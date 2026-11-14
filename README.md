@@ -64,6 +64,12 @@ adb shell am start -n dev.aman.lookout/.SettingsActivity --es url "https://examp
 | Webhook URL        | Endpoint that receives the POST. HTTPS only; cleartext is rejected. |
 | Ignored packages   | Optional comma-separated packages never to report (launchers etc.). |
 
+## Releases
+
+Pushing a tag like `v1.0.0` builds a signed APK and publishes it, with a SHA-256 file, as a GitHub
+release. Maintainers need four repository secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`,
+`KEY_ALIAS` and `KEY_PASSWORD`. CI runs the tests and a debug build on every push and PR.
+
 ## Home Assistant example
 
 ```yaml
