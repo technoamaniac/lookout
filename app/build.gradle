@@ -1,0 +1,48 @@
+plugins {
+    id "com.android.application"
+}
+
+// Release version comes from the git tag (-PversionName=1.2.3); local builds are 0.0.0-dev
+def semver = (findProperty("versionName") ?: "0.0.0-dev").toString()
+def semverMatch = semver =~ /^(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?$/
+if (!semverMatch.matches()) throw new GradleException("versionName '${semver}' is not a semantic version")
+def (major, minor, patch) = (1..3).collect { semverMatch.group(it).toInteger() }
+// major*10000 + minor*100 + patch: monotonic only while minor and patch stay below 100
+if (minor > 99 || patch > 99) throw new GradleException("versionName '${semver}' needs minor and patch below 100")
+def semverCode = Math.max(1, major * 10000 + minor * 100 + patch)
+
+android {
+    namespace = "dev.aman.lookout"
+    compileSdk = 37
+
+    defaultConfig {
+        applicationId = "dev.aman.lookout"
+        minSdk = 28
+        targetSdk = 34
+        versionCode = semverCode
+        versionName = semver
+    }
+
+    buildTypes {
+        // Left unsigned: the release workflow signs it with apksigner in a job that runs no Gradle
+        release {
+            minifyEnabled = true
+            shrinkResources = true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+}
+
+dependencyLocking {
+    lockAllConfigurations()
+}
+
+dependencies {
+    implementation "com.google.android.material:material:1.14.0"
+    testImplementation "junit:junit:4.13.2"
+}

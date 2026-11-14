@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android TV requires a 320x180dp banner, above the usual vector size limit -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:width="320dp"
+    android:height="180dp"
+    android:viewportWidth="320"
+    android:viewportHeight="180"
+    tools:ignore="VectorRaster">
+    <path android:fillColor="@color/surface" android:pathData="M0,0h320v180h-320z" />
+    <group android:translateX="18" android:translateY="42">
+        <path android:fillColor="@color/accent" android:pathData="M18,56A30,30 0 0,1 78,56Z" />
+        <path android:fillColor="@color/surface" android:pathData="M36,56A12,12 0 0,1 60,56Z" />
+        <path
+            android:pathData="M14.5,65.5H81.5M26.5,74.5H69.5M38.5,83.5H57.5"
+            android:strokeColor="@color/accent"
+            android:strokeLineCap="round"
+            android:strokeWidth="5" />
+    </group>
+    <path
+        android:pathData="M129,76V104H142M151,95a9,9 0 1,0 18,0a9,9 0 1,0 -18,0M178,95a9,9 0 1,0 18,0a9,9 0 1,0 -18,0M208,76V104M221,86L208,96M212,94L222,104M232,95a9,9 0 1,0 18,0a9,9 0 1,0 -18,0M260,86V96A8,8 0 0,0 276,96M276,86V103M291,78V98Q291,104 297,104H299M285,86H298"
+        android:strokeColor="#E8EEF4"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round"
+        android:strokeWidth="5" />
+    <path
+        android:pathData="M131,118H171"
+        android:strokeColor="@color/accent"
+        android:strokeLineCap="round"
+        android:strokeWidth="4" />
+</vector>

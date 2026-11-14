@@ -1,0 +1,131 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.Lookout" parent="Theme.Material3.Dark.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorOnPrimary">@color/on_accent</item>
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/on_surface</item>
+        <item name="colorOnSurfaceVariant">@color/on_surface_variant</item>
+        <item name="android:textColorPrimary">@color/on_surface</item>
+        <item name="android:textColorSecondary">@color/on_surface_variant</item>
+    </style>
+
+    <!-- Text -->
+    <style name="Text.Label" parent="">
+        <item name="android:textColor">@color/on_surface_variant</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="Text.Secondary" parent="">
+        <item name="android:textColor">@color/on_surface_variant</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+    <style name="Text.Body" parent="">
+        <item name="android:textColor">@color/on_surface</item>
+        <item name="android:textSize">18sp</item>
+    </style>
+    <style name="Text.Title" parent="">
+        <item name="android:textColor">@color/on_surface</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="Text.Headline" parent="">
+        <item name="android:textColor">@color/on_surface</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+    <style name="Text.Mono" parent="Text.Body">
+        <item name="android:fontFamily">monospace</item>
+    </style>
+
+    <!-- Fields -->
+    <style name="Widget.Lookout.Field" parent="Text.Mono">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">56dp</item>
+        <item name="android:background">@drawable/bg_field</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:singleLine">true</item>
+        <item name="android:textColorHint">@color/on_surface_disabled</item>
+        <item name="android:textCursorDrawable">@drawable/cursor_accent</item>
+    </style>
+
+
+    <!-- Status chip: StatusLine sets its tint, colours and icon -->
+    <style name="Widget.Lookout.Chip" parent="">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:background">@drawable/bg_chip</item>
+        <item name="android:drawablePadding">8dp</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:paddingTop">8dp</item>
+        <item name="android:paddingBottom">8dp</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:visibility">gone</item>
+    </style>
+
+    <!-- Buttons: pills that light up and grow when focused -->
+    <style name="Widget.Lookout.Button" parent="Widget.Material3.Button">
+        <item name="android:foreground">@drawable/focus_ring_pill</item>
+        <item name="android:stateListAnimator">@animator/focus_lift</item>
+        <item name="android:minHeight">48dp</item>
+        <item name="android:minWidth">120dp</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textAllCaps">false</item>
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:insetTop">0dp</item>
+        <item name="android:insetBottom">0dp</item>
+        <item name="android:paddingStart">22dp</item>
+        <item name="android:paddingEnd">22dp</item>
+        <item name="cornerRadius">24dp</item>
+        <item name="strokeWidth">1dp</item>
+        <item name="iconSize">20dp</item>
+        <item name="iconPadding">8dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="rippleColor">@android:color/transparent</item>
+    </style>
+    <style name="Widget.Lookout.Button.Primary">
+        <item name="backgroundTint">@color/primary_bg</item>
+        <item name="strokeColor">@color/primary_stroke</item>
+        <item name="android:textColor">@color/primary_text</item>
+        <item name="iconTint">@color/primary_text</item>
+    </style>
+    <style name="Widget.Lookout.Button.Secondary">
+        <item name="backgroundTint">@color/secondary_bg</item>
+        <item name="strokeColor">@color/secondary_stroke_state</item>
+        <item name="android:textColor">@color/secondary_text</item>
+        <item name="iconTint">@color/secondary_text</item>
+    </style>
+    <style name="Widget.Lookout.Button.Warning">
+        <item name="backgroundTint">@color/warning_bg</item>
+        <item name="strokeColor">@color/warning_stroke</item>
+        <item name="android:textColor">@color/warning_text</item>
+        <item name="iconTint">@color/warning_text</item>
+    </style>
+    <style name="Widget.Lookout.Button.Badge" parent="Widget.Lookout.Button.Primary">
+        <item name="android:minHeight">40dp</item>
+        <item name="android:minWidth">0dp</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:paddingEnd">16dp</item>
+        <item name="android:textSize">16sp</item>
+    </style>
+    <style name="Widget.Lookout.RailTab" parent="Widget.Lookout.Button">
+        <item name="android:stateListAnimator">@animator/focus_lift_tab</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:layout_marginTop">8dp</item>
+        <item name="android:textAlignment">viewStart</item>
+        <item name="android:paddingStart">16dp</item>
+        <item name="android:focusable">true</item>
+        <item name="iconSize">24dp</item>
+        <item name="iconPadding">12dp</item>
+        <item name="backgroundTint">@color/rail_bg</item>
+        <item name="strokeColor">@color/transparent_stroke</item>
+        <item name="android:textColor">@color/rail_text</item>
+        <item name="iconTint">@color/rail_text</item>
+    </style>
+</resources>
