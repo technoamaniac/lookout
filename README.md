@@ -35,15 +35,17 @@ adb connect <tv-ip>:<port>
 The script installs the APK and enables the service, keeping other enabled services. It is safe to
 re-run, for example after a factory reset.
 
-Open **Lookout** on the TV, enter your webhook URL, press **Save**, then **Send test**. To avoid
-typing a long URL with the remote, send it from your computer and press Save on the TV:
+Open **Lookout** on the TV, enter your webhook URL, press **Save**, then **Send test**. The URL
+must be HTTPS. **Ignored packages** optionally lists apps never to report, such as a launcher,
+separated by commas.
+
+To avoid typing with the remote, send either field from your computer and press Save on the TV:
 
 ```sh
-adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity --es url "https://example.com/hooks/lookout"
+adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
+  --es url "https://example.com/hooks/lookout" \
+  --es ignored "com.spocky.projengmenu,com.google.android.apps.tv.dreamx"
 ```
-
-The URL must be HTTPS. **Ignored packages** optionally lists apps never to report, such as a
-launcher.
 
 ## Using the app
 
