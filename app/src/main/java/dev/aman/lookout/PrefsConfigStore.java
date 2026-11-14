@@ -19,10 +19,12 @@ public final class PrefsConfigStore implements ConfigStore {
 
     @Override
     public Config load() {
+        String ignored = prefs.getString(KEY_IGNORED, "");
         try {
-            return Config.parse(prefs.getString(KEY_URL, ""), prefs.getString(KEY_IGNORED, ""));
+            return Config.parse(prefs.getString(KEY_URL, ""), ignored);
         } catch (IllegalArgumentException e) {
-            return Config.EMPTY;
+            // A URL saved before validation tightened no longer parses; keep the ignored packages
+            return Config.parse("", ignored);
         }
     }
 

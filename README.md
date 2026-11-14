@@ -21,7 +21,9 @@ Content-Type: application/json
 {"package": "org.smarttube.stable", "timestamp": 1731600000}
 ```
 
-`timestamp` is Unix epoch seconds. Events are sent only when the app changes.
+`timestamp` is Unix epoch seconds. Events are sent only when the app changes. Any 2xx response
+counts as delivered. Network errors, 408, 429 and 5xx responses are retried; other responses are
+not, and redirects are not followed, so point the URL at the final endpoint.
 
 ## Requirements
 
@@ -109,6 +111,7 @@ The core is plain Java with no Android dependencies, so it is unit-tested on the
 | `PackageFilter`      | Which packages count as user-facing apps                            |
 | `AppEvent`           | Immutable event and its JSON form                                   |
 | `EventSink`          | Delivery abstraction; `WebhookSink` is the HTTP implementation      |
+| `DeliveryResult`     | Whether a send succeeded, may succeed on retry, or never will       |
 | `RetryingDispatcher` | Off-thread delivery with backoff; drops events a newer one replaced |
 | `LookoutService`     | The only Android-aware class; wires the above together              |
 
@@ -118,8 +121,8 @@ To send events somewhere other than a webhook (MQTT, a local socket), implement 
 
 - Reports app changes, not playback state. Pair it with your TV's power state to know when the
   screen is actually on.
-- The enabled-keyboard ignore list is read when the service starts; restart it after installing a
-  new keyboard.
+- The enabled-keyboard ignore list is read when the service starts or settings are saved; press
+  Save again after installing a new keyboard.
 - Some TVs reset secure settings on factory reset, so re-run `scripts/install.sh` afterwards.
 
 ## Contributing

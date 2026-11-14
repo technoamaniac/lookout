@@ -1,6 +1,8 @@
 package dev.aman.lookout;
 
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -11,8 +13,6 @@ import java.util.Set;
 
 /** Validated, immutable user configuration. */
 public final class Config {
-    public static final Config EMPTY = new Config(null, Collections.emptyList());
-
     private final URL webhookUrl;
     private final List<String> ignoredPackages;
 
@@ -51,8 +51,9 @@ public final class Config {
         if (text.isEmpty()) return null;
         URL url;
         try {
-            url = new URL(text);
-        } catch (MalformedURLException e) {
+            // Parse as a URI first: it rejects characters such as spaces that URL lets through
+            url = new URI(text).toURL();
+        } catch (URISyntaxException | MalformedURLException | IllegalArgumentException e) {
             throw new IllegalArgumentException("Not a valid URL", e);
         }
         if (!"https".equals(url.getProtocol())) {

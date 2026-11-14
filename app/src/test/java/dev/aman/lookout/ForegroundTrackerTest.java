@@ -52,6 +52,15 @@ public class ForegroundTrackerTest {
     }
 
     @Test
+    public void earlierEventIsStaleEvenWhenItsAppReturns() {
+        AppEvent first = tracker.onWindowChanged("com.example.a", 10).orElseThrow();
+        tracker.onWindowChanged("com.example.b", 11);
+        AppEvent second = tracker.onWindowChanged("com.example.a", 12).orElseThrow();
+        assertFalse(tracker.isCurrent(first));
+        assertTrue(tracker.isCurrent(second));
+    }
+
+    @Test
     public void emptyFilterAcceptsEverything() {
         ForegroundTracker open = new ForegroundTracker(new PackageFilter(Collections.emptyList()));
         assertTrue(open.onWindowChanged("com.android.systemui", 1).isPresent());

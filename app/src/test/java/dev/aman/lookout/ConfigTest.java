@@ -30,6 +30,11 @@ public class ConfigTest {
     }
 
     @Test(expected = IllegalArgumentException.class)
+    public void rejectsUrlWithIllegalCharacters() {
+        Config.parse("https://example.com/my hook", "");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
     public void rejectsUrlWithoutHost() {
         Config.parse("https:///path", "");
     }

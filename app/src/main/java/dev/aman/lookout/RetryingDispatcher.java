@@ -42,7 +42,7 @@ public final class RetryingDispatcher {
                 Thread.currentThread().interrupt();
                 return;
             }
-            if (!stillRelevant.test(event) || sink.send(event)) return;
+            if (!stillRelevant.test(event) || !sink.send(event).isRetryable()) return;
         }
     }
 }

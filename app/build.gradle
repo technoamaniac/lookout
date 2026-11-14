@@ -6,8 +6,10 @@ plugins {
 def semver = (findProperty("versionName") ?: "0.0.0-dev").toString()
 def semverMatch = semver =~ /^(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?$/
 if (!semverMatch.matches()) throw new GradleException("versionName '${semver}' is not a semantic version")
-// major*10000 + minor*100 + patch: monotonic as long as minor and patch stay below 100
-def semverCode = Math.max(1, semverMatch.group(1).toInteger() * 10000 + semverMatch.group(2).toInteger() * 100 + semverMatch.group(3).toInteger())
+def (major, minor, patch) = (1..3).collect { semverMatch.group(it).toInteger() }
+// major*10000 + minor*100 + patch: monotonic only while minor and patch stay below 100
+if (minor > 99 || patch > 99) throw new GradleException("versionName '${semver}' needs minor and patch below 100")
+def semverCode = Math.max(1, major * 10000 + minor * 100 + patch)
 
 android {
     namespace "dev.aman.lookout"
@@ -37,6 +39,9 @@ android {
     buildTypes {
         release {
             if (System.getenv("KEYSTORE_PATH")) signingConfig signingConfigs.release
+            minifyEnabled true
+            shrinkResources true
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt")
         }
     }
 

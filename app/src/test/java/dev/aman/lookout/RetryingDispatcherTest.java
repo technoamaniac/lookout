@@ -1,5 +1,8 @@
 package dev.aman.lookout;
 
+import static dev.aman.lookout.DeliveryResult.DELIVERED;
+import static dev.aman.lookout.DeliveryResult.PERMANENT_FAILURE;
+import static dev.aman.lookout.DeliveryResult.TEMPORARY_FAILURE;
 import static org.junit.Assert.assertEquals;
 
 import java.util.ArrayList;
@@ -19,27 +22,34 @@ public class RetryingDispatcherTest {
 
     @Test
     public void stopsAfterFirstSuccess() {
-        dispatcher(e -> { attempts++; return true; }, true).dispatch(EVENT);
+        dispatcher(e -> { attempts++; return DELIVERED; }, true).dispatch(EVENT);
         assertEquals(1, attempts);
         assertEquals(0, sleeps.size());
     }
 
     @Test
     public void retriesWithBackoffUntilSuccess() {
-        dispatcher(e -> ++attempts == 3, true).dispatch(EVENT);
+        dispatcher(e -> ++attempts == 3 ? DELIVERED : TEMPORARY_FAILURE, true).dispatch(EVENT);
         assertEquals(3, attempts);
         assertEquals(List.of(100L, 200L), sleeps);
     }
 
     @Test
     public void givesUpAfterTheLastBackoffStep() {
-        dispatcher(e -> { attempts++; return false; }, true).dispatch(EVENT);
+        dispatcher(e -> { attempts++; return TEMPORARY_FAILURE; }, true).dispatch(EVENT);
         assertEquals(3, attempts);
     }
 
     @Test
+    public void doesNotRetryAPermanentFailure() {
+        dispatcher(e -> { attempts++; return PERMANENT_FAILURE; }, true).dispatch(EVENT);
+        assertEquals(1, attempts);
+        assertEquals(0, sleeps.size());
+    }
+
+    @Test
     public void dropsEventsThatHaveBeenSuperseded() {
-        dispatcher(e -> { attempts++; return true; }, false).dispatch(EVENT);
+        dispatcher(e -> { attempts++; return DELIVERED; }, false).dispatch(EVENT);
         assertEquals(0, attempts);
     }
 }

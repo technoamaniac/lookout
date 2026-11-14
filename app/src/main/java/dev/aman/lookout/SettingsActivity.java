@@ -18,6 +18,7 @@ public class SettingsActivity extends AppCompatActivity {
     private EditText urlField;
     private EditText ignoredField;
     private TextView status;
+    private boolean sending;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,7 +40,9 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
         TextView service = findViewById(R.id.service_status);
-        service.setText(serviceEnabled() ? R.string.service_enabled : R.string.service_disabled);
+        boolean enabled = serviceEnabled();
+        service.setText(enabled ? R.string.service_enabled : R.string.service_disabled);
+        service.setTextColor(getColor(enabled ? R.color.ok : R.color.warn));
     }
 
     private void save() {
@@ -52,6 +55,7 @@ public class SettingsActivity extends AppCompatActivity {
     }
 
     private void sendTest() {
+        if (sending) return;
         Config config;
         try {
             config = readFields();
@@ -59,16 +63,32 @@ public class SettingsActivity extends AppCompatActivity {
             status.setText(e.getMessage());
             return;
         }
-        if (config.webhookUrl().isEmpty()) {
+        // Not Optional#isEmpty: that needs API 33 and minSdk is 28
+        if (!config.webhookUrl().isPresent()) {
             status.setText(R.string.no_url);
             return;
         }
+        sending = true;
         status.setText(R.string.sending);
         EventSink sink = new WebhookSink(config.webhookUrl().get());
         new Thread(() -> {
-            boolean ok = sink.send(new AppEvent(getPackageName() + ".test", System.currentTimeMillis() / 1000));
-            runOnUiThread(() -> status.setText(ok ? R.string.test_ok : R.string.test_failed));
+            DeliveryResult result = sink.send(new AppEvent(getPackageName() + ".test", System.currentTimeMillis() / 1000));
+            runOnUiThread(() -> {
+                sending = false;
+                status.setText(messageFor(result));
+            });
         }).start();
+    }
+
+    private static int messageFor(DeliveryResult result) {
+        switch (result) {
+            case DELIVERED:
+                return R.string.test_ok;
+            case PERMANENT_FAILURE:
+                return R.string.test_rejected;
+            default:
+                return R.string.test_failed;
+        }
     }
 
     private Config readFields() {
@@ -77,7 +97,14 @@ public class SettingsActivity extends AppCompatActivity {
 
     private boolean serviceEnabled() {
         String enabled = Settings.Secure.getString(getContentResolver(), Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-        return enabled != null && enabled.contains(new ComponentName(this, LookoutService.class).flattenToString());
+        if (enabled == null) return false;
+        // Compare whole entries: a substring match would accept e.g. ".LookoutServiceX", and
+        // entries may use the short "pkg/.Class" form
+        ComponentName self = new ComponentName(this, LookoutService.class);
+        for (String entry : enabled.split(":")) {
+            if (self.equals(ComponentName.unflattenFromString(entry))) return true;
+        }
+        return false;
     }
 
     private static String orDefault(String value, String fallback) {
