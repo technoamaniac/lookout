@@ -2,7 +2,9 @@ name: Release
 
 on:
   push:
-    tags: ["v*"]
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-*"
 
 permissions:
   contents: write
@@ -33,7 +35,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
-        run: ./gradlew test assembleRelease
+        run: ./gradlew test assembleRelease -PversionName="${GITHUB_REF_NAME#v}"
 
       - name: Publish
         env:
@@ -41,5 +43,7 @@ jobs:
         run: |
           cp app/build/outputs/apk/release/app-release.apk "lookout-${GITHUB_REF_NAME}.apk"
           sha256sum "lookout-${GITHUB_REF_NAME}.apk" > "lookout-${GITHUB_REF_NAME}.apk.sha256"
+          # A hyphen in the tag (v1.2.0-rc.1) marks a pre-release
+          case "$GITHUB_REF_NAME" in *-*) pre=--prerelease ;; *) pre= ;; esac
           gh release create "$GITHUB_REF_NAME" "lookout-${GITHUB_REF_NAME}.apk" "lookout-${GITHUB_REF_NAME}.apk.sha256" \
-            --generate-notes
+            --generate-notes $pre

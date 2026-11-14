@@ -66,9 +66,11 @@ adb shell am start -n dev.aman.lookout/.SettingsActivity --es url "https://examp
 
 ## Releases
 
-Pushing a tag like `v1.0.0` builds a signed APK and publishes it, with a SHA-256 file, as a GitHub
+Versions follow [Semantic Versioning](https://semver.org). Pushing a tag like `v1.0.0` (or a
+pre-release such as `v1.1.0-rc.1`, published as a GitHub pre-release) builds a signed APK and publishes it, with a SHA-256 file, as a GitHub
 release. Maintainers need four repository secrets: `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`,
-`KEY_ALIAS` and `KEY_PASSWORD`. CI runs the tests and a debug build on every push and PR.
+`KEY_ALIAS` and `KEY_PASSWORD`. The tag sets the app's version name; the version code is
+`major*10000 + minor*100 + patch`, so keep minor and patch below 100. CI runs the tests and a debug build on every push and PR.
 
 ## Home Assistant example
 

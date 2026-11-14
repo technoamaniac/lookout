@@ -2,6 +2,13 @@ plugins {
     id "com.android.application"
 }
 
+// Release version comes from the git tag (-PversionName=1.2.3); local builds are 0.0.0-dev
+def semver = (findProperty("versionName") ?: "0.0.0-dev").toString()
+def semverMatch = semver =~ /^(\d+)\.(\d+)\.(\d+)(-[0-9A-Za-z.-]+)?$/
+if (!semverMatch.matches()) throw new GradleException("versionName '${semver}' is not a semantic version")
+// major*10000 + minor*100 + patch: monotonic as long as minor and patch stay below 100
+def semverCode = Math.max(1, semverMatch.group(1).toInteger() * 10000 + semverMatch.group(2).toInteger() * 100 + semverMatch.group(3).toInteger())
+
 android {
     namespace "dev.aman.lookout"
     compileSdk 34
@@ -10,8 +17,8 @@ android {
         applicationId "dev.aman.lookout"
         minSdk 28
         targetSdk 34
-        versionCode 1
-        versionName "1.0"
+        versionCode semverCode
+        versionName semver
     }
 
     signingConfigs {
