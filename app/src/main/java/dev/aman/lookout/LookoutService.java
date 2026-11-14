@@ -5,6 +5,7 @@ import android.view.accessibility.AccessibilityEvent;
 import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -49,9 +50,13 @@ public class LookoutService extends AccessibilityService {
         Config config = store.load();
         tracker = new ForegroundTracker(new PackageFilter(ignoredPackages(config)));
         dispatcher = config.webhookUrl()
-                .map(url -> new RetryingDispatcher(new WebhookSink(url), io, BACKOFF_MS,
+                .map(url -> new RetryingDispatcher(recordingSinkFor(url), io, BACKOFF_MS,
                         Thread::sleep, tracker::isCurrent))
                 .orElse(null);
+    }
+
+    private static EventSink recordingSinkFor(URL url) {
+        return new RecordingSink(new WebhookSink(url), DeliveryLog.shared(), System::currentTimeMillis);
     }
 
     // Keyboards and system chrome raise window events over the real foreground app
