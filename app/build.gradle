@@ -12,6 +12,7 @@ def semverCode = Math.max(1, semverMatch.group(1).toInteger() * 10000 + semverMa
 android {
     namespace "dev.aman.lookout"
     compileSdk 34
+    buildToolsVersion "34.0.0"
 
     defaultConfig {
         applicationId "dev.aman.lookout"
@@ -43,6 +44,10 @@ android {
         sourceCompatibility JavaVersion.VERSION_17
         targetCompatibility JavaVersion.VERSION_17
     }
+}
+
+dependencyLocking {
+    lockAllConfigurations()
 }
 
 dependencies {
