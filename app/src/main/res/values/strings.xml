@@ -25,4 +25,20 @@
     <string name="delivery_failed">Failed</string>
     <string name="delivery_rejected">Rejected</string>
     <string name="open_accessibility">Open accessibility settings</string>
+    <string name="tab_updates">Updates</string>
+    <string name="update_badge">Update %1$s available</string>
+    <string name="version">Version %1$s</string>
+    <string name="check_updates">Check for updates</string>
+    <string name="install_version">Install %1$s</string>
+    <string name="updates_note">Updates are downloaded from this app\'s GitHub releases. Android only installs them if they are signed with the same key as the version you have.</string>
+    <string name="update_checking">Checking…</string>
+    <string name="update_check_failed">Could not reach GitHub. Check the TV\'s connection.</string>
+    <string name="update_current">You are on the latest version.</string>
+    <string name="update_available">Version %1$s is available.</string>
+    <string name="update_allow_installs">Allow Lookout to install apps on the next screen, then press Install again.</string>
+    <string name="update_no_permission_screen">This TV has no screen for allowing installs. Update with scripts/install.sh instead.</string>
+    <string name="update_downloading">Downloading…</string>
+    <string name="update_download_failed">Download failed or did not match its checksum. Try again.</string>
+    <string name="update_installing">Confirm the install on screen. Lookout restarts afterwards.</string>
+    <string name="update_failed">Update failed: %1$s</string>
 </resources>

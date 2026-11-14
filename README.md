@@ -66,6 +66,19 @@ adb shell am start -n dev.aman.lookout/.SettingsActivity --es url "https://examp
 | Webhook URL        | Endpoint that receives the POST. HTTPS only; cleartext is rejected. |
 | Ignored packages   | Optional comma-separated packages never to report (launchers etc.). |
 
+## Deliveries and updates
+
+The app has three tabs. **Deliveries** lists the last 50 delivery attempts (kept in memory, so
+they clear when the app restarts). **Updates** checks this repository's latest stable GitHub
+release and installs it in place; pre-releases are never offered. A corner badge appears when a
+newer version exists. The app contacts github.com only when you open it, never in the background.
+
+Updating needs the repository to be public. The app downloads the release APK, checks it against
+the published SHA-256, then hands it to Android's installer, which only accepts it if it is signed
+with the same key as the installed app. A debug build therefore cannot update to a release build.
+The first time, Android asks you to allow Lookout to install apps. Expect a confirmation screen
+for each update.
+
 ## Releases
 
 Versions follow [Semantic Versioning](https://semver.org). Pushing a tag like `v0.1.0` (or a
@@ -103,17 +116,32 @@ automation:
 
 ## Design
 
-The core is plain Java with no Android dependencies, so it is unit-tested on the JVM:
+The code is split by feature. Apart from `ui`, the root classes, `PrefsConfigStore`,
+`UpdateInstaller` and `InstallResultReceiver`, everything is plain Java with no Android
+dependencies, so it is unit-tested on the JVM. Dependencies point one way:
+`ui` and the entry points use the feature packages, and the feature packages never use them.
 
-| Class                | Responsibility                                                      |
-| -------------------- | ------------------------------------------------------------------- |
-| `ForegroundTracker`  | Turns window notifications into app _changes_; owns current state   |
-| `PackageFilter`      | Which packages count as user-facing apps                            |
-| `AppEvent`           | Immutable event and its JSON form                                   |
-| `EventSink`          | Delivery abstraction; `WebhookSink` is the HTTP implementation      |
-| `DeliveryResult`     | Whether a send succeeded, may succeed on retry, or never will       |
-| `RetryingDispatcher` | Off-thread delivery with backoff; drops events a newer one replaced |
-| `LookoutService`     | The only Android-aware class; wires the above together              |
+| Package      | Class                | Responsibility                                                      |
+| ------------ | -------------------- | ------------------------------------------------------------------- |
+| `foreground` | `ForegroundTracker`  | Turns window notifications into app _changes_; owns current state   |
+|              | `PackageFilter`      | Which packages count as user-facing apps                            |
+|              | `AppEvent`           | Immutable event and its JSON form                                   |
+| `delivery`   | `EventSink`          | Delivery abstraction; `WebhookSink` is the HTTP implementation      |
+|              | `DeliveryResult`     | Whether a send succeeded, may succeed on retry, or never will       |
+|              | `RetryingDispatcher` | Off-thread delivery with backoff; drops events a newer one replaced |
+|              | `DeliveryLog`        | Bounded, thread-safe history of attempts; `RecordingSink` fills it  |
+| `config`     | `Config`             | Validated, immutable settings; `PrefsConfigStore` persists them     |
+| `update`     | `Version`            | Semantic version ordering, pre-releases included                    |
+|              | `ReleaseSource`      | Where the newest release comes from; `GitHubReleases` implements it |
+|              | `UpdateChecker`      | Whether a published release is newer than the installed version     |
+|              | `ApkFetcher`         | Downloads an APK and verifies its SHA-256                           |
+|              | `UpdateInstaller`    | Hands the APK to Android's package installer                        |
+| `ui`         | `*Panel`             | One class per tab (settings, deliveries, updates) plus the service status |
+| (root)       | `LookoutService`     | Accessibility service; wires the delivery classes together          |
+|              | `SettingsActivity`   | The screen; builds the panels and the tabs                          |
+
+The two root classes stay at the root because their names are stored on the TV (the enabled
+accessibility service) and used by `scripts/install.sh`; renaming them would break existing installs.
 
 To send events somewhere other than a webhook (MQTT, a local socket), implement `EventSink`.
 
@@ -123,6 +151,8 @@ To send events somewhere other than a webhook (MQTT, a local socket), implement 
   screen is actually on.
 - The enabled-keyboard ignore list is read when the service starts or settings are saved; press
   Save again after installing a new keyboard.
+- Update installs need Android's "install unknown apps" permission, and some TV builds have no
+  screen to grant it; use `scripts/install.sh` there.
 - Some TVs reset secure settings on factory reset, so re-run `scripts/install.sh` afterwards.
 
 ## Contributing
