@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Lookout</string>
+    <string name="service_description">Reports the foreground app to your webhook.</string>
+    <string name="tagline">Reports which app is in the foreground to your webhook.</string>
+    <string name="helper_ignored">Keyboards and system UI are always ignored.</string>
+    <string name="label_url">Webhook URL</string>
+    <string name="hint_url">https://example.com/hooks/lookout</string>
+    <string name="label_ignored">Ignored packages (optional)</string>
+    <string name="hint_ignored">com.example.launcher</string>
+    <string name="save">Save</string>
+    <string name="send_test">Send test</string>
+    <string name="saved">Saved.</string>
+    <string name="sending">Sending…</string>
+    <string name="no_url">Enter a webhook URL first.</string>
+    <string name="test_ok">Test event delivered.</string>
+    <string name="test_failed">Delivery failed. Check the URL and that the TV can reach it.</string>
+    <string name="service_enabled">● Service running</string>
+    <string name="service_disabled">○ Service not enabled — run scripts/install.sh from a computer</string>
+</resources>
