@@ -8,3 +8,8 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    ignore:
+      # A new AGP major needs a matching Gradle major and a build-script migration, so it is
+      # upgraded by hand together with gradle-wrapper.properties and the verification metadata
+      - dependency-name: "com.android.application"
+        update-types: ["version-update:semver-major"]
