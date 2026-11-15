@@ -8,13 +8,17 @@ TV remote APIs (Sony Bravia, Fire TV and others) often can't tell you which app 
 
 An accessibility service listens for window changes only. It never reads window content, so it sees which app is in front, not what is on screen. System UI, keyboards and Lookout itself are ignored. Each change is sent as:
 
-```
+```json
 POST <webhook url>
 Content-Type: application/json
 
-{"event": "app_changed", "package": "org.smarttube.stable",
- "activity": "org.smarttube.stable.MainActivity", "device": "Living room",
- "timestamp": 1731600000}
+{
+  "event": "app_changed",
+  "package": "org.smarttube.stable",
+  "activity": "org.smarttube.stable.MainActivity",
+  "device": "Living room",
+  "timestamp": 1731600000
+}
 ```
 
 `event` names the kind of message. `activity` is the window Android reported when the app came to the front, often its main activity but sometimes a dialog or splash window; later screens inside the app do not update it. `device` is the TV's name from its system settings, so one webhook can serve several TVs; it is only sent when **Send this TV's name** is ticked. Both are left out when unknown. `timestamp` is Unix seconds.
@@ -92,17 +96,17 @@ Needs JDK 17 and the Android SDK (platform 37).
 
 Logic lives in plain-Java packages with JVM unit tests; Android classes stay thin.
 
-| Package      | Contents                                                                  |
-| ------------ | ------------------------------------------------------------------------- |
-| `event`      | `Event`, the JSON builder and `LatestEvents`, which drops superseded ones |
-| `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`      |
-| `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes   |
+| Package      | Contents                                                                        |
+| ------------ | ------------------------------------------------------------------------------- |
+| `event`      | `Event`, the JSON builder and `LatestEvents`, which drops superseded ones       |
+| `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`            |
+| `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes         |
 | `playback`   | `PlaybackTracker` and `PlaybackEvent`; `MediaSessionWatcher` reads the sessions |
-| `delivery`   | `EventSink` and `WebhookSink`, `RetryingDispatcher`, `DeliveryLog`        |
-| `config`     | `Config`, validated settings; `PrefsConfigStore` persists them            |
-| `update`     | `GitHubReleases`, `UpdateChecker`, `ApkFetcher`, `UpdateInstaller`        |
-| `ui`         | One panel class per tab                                                   |
-| (root)       | `LookoutService` and `SettingsActivity`; their names are stored on the TV |
+| `delivery`   | `EventSink` and `WebhookSink`, `RetryingDispatcher`, `DeliveryLog`              |
+| `config`     | `Config`, validated settings; `PrefsConfigStore` persists them                  |
+| `update`     | `GitHubReleases`, `UpdateChecker`, `ApkFetcher`, `UpdateInstaller`              |
+| `ui`         | One panel class per tab                                                         |
+| (root)       | `LookoutService` and `SettingsActivity`; their names are stored on the TV       |
 
 To send events somewhere other than a webhook, implement `EventSink`.
 
