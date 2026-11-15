@@ -17,6 +17,9 @@ import dev.aman.lookout.delivery.EventSink;
 import dev.aman.lookout.delivery.RecordingSink;
 import dev.aman.lookout.delivery.RetryingDispatcher;
 import dev.aman.lookout.delivery.WebhookSink;
+import dev.aman.lookout.device.DeviceStateReceiver;
+import dev.aman.lookout.event.Event;
+import dev.aman.lookout.event.LatestEvents;
 import dev.aman.lookout.foreground.ForegroundTracker;
 import dev.aman.lookout.foreground.PackageFilter;
 
@@ -43,7 +46,11 @@ public class LookoutService extends AccessibilityService {
             configure();
         }
     };
+    private final LatestEvents latest = new LatestEvents();
+    // Replaced whenever settings change, so the opt-in applies to device events too
+    private volatile Supplier<String> deviceName = () -> null;
     private PrefsConfigStore store;
+    private DeviceStateReceiver deviceState;
     private RetryingDispatcher dispatcher;
 
     @Override
@@ -53,6 +60,8 @@ public class LookoutService extends AccessibilityService {
         getContentResolver().registerContentObserver(
                 Settings.Secure.getUriFor(Settings.Secure.ENABLED_INPUT_METHODS), false, keyboardsChanged);
         configure();
+        deviceState = new DeviceStateReceiver(this, this::dispatch, () -> deviceName.get());
+        deviceState.start();
     }
 
     @Override
@@ -60,7 +69,7 @@ public class LookoutService extends AccessibilityService {
         if (dispatcher == null || event.getPackageName() == null) return;
         String activity = event.getClassName() == null ? null : event.getClassName().toString();
         tracker.onWindowChanged(event.getPackageName().toString(), activity, System.currentTimeMillis() / 1000)
-                .ifPresent(dispatcher::dispatch);
+                .ifPresent(this::dispatch);
     }
 
     @Override
@@ -68,20 +77,29 @@ public class LookoutService extends AccessibilityService {
 
     @Override
     public void onDestroy() {
+        if (deviceState != null) deviceState.stop();
         if (store != null) store.stopListening();
         getContentResolver().unregisterContentObserver(keyboardsChanged);
         io.shutdownNow();
         super.onDestroy();
     }
 
+    // Recorded first so an older undelivered event of the same kind goes stale
+    private void dispatch(Event event) {
+        if (dispatcher == null) return;
+        latest.record(event);
+        dispatcher.dispatch(event);
+    }
+
     // Rebuilt whenever settings or keyboards change, so edits apply without restarting the service
     private void configure() {
         Config config = store.load();
-        tracker.reconfigure(new PackageFilter(ignoredPackages(config)), deviceNameFor(config));
+        deviceName = deviceNameFor(config);
+        tracker.reconfigure(new PackageFilter(ignoredPackages(config)), deviceName);
         dispatcher = config.webhookUrl()
                 .map(url -> new RetryingDispatcher(recordingSinkFor(url),
                         (task, delayMillis) -> io.schedule(task, delayMillis, TimeUnit.MILLISECONDS),
-                        BACKOFF_MS, tracker::isCurrent))
+                        BACKOFF_MS, latest::isCurrent))
                 .orElse(null);
     }
 

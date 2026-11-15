@@ -1,6 +1,6 @@
 package dev.aman.lookout.delivery;
 
-import dev.aman.lookout.foreground.AppEvent;
+import dev.aman.lookout.event.Event;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -21,7 +21,7 @@ public final class WebhookSink implements EventSink {
     }
 
     @Override
-    public DeliveryResult send(AppEvent event) {
+    public DeliveryResult send(Event event) {
         byte[] body = event.toJson().getBytes(StandardCharsets.UTF_8);
         HttpURLConnection conn = null;
         try {

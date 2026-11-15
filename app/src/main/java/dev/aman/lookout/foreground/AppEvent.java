@@ -1,13 +1,13 @@
 package dev.aman.lookout.foreground;
 
-import java.util.LinkedHashMap;
-import java.util.Map;
+import dev.aman.lookout.event.Event;
+import dev.aman.lookout.event.JsonFields;
+
 import java.util.Objects;
 import java.util.Optional;
-import java.util.StringJoiner;
 
 /** An app coming to the foreground. */
-public final class AppEvent {
+public final class AppEvent implements Event {
     private static final String TYPE = "app_changed";
 
     private final String packageName;
@@ -49,52 +49,37 @@ public final class AppEvent {
         return epochSeconds;
     }
 
+    @Override
+    public String summary() {
+        return packageName;
+    }
+
+    // Only the app in front matters, so a newer app change makes an older one stale
+    @Override
+    public String supersessionKey() {
+        return "foreground";
+    }
+
+    @Override
     public String toJson() {
-        return render(false);
+        return json().compact();
     }
 
-    /** The same payload, indented for reading on screen; it is never sent. */
+    @Override
     public String toPrettyJson() {
-        return render(true);
+        return json().pretty();
     }
 
-    private String render(boolean pretty) {
-        String newline = pretty ? "\n" : "";
-        String indent = pretty ? "  " : "";
-        String colon = pretty ? ": " : ":";
-        StringJoiner json = new StringJoiner("," + newline, "{" + newline, newline + "}");
-        for (Map.Entry<String, String> field : fields().entrySet()) {
-            json.add(indent + quote(field.getKey()) + colon + field.getValue());
-        }
-        return json.toString();
-    }
-
-    // Values are already JSON-encoded; optional fields are left out rather than sent as null
-    private Map<String, String> fields() {
-        Map<String, String> fields = new LinkedHashMap<>();
-        fields.put("event", quote(TYPE));
-        fields.put("package", quote(packageName));
-        if (activity != null) fields.put("activity", quote(activity));
-        if (device != null) fields.put("device", quote(device));
-        fields.put("timestamp", Long.toString(epochSeconds));
-        return fields;
+    private JsonFields json() {
+        return new JsonFields()
+                .string("event", TYPE)
+                .string("package", packageName)
+                .optionalString("activity", activity)
+                .optionalString("device", device)
+                .number("timestamp", epochSeconds);
     }
 
     private static String blankToNull(String s) {
         return s == null || s.trim().isEmpty() ? null : s;
-    }
-
-    private static String quote(String s) {
-        StringBuilder out = new StringBuilder(s.length() + 2).append('"');
-        for (char c : s.toCharArray()) {
-            if (c == '"' || c == '\\') {
-                out.append('\\').append(c);
-            } else if (c < 0x20) {
-                out.append(String.format("\\u%04x", (int) c));
-            } else {
-                out.append(c);
-            }
-        }
-        return out.append('"').toString();
     }
 }

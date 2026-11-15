@@ -107,7 +107,7 @@ public class RetryingDispatcherTest {
     public void aNewerEventIsNotHeldUpByAnOlderOnesBackoff() {
         List<String> sent = new ArrayList<>();
         RetryingDispatcher dispatcher = dispatcher(e -> {
-            sent.add(e.packageName());
+            sent.add(e.summary());
             return TEMPORARY_FAILURE;
         }, true);
 

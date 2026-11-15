@@ -64,7 +64,7 @@ final class DeliveriesAdapter extends ListAdapter<DeliveryRecord, DeliveriesAdap
         int color = row.itemView.getContext().getColor(DeliveryAppearance.colorFor(record.result()));
         row.icon.setImageResource(DeliveryAppearance.iconFor(record.result()));
         row.icon.setImageTintList(ColorStateList.valueOf(color));
-        row.pkg.setText(record.event().packageName());
+        row.pkg.setText(record.event().summary());
         row.time.setText(timeFormat.format(new Date(record.attemptedAtMillis())));
         row.result.setText(DeliveryAppearance.labelFor(record.result()));
         row.result.setTextColor(color);

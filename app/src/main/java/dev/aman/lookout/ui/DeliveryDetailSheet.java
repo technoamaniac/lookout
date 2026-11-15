@@ -55,7 +55,7 @@ final class DeliveryDetailSheet {
         this.onClosed = onClosed;
         result.show(activity.getString(DeliveryAppearance.labelFor(record.result())),
                 DeliveryAppearance.kindFor(record.result()));
-        app.setText(record.event().packageName());
+        app.setText(record.event().summary());
         time.setText(dateTimeFormat.format(new Date(record.attemptedAtMillis())));
         response.setText(DeliveryAppearance.responseFor(record.result()));
         payload.setText(highlight(record.event().toPrettyJson()));

@@ -57,7 +57,7 @@
     <string name="subtitle_deliveries">Last 10 attempts, until Lookout restarts. Press OK for the payload.</string>
     <string name="subtitle_updates">Stable GitHub releases, checked only while this screen is open.</string>
     <string name="detail_title">Delivery</string>
-    <string name="detail_app">App</string>
+    <string name="detail_app">Event</string>
     <string name="detail_attempted">Attempted</string>
     <string name="detail_response">Response</string>
     <string name="detail_payload">Payload · POST · application/json</string>

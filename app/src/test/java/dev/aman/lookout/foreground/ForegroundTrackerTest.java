@@ -67,31 +67,8 @@ public class ForegroundTrackerTest {
     }
 
     @Test
-    public void ignoredPackagesDoNotDisplaceTheCurrentApp() {
-        AppEvent a = tracker.onWindowChanged("com.example.a", null, 10).orElseThrow();
-        assertTrue(tracker.onWindowChanged("com.android.systemui", null, 11).isEmpty());
-        assertTrue(tracker.isCurrent(a));
-    }
-
-    @Test
     public void ignoresNullPackage() {
         assertTrue(tracker.onWindowChanged(null, null, 10).isEmpty());
-    }
-
-    @Test
-    public void olderEventIsNoLongerCurrentAfterASwitch() {
-        AppEvent a = tracker.onWindowChanged("com.example.a", null, 10).orElseThrow();
-        tracker.onWindowChanged("com.example.b", null, 11);
-        assertFalse(tracker.isCurrent(a));
-    }
-
-    @Test
-    public void earlierEventIsStaleEvenWhenItsAppReturns() {
-        AppEvent first = tracker.onWindowChanged("com.example.a", null, 10).orElseThrow();
-        tracker.onWindowChanged("com.example.b", null, 11);
-        AppEvent second = tracker.onWindowChanged("com.example.a", null, 12).orElseThrow();
-        assertFalse(tracker.isCurrent(first));
-        assertTrue(tracker.isCurrent(second));
     }
 
     @Test

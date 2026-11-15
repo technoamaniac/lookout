@@ -26,8 +26,8 @@ public class DeliveryLogTest {
         log.add(record("a"));
         log.add(record("b"));
         List<DeliveryRecord> recent = log.recent();
-        assertEquals("b", recent.get(0).event().packageName());
-        assertEquals("a", recent.get(1).event().packageName());
+        assertEquals("b", recent.get(0).event().summary());
+        assertEquals("a", recent.get(1).event().summary());
     }
 
     @Test
@@ -38,8 +38,8 @@ public class DeliveryLogTest {
         log.add(record("c"));
         List<DeliveryRecord> recent = log.recent();
         assertEquals(2, recent.size());
-        assertEquals("c", recent.get(0).event().packageName());
-        assertEquals("b", recent.get(1).event().packageName());
+        assertEquals("c", recent.get(0).event().summary());
+        assertEquals("b", recent.get(1).event().summary());
     }
 
     @Test

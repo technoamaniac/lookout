@@ -1,6 +1,6 @@
 package dev.aman.lookout.delivery;
 
-import dev.aman.lookout.foreground.AppEvent;
+import dev.aman.lookout.event.Event;
 
 import java.util.function.Predicate;
 
@@ -17,15 +17,15 @@ public final class RetryingDispatcher {
     private final EventSink sink;
     private final Scheduler scheduler;
     private final long[] backoffMillis;
-    private final Predicate<AppEvent> stillRelevant;
+    private final Predicate<Event> stillRelevant;
 
     /**
      * @param backoffMillis delay before each attempt; its length is the attempt count
      * @param stillRelevant checked before every attempt so a stale event is dropped
-     *                      once a newer one exists
+     *                      once a newer one replaces it
      */
     public RetryingDispatcher(EventSink sink, Scheduler scheduler, long[] backoffMillis,
-                              Predicate<AppEvent> stillRelevant) {
+                              Predicate<Event> stillRelevant) {
         if (backoffMillis.length == 0) throw new IllegalArgumentException("Needs at least one attempt");
         this.sink = sink;
         this.scheduler = scheduler;
@@ -33,11 +33,11 @@ public final class RetryingDispatcher {
         this.stillRelevant = stillRelevant;
     }
 
-    public void dispatch(AppEvent event) {
+    public void dispatch(Event event) {
         scheduleAttempt(event, 0);
     }
 
-    private void scheduleAttempt(AppEvent event, int attempt) {
+    private void scheduleAttempt(Event event, int attempt) {
         scheduler.schedule(() -> {
             if (!stillRelevant.test(event) || !sink.send(event).isRetryable()) return;
             if (attempt + 1 < backoffMillis.length) scheduleAttempt(event, attempt + 1);

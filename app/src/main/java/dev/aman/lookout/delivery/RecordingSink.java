@@ -1,6 +1,6 @@
 package dev.aman.lookout.delivery;
 
-import dev.aman.lookout.foreground.AppEvent;
+import dev.aman.lookout.event.Event;
 
 import java.util.function.LongSupplier;
 
@@ -17,7 +17,7 @@ public final class RecordingSink implements EventSink {
     }
 
     @Override
-    public DeliveryResult send(AppEvent event) {
+    public DeliveryResult send(Event event) {
         DeliveryResult result = delegate.send(event);
         log.add(new DeliveryRecord(event, result, clockMillis.getAsLong()));
         return result;

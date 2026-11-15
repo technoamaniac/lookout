@@ -40,14 +40,6 @@ public final class ForegroundTracker {
         return Optional.of(event);
     }
 
-    /**
-     * True while no newer event has replaced this one. Compares identity, not package: after
-     * A, B, A the first A event is stale even though A is in front again.
-     */
-    public boolean isCurrent(AppEvent event) {
-        return event == current;
-    }
-
     private boolean isInForeground(String packageName) {
         AppEvent last = current;
         return last != null && last.packageName().equals(packageName);
