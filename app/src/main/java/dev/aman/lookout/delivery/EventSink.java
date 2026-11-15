@@ -1,8 +1,6 @@
 package dev.aman.lookout.delivery;
 
-import dev.aman.lookout.event.Event;
-
-/** Destination for events. */
+/** Destination for messages. */
 public interface EventSink {
-    DeliveryResult send(Event event);
+    DeliveryResult send(Message message);
 }

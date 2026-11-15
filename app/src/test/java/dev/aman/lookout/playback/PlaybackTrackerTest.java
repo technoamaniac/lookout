@@ -20,8 +20,8 @@ public class PlaybackTrackerTest {
         assertEquals(1, events.size());
         assertEquals("a", events.get(0).packageName());
         assertEquals(PlayState.PLAYING, events.get(0).state());
-        assertTrue(events.get(0).toJson().contains("\"title\":\"Song\""));
-        assertTrue(events.get(0).toJson().contains("\"device\":\"Den\""));
+        assertTrue(events.get(0).fields().compact().contains("\"title\":\"Song\""));
+        assertTrue(events.get(0).fields().compact().contains("\"device\":\"Den\""));
     }
 
     @Test
@@ -36,7 +36,7 @@ public class PlaybackTrackerTest {
         assertEquals(PlayState.PAUSED,
                 tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PAUSED, "Song")), 11).get(0).state());
         assertTrue(tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PAUSED, "Next")), 12)
-                .get(0).toJson().contains("\"title\":\"Next\""));
+                .get(0).fields().compact().contains("\"title\":\"Next\""));
     }
 
     @Test
@@ -58,7 +58,7 @@ public class PlaybackTrackerTest {
         List<PlaybackEvent> events = tracker.onSessionsChanged(List.of(), 11);
         assertEquals(1, events.size());
         assertEquals(PlayState.STOPPED, events.get(0).state());
-        assertTrue(events.get(0).toJson().contains("\"timestamp\":11"));
+        assertTrue(events.get(0).fields().compact().contains("\"timestamp\":11"));
     }
 
     @Test
@@ -115,7 +115,7 @@ public class PlaybackTrackerTest {
         List<PlaybackEvent> events = tracker.onSessionsChanged(List.of(snapshot("a", PlayState.BUFFERING, "Two")), 11);
         assertEquals(1, events.size());
         assertEquals(PlayState.PLAYING, events.get(0).state());
-        assertTrue(events.get(0).toJson().contains("\"title\":\"Two\""));
+        assertTrue(events.get(0).fields().compact().contains("\"title\":\"Two\""));
     }
 
     @Test

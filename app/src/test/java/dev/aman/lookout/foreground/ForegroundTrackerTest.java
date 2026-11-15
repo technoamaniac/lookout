@@ -24,8 +24,8 @@ public class ForegroundTrackerTest {
     @Test
     public void stampsTheDeviceAndActivityOnTheEvent() {
         AppEvent event = tracker.onWindowChanged("com.example.a", "com.example.a.Main", 10).orElseThrow();
-        assertTrue(event.toJson().contains("\"activity\":\"com.example.a.Main\""));
-        assertTrue(event.toJson().contains("\"device\":\"Living room\""));
+        assertTrue(event.fields().compact().contains("\"activity\":\"com.example.a.Main\""));
+        assertTrue(event.fields().compact().contains("\"device\":\"Living room\""));
     }
 
     @Test
@@ -35,7 +35,7 @@ public class ForegroundTrackerTest {
         renamed.onWindowChanged("com.example.a", null, 10);
         name.set("Bedroom");
         AppEvent event = renamed.onWindowChanged("com.example.b", null, 11).orElseThrow();
-        assertTrue(event.toJson().contains("\"device\":\"Bedroom\""));
+        assertTrue(event.fields().compact().contains("\"device\":\"Bedroom\""));
     }
 
     @Test
@@ -50,7 +50,7 @@ public class ForegroundTrackerTest {
         tracker.reconfigure(new PackageFilter(List.of("com.example.launcher")), () -> "Den");
         assertTrue(tracker.onWindowChanged("com.example.launcher", null, 10).isEmpty());
         AppEvent event = tracker.onWindowChanged("com.example.a", null, 11).orElseThrow();
-        assertTrue(event.toJson().contains("\"device\":\"Den\""));
+        assertTrue(event.fields().compact().contains("\"device\":\"Den\""));
     }
 
     @Test

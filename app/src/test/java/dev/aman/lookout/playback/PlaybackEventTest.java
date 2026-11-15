@@ -10,20 +10,20 @@ public class PlaybackEventTest {
     public void serialisesWhatIsPlaying() {
         assertEquals("{\"event\":\"playback_changed\",\"package\":\"org.smarttube.stable\",\"state\":\"playing\","
                         + "\"title\":\"Song\",\"artist\":\"Band\",\"timestamp\":5}",
-                new PlaybackEvent("org.smarttube.stable", PlayState.PLAYING, "Song", "Band", 5).toJson());
+                new PlaybackEvent("org.smarttube.stable", PlayState.PLAYING, "Song", "Band", 5).fields().compact());
     }
 
     @Test
     public void leavesOutTitleAndArtistWhenTheAppGivesNone() {
         assertEquals("{\"event\":\"playback_changed\",\"package\":\"a\",\"state\":\"paused\",\"timestamp\":5}",
-                new PlaybackEvent("a", PlayState.PAUSED, null, " ", 5).toJson());
+                new PlaybackEvent("a", PlayState.PAUSED, null, " ", 5).fields().compact());
     }
 
     @Test
     public void includesTheDeviceNameWhenKnown() {
         assertEquals("{\"event\":\"playback_changed\",\"package\":\"a\",\"state\":\"stopped\",\"device\":\"Den\","
                         + "\"timestamp\":5}",
-                new PlaybackEvent("a", PlayState.STOPPED, null, null, 5).withDevice("Den").toJson());
+                new PlaybackEvent("a", PlayState.STOPPED, null, null, 5).withDevice("Den").fields().compact());
     }
 
     @Test
@@ -42,7 +42,7 @@ public class PlaybackEventTest {
     public void prettyJsonHasTheSameFieldsIndentedForReading() {
         assertEquals("{\n  \"event\": \"playback_changed\",\n  \"package\": \"a\",\n  \"state\": \"playing\",\n"
                         + "  \"timestamp\": 5\n}",
-                new PlaybackEvent("a", PlayState.PLAYING, null, null, 5).toPrettyJson());
+                new PlaybackEvent("a", PlayState.PLAYING, null, null, 5).fields().pretty());
     }
 
     @Test(expected = IllegalArgumentException.class)

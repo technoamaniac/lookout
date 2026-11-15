@@ -1,5 +1,6 @@
 package dev.aman.lookout.event;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.StringJoiner;
@@ -22,6 +23,31 @@ public final class JsonFields {
     public JsonFields number(String name, long value) {
         fields.put(name, Long.toString(value));
         return this;
+    }
+
+    public JsonFields bool(String name, boolean value) {
+        fields.put(name, Boolean.toString(value));
+        return this;
+    }
+
+    /**
+     * Adds a value that is already JSON-encoded, as returned by {@link #encoded()}; for restoring saved fields, so
+     * nothing has to be decoded and re-encoded.
+     */
+    public JsonFields encoded(String name, String json) {
+        fields.put(name, json);
+        return this;
+    }
+
+    /** Each field's name and JSON-encoded value, in order. */
+    public Map<String, String> encoded() {
+        return Collections.unmodifiableMap(fields);
+    }
+
+    public JsonFields copy() {
+        JsonFields copy = new JsonFields();
+        copy.fields.putAll(fields);
+        return copy;
     }
 
     public String compact() {

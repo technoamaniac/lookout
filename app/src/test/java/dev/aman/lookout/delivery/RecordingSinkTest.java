@@ -9,16 +9,16 @@ import org.junit.Test;
 
 public class RecordingSinkTest {
     private final DeliveryLog log = new DeliveryLog(10);
-    private final AppEvent event = new AppEvent("com.example.a", 5);
+    private final Message message = Message.of(new AppEvent("com.example.a", 5), 5_000);
 
     @Test
     public void recordsEachAttemptWithItsResultAndTime() {
         RecordingSink sink = new RecordingSink(e -> DeliveryResult.TEMPORARY_FAILURE, log, () -> 42_000);
 
-        sink.send(event);
+        sink.send(message);
 
         DeliveryRecord record = log.recent().get(0);
-        assertSame(event, record.event());
+        assertSame(message, record.message());
         assertEquals(DeliveryResult.TEMPORARY_FAILURE, record.result());
         assertEquals(42_000, record.attemptedAtMillis());
     }
@@ -26,6 +26,6 @@ public class RecordingSinkTest {
     @Test
     public void returnsTheWrappedSinksResult() {
         RecordingSink sink = new RecordingSink(e -> DeliveryResult.PERMANENT_FAILURE, log, () -> 0);
-        assertEquals(DeliveryResult.PERMANENT_FAILURE, sink.send(event));
+        assertEquals(DeliveryResult.PERMANENT_FAILURE, sink.send(message));
     }
 }

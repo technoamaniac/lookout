@@ -58,10 +58,10 @@ final class DeliveryDetailSheet {
         this.onClosed = onClosed;
         result.show(activity.getString(DeliveryAppearance.labelFor(record.result())),
                 DeliveryAppearance.kindFor(record.result()));
-        app.setText(record.event().summary());
+        app.setText(record.message().summary());
         time.setText(dateTimeFormat.format(new Date(record.attemptedAtMillis())));
         response.setText(DeliveryAppearance.responseFor(record.result()));
-        payload.setText(highlight(record.event().toPrettyJson()));
+        payload.setText(highlight(record.message().toPrettyJson()));
         // The sheet is reused, so start each payload at its top rather than where the last one was left
         payloadScroll.scrollTo(0, 0);
         // The screen behind must not take D-pad focus while the sheet is open

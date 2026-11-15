@@ -1,23 +1,21 @@
 package dev.aman.lookout.delivery;
 
-import dev.aman.lookout.event.Event;
-
 import java.util.Objects;
 
-/** One attempt to deliver an event, and how it went. */
+/** One attempt to deliver a message, and how it went. */
 public final class DeliveryRecord {
-    private final Event event;
+    private final Message message;
     private final DeliveryResult result;
     private final long attemptedAtMillis;
 
-    public DeliveryRecord(Event event, DeliveryResult result, long attemptedAtMillis) {
-        this.event = Objects.requireNonNull(event);
+    public DeliveryRecord(Message message, DeliveryResult result, long attemptedAtMillis) {
+        this.message = Objects.requireNonNull(message);
         this.result = Objects.requireNonNull(result);
         this.attemptedAtMillis = attemptedAtMillis;
     }
 
-    public Event event() {
-        return event;
+    public Message message() {
+        return message;
     }
 
     public DeliveryResult result() {

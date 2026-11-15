@@ -47,4 +47,6 @@ dependencies {
     // Already pulled in by Material; declared because the delivery sheet uses it directly
     implementation "androidx.constraintlayout:constraintlayout:2.2.1"
     testImplementation "junit:junit:4.13.2"
+    // Android ships org.json, but the unit-test android.jar only has stubs of it
+    testImplementation "org.json:json:20260814"
 }

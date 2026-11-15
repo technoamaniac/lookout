@@ -19,7 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class WebhookSinkTest {
-    private static final AppEvent EVENT = new AppEvent("com.example.a", 1);
+    private static final Message EVENT = Message.of(new AppEvent("com.example.a", 1), 1_000);
 
     private FakeWebhookServer server;
     private WebhookSink sink;
@@ -43,6 +43,12 @@ public class WebhookSinkTest {
         assertEquals("/hook", request.path);
         assertEquals("application/json", request.contentType);
         assertEquals(EVENT.toJson(), request.body);
+    }
+
+    @Test
+    public void sendsTheMessageIdAsAHeader() {
+        sink.send(EVENT);
+        assertEquals(EVENT.id(), server.requests().get(0).webhookId);
     }
 
     @Test

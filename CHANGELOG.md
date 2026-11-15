@@ -7,9 +7,12 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 ### Added
 
 - A **Send reports** switch under the status in the side rail pauses all reports at once, without changing your settings. While it is off, failed deliveries stop retrying too. Turning it back on sends the latest app, screen and playback state that changed while it was off, plus anything that had not been delivered yet, so your smart home catches up straight away.
+- Reports that could not be delivered are kept, even across a restart, an update or a reboot, and retried until they arrive or a newer report of the same kind replaces them, at once when the network comes back. After an outage your smart home gets the current state, not a backlog.
+- Every message has an `id`, also sent as the `webhook-id` header, that stays the same on each attempt, so a receiver can drop a repeat. A message sent a minute or more after it happened has `"delayed": true`.
 
 ### Changed
 
+- **Deliveries** keeps its last 10 attempts across restarts.
 - A new webhook URL can only be saved after **Test webhook** reaches it: Save stays off until then, and a note beside the buttons says so. The form is locked while a test runs. Changing only the other settings needs no test. With the URL field empty, both buttons are off. **Send test** is now called **Test webhook**.
 - The webhook URL field starts with `https://` filled in, so you only type the rest.
 - Saving a webhook URL, your first or a new one, sends it the app in front, the screen state and any playback straight away, instead of waiting for the next change.

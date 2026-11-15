@@ -43,7 +43,7 @@ adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
   --es ignored "com.spocky.projengmenu,com.google.android.apps.tv.dreamx"
 ```
 
-On the TV, **Deliveries** shows the last 10 attempts until Lookout restarts; press OK on one to see the exact payload. **Updates** installs the latest stable release (tick **Include pre-releases** to be offered release candidates too). Android only accepts an update signed with the same key as the installed app, and Lookout contacts GitHub only while that screen is open.
+On the TV, **Deliveries** shows the last 10 attempts, kept across restarts; press OK on one to see the exact payload. **Updates** installs the latest stable release (tick **Include pre-releases** to be offered release candidates too). Android only accepts an update signed with the same key as the installed app, and Lookout contacts GitHub only while that screen is open.
 
 ## Home Assistant example
 
@@ -98,7 +98,9 @@ This gives Lookout Android's notification access, which is the only way an app m
 
 Only apps that mark their media session as active are seen. SmartTube does so unless **Settings → Player → Developer options → Disable playback notifications** is ticked.
 
-Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are retried; other responses are not. Redirects are not followed, so use the final URL.
+Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are retried, at once when the network comes back and otherwise with waits that grow to 15 minutes, until the message is delivered or a newer one of its kind replaces it; other responses are not retried. Messages waiting to be sent survive a restart, an update or a reboot. Redirects are not followed, so use the final URL.
+
+Every message carries an `id`, also sent as the `webhook-id` header, that stays the same on each attempt, so a receiver can drop a repeat. A message sent a minute or more after it happened also has `"delayed": true`, so automations can skip stale changes.
 
 ## Limitations
 
@@ -118,11 +120,11 @@ Logic lives in plain-Java packages with JVM unit tests; Android classes stay thi
 
 | Package      | Contents                                                                            |
 | ------------ | ----------------------------------------------------------------------------------- |
-| `event`      | `Event`, the JSON builder and `LatestEvents`, which drops superseded ones           |
+| `event`      | `Event` and the JSON builder                                                        |
 | `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`                |
 | `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes             |
 | `playback`   | `PlaybackTracker` and `PlaybackEvent`; `MediaSessionWatcher` reads the sessions     |
-| `delivery`   | `EventSink` and `WebhookSink`, `RetryingDispatcher`, `ReportingGate`, `DeliveryLog` |
+| `delivery`   | `Outbox`, `OutboxSender` and `WebhookSink`; `DeliveryLog`                           |
 | `config`     | `Config`, validated settings; `SaveGate`; `PrefsConfigStore` persists them          |
 | `update`     | `GitHubReleases`, `UpdateChecker`, `ApkFetcher`, `UpdateInstaller`                  |
 | `ui`         | One panel class per tab                                                             |

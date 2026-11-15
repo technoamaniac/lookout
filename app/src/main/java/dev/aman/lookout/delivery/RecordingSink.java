@@ -1,10 +1,8 @@
 package dev.aman.lookout.delivery;
 
-import dev.aman.lookout.event.Event;
-
 import java.util.function.LongSupplier;
 
-/** Passes events to another sink and records every attempt's outcome. */
+/** Passes messages to another sink and records every attempt's outcome. */
 public final class RecordingSink implements EventSink {
     private final EventSink delegate;
     private final DeliveryLog log;
@@ -17,9 +15,9 @@ public final class RecordingSink implements EventSink {
     }
 
     @Override
-    public DeliveryResult send(Event event) {
-        DeliveryResult result = delegate.send(event);
-        log.add(new DeliveryRecord(event, result, clockMillis.getAsLong()));
+    public DeliveryResult send(Message message) {
+        DeliveryResult result = delegate.send(message);
+        log.add(new DeliveryRecord(message, result, clockMillis.getAsLong()));
         return result;
     }
 }

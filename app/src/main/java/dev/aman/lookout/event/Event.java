@@ -11,8 +11,6 @@ public interface Event {
      */
     String supersessionKey();
 
-    String toJson();
-
-    /** The same payload, indented for reading on screen; it is never sent. */
-    String toPrettyJson();
+    /** The payload's fields; a new builder on each call, so callers may add to it. */
+    JsonFields fields();
 }

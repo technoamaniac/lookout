@@ -1,7 +1,7 @@
 package dev.aman.lookout.delivery;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 import dev.aman.lookout.foreground.AppEvent;
 
@@ -35,7 +35,8 @@ public class WebhookTesterTest {
         tester.test(new URL("https://example.com/h"), event);
 
         DeliveryRecord record = log.recent().get(0);
-        assertSame(event, record.event());
+        assertEquals(event.summary(), record.message().summary());
+        assertTrue(record.message().toJson().contains("\"id\":"));
         assertEquals(DeliveryResult.DELIVERED, record.result());
         assertEquals(7_000, record.attemptedAtMillis());
     }

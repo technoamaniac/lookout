@@ -58,16 +58,7 @@ public final class DeviceEvent implements Event {
     }
 
     @Override
-    public String toJson() {
-        return json().compact();
-    }
-
-    @Override
-    public String toPrettyJson() {
-        return json().pretty();
-    }
-
-    private JsonFields json() {
+    public JsonFields fields() {
         return new JsonFields()
                 .string("event", kind.type)
                 .optionalString("device", device)

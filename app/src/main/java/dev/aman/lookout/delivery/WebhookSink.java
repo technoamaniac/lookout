@@ -1,14 +1,12 @@
 package dev.aman.lookout.delivery;
 
-import dev.aman.lookout.event.Event;
-
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
-/** Delivers events as a JSON POST to an HTTP(S) endpoint. */
+/** Delivers messages as a JSON POST to an HTTP(S) endpoint. */
 public final class WebhookSink implements EventSink {
     private static final int TIMEOUT_MS = 5000;
     private static final int HTTP_REQUEST_TIMEOUT = 408;
@@ -21,8 +19,8 @@ public final class WebhookSink implements EventSink {
     }
 
     @Override
-    public DeliveryResult send(Event event) {
-        byte[] body = event.toJson().getBytes(StandardCharsets.UTF_8);
+    public DeliveryResult send(Message message) {
+        byte[] body = message.toJson().getBytes(StandardCharsets.UTF_8);
         HttpURLConnection conn = null;
         try {
             conn = (HttpURLConnection) url.openConnection();
@@ -32,6 +30,8 @@ public final class WebhookSink implements EventSink {
             conn.setInstanceFollowRedirects(false);
             conn.setRequestMethod("POST");
             conn.setRequestProperty("Content-Type", "application/json");
+            // The Standard Webhooks header, so a receiver can drop a repeat without parsing the body
+            conn.setRequestProperty("webhook-id", message.id());
             conn.setDoOutput(true);
             conn.setFixedLengthStreamingMode(body.length);
             try (OutputStream out = conn.getOutputStream()) {

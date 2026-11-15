@@ -22,6 +22,26 @@ public class JsonFieldsTest {
     }
 
     @Test
+    public void writesBooleans() {
+        assertEquals("{\"a\":true}", new JsonFields().bool("a", true).compact());
+    }
+
+    @Test
+    public void restoresEncodedFieldsUnchanged() {
+        JsonFields original = new JsonFields().string("a", "q\"b").number("n", 3);
+        JsonFields restored = new JsonFields();
+        original.encoded().forEach(restored::encoded);
+        assertEquals(original.compact(), restored.compact());
+    }
+
+    @Test
+    public void copiesAreIndependent() {
+        JsonFields original = new JsonFields().string("a", "x");
+        original.copy().number("b", 1);
+        assertEquals("{\"a\":\"x\"}", original.compact());
+    }
+
+    @Test
     public void prettyPrintsOneFieldPerLine() {
         assertEquals("{\n  \"a\": \"x\",\n  \"b\": 2\n}", new JsonFields().string("a", "x").number("b", 2).pretty());
     }

@@ -24,6 +24,7 @@ public final class WebhookTester {
 
     /** Blocks on the network, so call it off the main thread. */
     public DeliveryResult test(URL url, Event event) {
-        return new RecordingSink(sinkFor.apply(url), log, clockMillis).send(event);
+        Message message = Message.of(event, clockMillis.getAsLong());
+        return new RecordingSink(sinkFor.apply(url), log, clockMillis).send(message);
     }
 }

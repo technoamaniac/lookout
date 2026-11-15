@@ -7,31 +7,38 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * The most recent delivery attempts, newest first. Thread-safe: the service writes from its
- * worker thread while the settings screen reads from the UI thread. Held in memory only, so
- * it starts empty when the process restarts.
+ * The most recent delivery attempts, newest first, kept across restarts by its store. Thread-safe: the service writes
+ * from its worker thread while the settings screen reads from the UI thread and tests webhooks from its own.
  */
 public final class DeliveryLog {
-    private static final int CAPACITY = 10;
-    private static final DeliveryLog SHARED = new DeliveryLog(CAPACITY);
+    /** How many attempts the Deliveries tab lists. */
+    public static final int CAPACITY = 10;
 
     private final int capacity;
+    private final DeliveryLogStore store;
     private final Deque<DeliveryRecord> records = new ArrayDeque<>();
     private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
 
+    /** A log held in memory only. */
     public DeliveryLog(int capacity) {
-        this.capacity = capacity;
+        this(capacity, DeliveryLogStore.NONE);
     }
 
-    /** The log shared by the service and the settings screen, which run in one process. */
-    public static DeliveryLog shared() {
-        return SHARED;
+    /** Starts with the records the store kept, and saves every change to it. */
+    public DeliveryLog(int capacity, DeliveryLogStore store) {
+        this.capacity = capacity;
+        this.store = store;
+        for (DeliveryRecord record : store.load()) {
+            if (records.size() < capacity) records.addLast(record);
+        }
     }
 
     public void add(DeliveryRecord record) {
         synchronized (this) {
             records.addFirst(record);
             if (records.size() > capacity) records.removeLast();
+            // Saved under the lock, so two threads' saves cannot land in the wrong order
+            store.save(new ArrayList<>(records));
         }
         for (Runnable listener : listeners) listener.run();
     }

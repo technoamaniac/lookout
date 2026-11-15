@@ -24,12 +24,14 @@ public final class FakeWebhookServer implements AutoCloseable {
         public final String method;
         public final String path;
         public final String contentType;
+        public final String webhookId;
         public final String body;
 
-        Request(String method, String path, String contentType, String body) {
+        Request(String method, String path, String contentType, String webhookId, String body) {
             this.method = method;
             this.path = path;
             this.contentType = contentType;
+            this.webhookId = webhookId;
             this.body = body;
         }
     }
@@ -104,12 +106,14 @@ public final class FakeWebhookServer implements AutoCloseable {
                 new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8));
         String[] requestLine = in.readLine().split(" ");
         String contentType = null;
+        String webhookId = null;
         int contentLength = 0;
         for (String line = in.readLine(); line != null && !line.isEmpty(); line = in.readLine()) {
             String[] header = line.split(":", 2);
             String name = header[0].trim();
             String value = header[1].trim();
             if (name.equalsIgnoreCase("Content-Type")) contentType = value;
+            if (name.equalsIgnoreCase("webhook-id")) webhookId = value;
             if (name.equalsIgnoreCase("Content-Length")) contentLength = Integer.parseInt(value);
         }
         // The body is ASCII JSON in these tests, so its byte length equals its char length
@@ -119,7 +123,7 @@ public final class FakeWebhookServer implements AutoCloseable {
             if (n < 0) throw new IOException("Body ended early");
             read += n;
         }
-        return new Request(requestLine[0], requestLine[1], contentType, new String(body));
+        return new Request(requestLine[0], requestLine[1], contentType, webhookId, new String(body));
     }
 
     private void writeResponse(Socket connection, String path) throws IOException {

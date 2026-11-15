@@ -61,16 +61,7 @@ public final class AppEvent implements Event {
     }
 
     @Override
-    public String toJson() {
-        return json().compact();
-    }
-
-    @Override
-    public String toPrettyJson() {
-        return json().pretty();
-    }
-
-    private JsonFields json() {
+    public JsonFields fields() {
         return new JsonFields()
                 .string("event", TYPE)
                 .string("package", packageName)

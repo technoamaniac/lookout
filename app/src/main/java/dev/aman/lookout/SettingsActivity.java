@@ -43,7 +43,7 @@ public class SettingsActivity extends AppCompatActivity {
                 new int[] {R.id.tab_settings, R.id.tab_deliveries, R.id.tab_updates},
                 new int[] {R.id.settings_panel, R.id.deliveries_panel, R.id.updates_panel});
         PanelHeader header = new PanelHeader(this);
-        DeliveryLog log = DeliveryLog.shared();
+        DeliveryLog log = ((LookoutApplication) getApplication()).deliveryLog();
 
         PrefsConfigStore store = new PrefsConfigStore(this);
         serviceStatus = new ServiceStatusPanel(this, new ComponentName(this, LookoutService.class), store);
