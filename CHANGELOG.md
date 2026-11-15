@@ -1,16 +1,14 @@
 # Changelog
 
-All notable changes to Lookout. The format follows [Keep a Changelog](https://keepachangelog.com/),
-and versions follow [Semantic Versioning](https://semver.org/).
+All notable changes to Lookout. The format follows [Keep a Changelog](https://keepachangelog.com/), and versions follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
 ### Added
 
-- Each message now carries `event` (`app_changed`) and, when known, `activity`, the window that
-  brought the app to the front.
-- **Send this TV's name** option adds `device` to each message so one webhook can serve several
-  TVs. It is off by default.
+- Each message now carries `event` (`app_changed`) and, when known, `activity`, the window that brought the app to the front.
+- New messages for the TV itself: `screen_on`, `screen_off`, `screensaver_started` and `screensaver_stopped`. The screen state is also sent when the service starts. `screen_off` is best effort on TVs that lose their network in standby.
+- **Send this TV's name** option adds `device` to each message so one webhook can serve several TVs. It is off by default.
 
 ### Fixed
 

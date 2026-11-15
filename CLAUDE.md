@@ -6,7 +6,7 @@ An Android TV accessibility service that reports the foreground app to an HTTPS 
 
 - Follow good object-oriented design: small classes with one responsibility, dependencies passed in (constructor injection), behaviour behind small interfaces such as `EventSink` and `ReleaseSource`, immutable value objects. Do not hack things together.
 - The code must be maintainable and very readable. Prefer clear names and small methods over clever ones. Match the surrounding comment density: comment the _why_ of non-obvious decisions, not what the code says.
-- Keep logic in the plain-Java packages (`foreground`, `delivery`, `config`, `update`) with unit tests. Android classes stay thin: `ui` panels, the service, the activity and the few adapters (`PrefsConfigStore`, `UpdateInstaller`, `InstallResultReceiver`).
+- Keep logic in the plain-Java packages (`event`, `foreground`, `device`, `delivery`, `config`, `update`) with unit tests. Android classes stay thin: `ui` panels, the service, the activity and the few adapters (`PrefsConfigStore`, `DeviceStateReceiver`, `UpdateInstaller`, `InstallResultReceiver`).
 - Dependencies point one way: the root classes and `ui` use the feature packages, never the reverse. One class per tab in `ui`; `SettingsActivity` only builds the panels and tabs.
 - Keep `LookoutService` and `SettingsActivity` in the root package under their current names: the TV stores the service's name and `scripts/install.sh` uses it.
 - Fix root causes and add a regression test with each bug fix. Prove a new test fails on the old code when practical.
@@ -19,6 +19,7 @@ An Android TV accessibility service that reports the foreground app to an HTTPS 
 ## Documentation
 
 - The repository is public. Keep `README.md` short and user-first: what Lookout does, how to install and use it, then one compact Development section. Say each thing once, in plain words; leave implementation detail to the code and its comments, and maintainer rules to this file.
+- Write prose in `CLAUDE.md`, `README.md` and `CHANGELOG.md` as one line per paragraph or list item, never hard-wrapped at a column width: editors soft-wrap it, and GitHub shows single newlines in release notes as line breaks. Code blocks, tables and headings keep their own line layout.
 - Update the README in the same change as any behaviour it describes.
 - Record every user-visible change in `CHANGELOG.md` under `[Unreleased]`, in the same change. Releasing means renaming that section to `[x.y.z]` before tagging: the release job takes its notes from the section named after the tag and fails without one. Pre-releases fall back to `[Unreleased]`. Write for users of the TV app, not for maintainers.
 
