@@ -6,24 +6,43 @@ import android.content.ComponentName;
 import android.content.Intent;
 import android.provider.Settings;
 import android.view.View;
+import android.widget.CompoundButton;
+import android.widget.ImageView;
+import android.widget.TextView;
 
 import dev.aman.lookout.R;
+import dev.aman.lookout.config.ReportingSwitch;
 
-/** Shows whether the accessibility service is switched on, with a shortcut to switch it on. */
+/**
+ * Shows whether the accessibility service is switched on, with a shortcut to switch it on, and the switch that
+ * pauses reporting. The switch applies at once: turning reports off should not wait for Save or a test.
+ */
 public final class ServiceStatusPanel {
     private final Activity activity;
     private final ComponentName service;
     private final View runningCard;
     private final View notEnabledCard;
     private final View openSettingsButton;
+    private final ReportingSwitch reporting;
+    private final CompoundButton reportingToggle;
+    private final ImageView dot;
+    private final TextView detail;
 
-    public ServiceStatusPanel(Activity activity, ComponentName service) {
+    public ServiceStatusPanel(Activity activity, ComponentName service, ReportingSwitch reporting) {
         this.activity = activity;
         this.service = service;
+        this.reporting = reporting;
         runningCard = activity.findViewById(R.id.service_on_card);
         notEnabledCard = activity.findViewById(R.id.service_off_card);
         openSettingsButton = activity.findViewById(R.id.open_accessibility);
         openSettingsButton.setOnClickListener(v -> openAccessibilitySettings());
+        reportingToggle = activity.findViewById(R.id.reporting_toggle);
+        dot = activity.findViewById(R.id.service_dot);
+        detail = activity.findViewById(R.id.service_detail);
+        reportingToggle.setOnCheckedChangeListener((button, on) -> {
+            reporting.setReportingOn(on);
+            showReporting(on);
+        });
     }
 
     /** Re-reads the system setting; call whenever the screen comes back into view. */
@@ -31,6 +50,14 @@ public final class ServiceStatusPanel {
         boolean enabled = isEnabled();
         runningCard.setVisibility(enabled ? View.VISIBLE : View.GONE);
         notEnabledCard.setVisibility(enabled ? View.GONE : View.VISIBLE);
+        // Fires the listener only when the stored value differs, which then just writes it back
+        reportingToggle.setChecked(reporting.isReportingOn());
+        showReporting(reportingToggle.isChecked());
+    }
+
+    private void showReporting(boolean on) {
+        dot.setImageResource(on ? R.drawable.dot_success : R.drawable.dot_paused);
+        detail.setText(on ? R.string.service_enabled_detail : R.string.service_paused_detail);
     }
 
     private boolean isEnabled() {

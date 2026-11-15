@@ -1,10 +1,13 @@
 package dev.aman.lookout.event;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import dev.aman.lookout.device.DeviceEvent;
 import dev.aman.lookout.foreground.AppEvent;
+
+import java.util.List;
 
 import org.junit.Test;
 
@@ -16,6 +19,39 @@ public class LatestEventsTest {
         AppEvent a = new AppEvent("com.example.a", 10);
         latest.record(a);
         assertTrue(latest.isCurrent(a));
+    }
+
+    @Test
+    public void allHoldsOnlyTheNewestOfEachKind() {
+        AppEvent b = new AppEvent("com.example.b", 11);
+        DeviceEvent screen = new DeviceEvent(DeviceEvent.Kind.SCREEN_ON, 10);
+        latest.record(new AppEvent("com.example.a", 10));
+        latest.record(b);
+        latest.record(screen);
+        assertEquals(2, latest.all().size());
+        assertTrue(latest.all().containsAll(List.of(b, screen)));
+    }
+
+    @Test
+    public void allListsEventsInTheOrderTheirKindLastChanged() {
+        AppEvent first = new AppEvent("com.example.a", 10);
+        DeviceEvent screen = new DeviceEvent(DeviceEvent.Kind.SCREEN_OFF, 11);
+        AppEvent last = new AppEvent("com.example.b", 12);
+        latest.record(first);
+        latest.record(screen);
+        latest.record(last);
+        assertEquals(List.of(screen, last), latest.all());
+    }
+
+    @Test
+    public void forgettingMakesEveryRecordedEventStale() {
+        AppEvent app = new AppEvent("com.example.a", 10);
+        DeviceEvent screen = new DeviceEvent(DeviceEvent.Kind.SCREEN_ON, 10);
+        latest.record(app);
+        latest.record(screen);
+        latest.forgetAll();
+        assertFalse(latest.isCurrent(app));
+        assertFalse(latest.isCurrent(screen));
     }
 
     @Test

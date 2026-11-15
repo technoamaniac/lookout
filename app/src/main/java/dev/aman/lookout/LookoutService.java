@@ -16,6 +16,7 @@ import dev.aman.lookout.config.PrefsConfigStore;
 import dev.aman.lookout.delivery.DeliveryLog;
 import dev.aman.lookout.delivery.EventSink;
 import dev.aman.lookout.delivery.RecordingSink;
+import dev.aman.lookout.delivery.ReportingGate;
 import dev.aman.lookout.delivery.RetryingDispatcher;
 import dev.aman.lookout.delivery.WebhookSink;
 import dev.aman.lookout.device.DeviceEvent;
@@ -34,9 +35,10 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
-/** Android adapter: wires window events into the tracker and dispatcher. */
+/** Android adapter: wires window, device and playback events through the trackers to the reporting gate. */
 public class LookoutService extends AccessibilityService {
     private static final String SYSTEM_UI = "com.android.systemui";
     private static final long[] BACKOFF_MS = {0, 2_000, 10_000};
@@ -59,13 +61,13 @@ public class LookoutService extends AccessibilityService {
         }
     };
     private final LatestEvents latest = new LatestEvents();
+    private final ReportingGate reporting = new ReportingGate(latest);
     // Replaced whenever settings change, so the opt-in applies to device events too
     private volatile Supplier<String> deviceName = () -> null;
     private final PlaybackTracker playback = new PlaybackTracker(() -> deviceName.get());
     private PrefsConfigStore store;
     private DeviceStateReceiver deviceState;
     private MediaSessionWatcher mediaSessions;
-    private RetryingDispatcher dispatcher;
 
     @Override
     protected void onServiceConnected() {
@@ -85,10 +87,10 @@ public class LookoutService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (dispatcher == null || event.getPackageName() == null) return;
+        if (event.getPackageName() == null) return;
         String activity = event.getClassName() == null ? null : event.getClassName().toString();
         tracker.onWindowChanged(event.getPackageName().toString(), activity, System.currentTimeMillis() / 1000)
-                .ifPresent(this::dispatch);
+                .ifPresent(reporting::report);
     }
 
     @Override
@@ -109,7 +111,7 @@ public class LookoutService extends AccessibilityService {
     private void onDeviceEvent(DeviceEvent event) {
         if (event.kind() == DeviceEvent.Kind.SCREENSAVER_STARTED) tracker.pause();
         if (event.kind() == DeviceEvent.Kind.SCREENSAVER_STOPPED) tracker.resume();
-        dispatch(event);
+        reporting.report(event);
     }
 
     // Without the media access grant this does nothing, so playback stays off until the user opts in
@@ -117,15 +119,8 @@ public class LookoutService extends AccessibilityService {
         if (mediaSessions != null) mediaSessions.stop();
         mediaSessions = new MediaSessionWatcher(this, new ComponentName(this, MediaAccessService.class),
                 sessions -> playback.onSessionsChanged(sessions, System.currentTimeMillis() / 1000)
-                        .forEach(this::dispatch));
+                        .forEach(reporting::report));
         mediaSessions.start();
-    }
-
-    // Recorded first so an older undelivered event of the same kind goes stale
-    private void dispatch(Event event) {
-        if (dispatcher == null) return;
-        latest.record(event);
-        dispatcher.dispatch(event);
     }
 
     // Rebuilt whenever settings or keyboards change, so edits apply without restarting the service
@@ -133,16 +128,21 @@ public class LookoutService extends AccessibilityService {
         Config config = store.load();
         deviceName = deviceNameFor(config);
         tracker.reconfigure(new PackageFilter(ignoredPackages(config)), deviceName);
-        dispatcher = config.webhookUrl()
-                .map(url -> new RetryingDispatcher(recordingSinkFor(url),
-                        (task, delayMillis) -> io.schedule(task, delayMillis, TimeUnit.MILLISECONDS),
-                        BACKOFF_MS, latest::isCurrent))
-                .orElse(null);
+        // The sender first, so resuming sends what changed during the pause to the current webhook
+        reporting.setSender(config.webhookUrl().map(this::senderFor).orElse(null));
+        reporting.setOn(store.isReportingOn());
     }
 
     // Asked per event so renaming the TV applies at once; withheld unless the user opted in
     private Supplier<String> deviceNameFor(Config config) {
         return config.sendDeviceName() ? () -> DeviceName.read(getContentResolver()) : () -> null;
+    }
+
+    private Consumer<Event> senderFor(URL url) {
+        RetryingDispatcher dispatcher = new RetryingDispatcher(recordingSinkFor(url),
+                (task, delayMillis) -> io.schedule(task, delayMillis, TimeUnit.MILLISECONDS),
+                BACKOFF_MS, latest::isCurrent);
+        return dispatcher::dispatch;
     }
 
     private static EventSink recordingSinkFor(URL url) {

@@ -7,6 +7,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import dev.aman.lookout.config.PrefsConfigStore;
 import dev.aman.lookout.delivery.DeliveryLog;
+import dev.aman.lookout.delivery.WebhookTester;
 import dev.aman.lookout.ui.DeliveriesPanel;
 import dev.aman.lookout.ui.PanelHeader;
 import dev.aman.lookout.ui.PanelTabs;
@@ -28,6 +29,8 @@ public class SettingsActivity extends AppCompatActivity {
     private static final int UPDATES_TAB = 2;
 
     private final ExecutorService background = Executors.newSingleThreadExecutor();
+    // Its own thread, so a test before saving never waits behind an update check or download
+    private final ExecutorService webhookTests = Executors.newSingleThreadExecutor();
     private ServiceStatusPanel serviceStatus;
     private DeliveriesPanel deliveries;
 
@@ -42,8 +45,9 @@ public class SettingsActivity extends AppCompatActivity {
         PanelHeader header = new PanelHeader(this);
         DeliveryLog log = DeliveryLog.shared();
 
-        serviceStatus = new ServiceStatusPanel(this, new ComponentName(this, LookoutService.class));
-        new SettingsPanel(this, new PrefsConfigStore(this), log, background,
+        PrefsConfigStore store = new PrefsConfigStore(this);
+        serviceStatus = new ServiceStatusPanel(this, new ComponentName(this, LookoutService.class), store);
+        new SettingsPanel(this, store, new WebhookTester(log, System::currentTimeMillis), webhookTests,
                 new SettingsPanel.Prefill(getIntent().getStringExtra(EXTRA_URL), getIntent().getStringExtra(EXTRA_IGNORED)));
         deliveries = new DeliveriesPanel(this, log);
         // The badge hides on the Updates tab, so focus must move off it before it goes
@@ -76,6 +80,7 @@ public class SettingsActivity extends AppCompatActivity {
     @Override
     protected void onDestroy() {
         background.shutdownNow();
+        webhookTests.shutdownNow();
         super.onDestroy();
     }
 }

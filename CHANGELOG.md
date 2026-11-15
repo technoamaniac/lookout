@@ -4,8 +4,15 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Added
+
+- A **Send reports** switch under the status in the side rail pauses all reports at once, without changing your settings. Turning it back on sends the latest app, screen and playback state that changed while it was off, so your smart home catches up straight away.
+
 ### Changed
 
+- A new webhook URL can only be saved after **Test webhook** reaches it: Save stays off until then, and a note beside the buttons says so. The form is locked while a test runs. Changing only the other settings needs no test. With the URL field empty, both buttons are off. **Send test** is now called **Test webhook**.
+- The webhook URL field starts with `https://` filled in, so you only type the rest.
+- Saving your first webhook sends it the app in front and the screen state straight away, instead of waiting for the next change.
 - The app's side rail shows just the name, without the old "Foreground app → webhook" tagline, which no longer described everything Lookout reports. The description in the TV's accessibility settings now lists what it reports.
 
 ### Fixed

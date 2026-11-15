@@ -3,12 +3,16 @@ package dev.aman.lookout.config;
 import android.content.Context;
 import android.content.SharedPreferences;
 
-/** Stores config in app-private preferences. */
-public final class PrefsConfigStore implements ConfigStore {
+/**
+ * Stores config in app-private preferences. The reporting switch shares the file, so the service's change listener
+ * picks it up like any other setting.
+ */
+public final class PrefsConfigStore implements ConfigStore, ReportingSwitch {
     private static final String FILE = "lookout";
     private static final String KEY_URL = "webhook_url";
     private static final String KEY_IGNORED = "ignored_packages";
     private static final String KEY_SEND_DEVICE_NAME = "send_device_name";
+    private static final String KEY_REPORTING = "reporting";
 
     private final SharedPreferences prefs;
     // SharedPreferences holds listeners weakly, so keep a strong reference
@@ -38,6 +42,17 @@ public final class PrefsConfigStore implements ConfigStore {
                 .putString(KEY_IGNORED, config.ignoredPackagesText())
                 .putBoolean(KEY_SEND_DEVICE_NAME, config.sendDeviceName())
                 .apply();
+    }
+
+    // On unless the user switched it off, so installs from before the switch keep reporting
+    @Override
+    public boolean isReportingOn() {
+        return prefs.getBoolean(KEY_REPORTING, true);
+    }
+
+    @Override
+    public void setReportingOn(boolean on) {
+        prefs.edit().putBoolean(KEY_REPORTING, on).apply();
     }
 
     public void onChange(Runnable callback) {

@@ -8,6 +8,7 @@ An Android TV accessibility service that reports the foreground app to an HTTPS 
 - The code must be maintainable and very readable. Prefer clear names and small methods over clever ones. Match the surrounding comment density: comment the _why_ of non-obvious decisions, not what the code says.
 - Keep logic in the plain-Java packages (`event`, `foreground`, `device`, `playback`, `delivery`, `config`, `update`) with unit tests. Android classes stay thin: `ui` panels, the service, the activity and the few adapters (`PrefsConfigStore`, `PrefsUpdateChannel`, `DeviceStateReceiver`, `MediaSessionWatcher`, `MediaAccessService`, `UpdateInstaller`, `InstallResultReceiver`).
 - Dependencies point one way: the root classes and `ui` use the feature packages, never the reverse. One class per tab in `ui`; `SettingsActivity` only builds the panels and tabs.
+- Keep changes local: each behaviour or rule is decided in exactly one place, so changing it means editing one class (and its test) or one layout. Split a class or layout as soon as it does more than one job or grows hard to scan; as a guide, a class past about 200 lines or a layout holding more than one screen or tab. Remove dead code and comments that no longer hold in the same change that makes them so.
 - Keep `LookoutService` and `SettingsActivity` in the root package under their current names: the TV stores the service's name and `scripts/install.sh` uses it.
 - Fix root causes and add a regression test with each bug fix. Prove a new test fails on the old code when practical.
 

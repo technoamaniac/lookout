@@ -8,11 +8,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 
 /** Validated, immutable user configuration. */
 public final class Config {
+    /** What the URL field starts with; on its own it means no URL yet. */
+    public static final String URL_PREFIX = "https://";
+
     private final URL webhookUrl;
     private final List<String> ignoredPackages;
     private final boolean sendDeviceName;
@@ -24,7 +28,7 @@ public final class Config {
     }
 
     /**
-     * @param url blank means "not configured"; otherwise it must be an https URL
+     * @param url blank or just {@link #URL_PREFIX} means "not configured"; otherwise it must be an https URL
      * @param ignoredCsv comma-separated packages to never report
      * @param sendDeviceName whether events carry the TV's name, which can be personal
      * @throws IllegalArgumentException if the URL is malformed or not https
@@ -53,9 +57,24 @@ public final class Config {
         return String.join(", ", ignoredPackages);
     }
 
+    // Compares the URL as text: URL#equals resolves host names over the network
+    @Override
+    public boolean equals(Object other) {
+        if (this == other) return true;
+        if (!(other instanceof Config)) return false;
+        Config that = (Config) other;
+        return webhookUrlText().equals(that.webhookUrlText()) && ignoredPackages.equals(that.ignoredPackages)
+                && sendDeviceName == that.sendDeviceName;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(webhookUrlText(), ignoredPackages, sendDeviceName);
+    }
+
     private static URL parseUrl(String raw) {
         String text = raw == null ? "" : raw.trim();
-        if (text.isEmpty()) return null;
+        if (text.isEmpty() || text.equalsIgnoreCase(URL_PREFIX)) return null;
         URL url;
         try {
             // Parse as a URI first: it rejects characters such as spaces that URL lets through

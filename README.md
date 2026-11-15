@@ -33,9 +33,9 @@ adb connect <tv-ip>:<port>
 
 The script installs the APK and enables the service, keeping other enabled services. It is safe to re-run, for example after a factory reset.
 
-Open **Lookout** on the TV, enter your webhook URL, press **Save**, then **Send test**. The URL must be HTTPS. **Ignored packages** optionally lists apps never to report, such as a launcher, separated by commas.
+Open **Lookout** on the TV, enter your webhook URL, press **Test webhook**, then **Save**. The URL must be HTTPS, and Save stays off until a test event reaches it. **Ignored packages** optionally lists apps never to report, such as a launcher, separated by commas. To stop reports for a while, turn off **Send reports** under the status in the side rail; it applies at once and keeps your settings.
 
-To avoid typing with the remote, send either field from your computer and press Save on the TV:
+To avoid typing with the remote, send either field from your computer, then press **Save** on the TV, after **Test webhook** for a new URL:
 
 ```sh
 adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
@@ -116,17 +116,17 @@ Needs JDK 17 and the Android SDK (platform 37).
 
 Logic lives in plain-Java packages with JVM unit tests; Android classes stay thin.
 
-| Package      | Contents                                                                        |
-| ------------ | ------------------------------------------------------------------------------- |
-| `event`      | `Event`, the JSON builder and `LatestEvents`, which drops superseded ones       |
-| `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`            |
-| `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes         |
-| `playback`   | `PlaybackTracker` and `PlaybackEvent`; `MediaSessionWatcher` reads the sessions |
-| `delivery`   | `EventSink` and `WebhookSink`, `RetryingDispatcher`, `DeliveryLog`              |
-| `config`     | `Config`, validated settings; `PrefsConfigStore` persists them                  |
-| `update`     | `GitHubReleases`, `UpdateChecker`, `ApkFetcher`, `UpdateInstaller`              |
-| `ui`         | One panel class per tab                                                         |
-| (root)       | `LookoutService` and `SettingsActivity`; their names are stored on the TV       |
+| Package      | Contents                                                                            |
+| ------------ | ----------------------------------------------------------------------------------- |
+| `event`      | `Event`, the JSON builder and `LatestEvents`, which drops superseded ones           |
+| `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`                |
+| `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes             |
+| `playback`   | `PlaybackTracker` and `PlaybackEvent`; `MediaSessionWatcher` reads the sessions     |
+| `delivery`   | `EventSink` and `WebhookSink`, `RetryingDispatcher`, `ReportingGate`, `DeliveryLog` |
+| `config`     | `Config`, validated settings; `SaveGate`; `PrefsConfigStore` persists them          |
+| `update`     | `GitHubReleases`, `UpdateChecker`, `ApkFetcher`, `UpdateInstaller`                  |
+| `ui`         | One panel class per tab                                                             |
+| (root)       | `LookoutService` and `SettingsActivity`; their names are stored on the TV           |
 
 To send events somewhere other than a webhook, implement `EventSink`.
 

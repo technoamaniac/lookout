@@ -1,8 +1,6 @@
 package dev.aman.lookout.ui;
 
 import android.app.Activity;
-import android.text.Editable;
-import android.text.TextWatcher;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.EditText;
@@ -12,20 +10,18 @@ import dev.aman.lookout.R;
 import dev.aman.lookout.config.Config;
 import dev.aman.lookout.config.ConfigStore;
 import dev.aman.lookout.config.DeviceName;
-import dev.aman.lookout.delivery.DeliveryLog;
+import dev.aman.lookout.config.SaveGate;
 import dev.aman.lookout.delivery.DeliveryResult;
-import dev.aman.lookout.delivery.EventSink;
-import dev.aman.lookout.delivery.RecordingSink;
-import dev.aman.lookout.delivery.WebhookSink;
+import dev.aman.lookout.delivery.WebhookTester;
 import dev.aman.lookout.foreground.AppEvent;
 
 import java.util.concurrent.Executor;
 
-/** The Settings tab: the webhook form, with Save and Send test. */
+/** The Settings tab: the webhook form, with Save and Test webhook. A new webhook URL must pass a test before Save. */
 public final class SettingsPanel {
     private final Activity activity;
     private final ConfigStore store;
-    private final DeliveryLog log;
+    private final WebhookTester tester;
     private final Executor background;
     private final EditText urlField;
     private final EditText ignoredField;
@@ -33,19 +29,19 @@ public final class SettingsPanel {
     private final StatusLine status;
     private final View saveButton;
     private final View testButton;
-    private final View saveHint;
+    private final TextView saveHint;
     private final View urlHelper;
     private final TextView urlError;
 
-    private Config saved;
+    private final SaveGate gate;
     private boolean sending;
 
     /** @param prefill optional values that override the saved ones until the user saves */
-    public SettingsPanel(Activity activity, ConfigStore store, DeliveryLog log, Executor background,
+    public SettingsPanel(Activity activity, ConfigStore store, WebhookTester tester, Executor background,
                          Prefill prefill) {
         this.activity = activity;
         this.store = store;
-        this.log = log;
+        this.tester = tester;
         this.background = background;
         urlField = activity.findViewById(R.id.url);
         ignoredField = activity.findViewById(R.id.ignored);
@@ -57,18 +53,23 @@ public final class SettingsPanel {
         urlHelper = activity.findViewById(R.id.url_helper);
         urlError = activity.findViewById(R.id.url_error);
 
-        saved = store.load();
-        showText(urlField, prefill.url != null ? prefill.url : saved.webhookUrlText());
-        showText(ignoredField, prefill.ignored != null ? prefill.ignored : saved.ignoredPackagesText());
-        onTextChanged(urlField, this::onFieldsEdited);
-        onTextChanged(ignoredField, this::onFieldsEdited);
+        Config saved = store.load();
+        gate = new SaveGate(saved);
+        showUrl(prefill.url != null ? prefill.url.trim() : saved.webhookUrlText());
+        TextFields.show(ignoredField, prefill.ignored != null ? prefill.ignored : saved.ignoredPackagesText());
+        TextFields.onChanged(urlField, this::onFieldsEdited);
+        TextFields.onChanged(ignoredField, this::onFieldsEdited);
         deviceNameSwitch.setChecked(saved.sendDeviceName());
         deviceNameSwitch.setOnCheckedChangeListener((button, checked) -> onFieldsEdited());
         saveButton.setOnClickListener(v -> save());
         testButton.setOnClickListener(v -> sendTest());
         updateSaveButton();
-        // An ADB prefill is waiting to be saved, so the next step is Save
-        if (prefill.url != null && saveButton.isEnabled()) saveButton.requestFocus();
+        // An ADB prefill is waiting to be tested or saved, so focus the next step; without a URL that is typing one
+        if (prefill.url != null || prefill.ignored != null) {
+            if (saveButton.isEnabled()) saveButton.requestFocus();
+            else if (testButton.isEnabled()) testButton.requestFocus();
+            else urlField.requestFocus();
+        }
     }
 
     /** Field values supplied from outside, such as ADB extras; null leaves a field as saved. */
@@ -83,21 +84,17 @@ public final class SettingsPanel {
     }
 
     private void save() {
-        Config config;
-        try {
-            config = readFields();
-        } catch (IllegalArgumentException e) {
-            showUrlError(e.getMessage());
-            return;
-        }
+        Config config = readFieldsOrNull();
+        // Save is disabled otherwise, fields that do not parse included; this guards a press that raced the update
+        if (gate.stateOf(config) != SaveGate.State.SAVEABLE) return;
         store.save(config);
-        saved = config;
+        gate.onSaved(config);
         // Show the normalised values (trimmed, de-duplicated) rather than what was typed
-        showText(urlField, config.webhookUrlText());
-        showText(ignoredField, config.ignoredPackagesText());
+        showUrl(config.webhookUrlText());
+        TextFields.show(ignoredField, config.ignoredPackagesText());
         status.success(R.string.saved);
         updateSaveButton();
-        // The disabled Save button gave up focus; the next likely step is a test
+        // The disabled Save button gave up focus; Test webhook is the one action left
         testButton.requestFocus();
     }
 
@@ -110,29 +107,35 @@ public final class SettingsPanel {
             showUrlError(e.getMessage());
             return;
         }
-        // Not Optional#isEmpty: that needs API 33 and minSdk is 28
-        if (!config.webhookUrl().isPresent()) {
-            showUrlError(activity.getString(R.string.no_url));
-            return;
-        }
-        setSending(true);
+        // Not Optional#isEmpty: that needs API 33 and minSdk is 28. The button is off without a URL; this guards
+        // a press that raced the update
+        if (!config.webhookUrl().isPresent()) return;
+        // Status first, so the lock's hint update sees it showing and hides "No unsaved changes" beside it
         status.info(R.string.sending);
-        // Recorded too, so a test shows up in the Deliveries tab
-        EventSink sink = new RecordingSink(new WebhookSink(config.webhookUrl().get()), log,
-                System::currentTimeMillis);
+        setSending(true);
         AppEvent testEvent = new AppEvent(activity.getPackageName() + ".test", System.currentTimeMillis() / 1000)
                 .withActivity(activity.getClass().getName())
                 .withDevice(config.sendDeviceName() ? DeviceName.read(activity.getContentResolver()) : null);
         background.execute(() -> {
-            DeliveryResult result = sink.send(testEvent);
-            activity.runOnUiThread(() -> showTestResult(result));
+            DeliveryResult result = tester.test(config.webhookUrl().get(), testEvent);
+            activity.runOnUiThread(() -> {
+                if (activity.isDestroyed()) return;
+                gate.onTested(config, result == DeliveryResult.DELIVERED);
+                setSending(false);
+                showTestResult(result, config);
+            });
         });
     }
 
-    private void showTestResult(DeliveryResult result) {
-        setSending(false);
+    private void showTestResult(DeliveryResult result, Config tested) {
         switch (result) {
             case DELIVERED:
+                // A new URL has just become saveable, so Save is the next step
+                if (gate.isNewUrlReadyToSave(tested)) {
+                    status.success(R.string.test_ok_save_next);
+                    saveButton.requestFocus();
+                    return;
+                }
                 status.success(R.string.test_ok);
                 break;
             case PERMANENT_FAILURE:
@@ -141,11 +144,17 @@ public final class SettingsPanel {
             default:
                 status.error(R.string.test_failed);
         }
+        testButton.requestFocus();
     }
 
+    // The form is locked while a test runs, so the URL cannot change under it. Test webhook stays enabled to keep
+    // the D-pad focus on it, which a disabled view would give up; sendTest ignores presses until the result
     private void setSending(boolean sending) {
         this.sending = sending;
-        testButton.setEnabled(!sending);
+        urlField.setEnabled(!sending);
+        ignoredField.setEnabled(!sending);
+        deviceNameSwitch.setEnabled(!sending);
+        updateSaveButton();
     }
 
     // Typing invalidates any earlier result, and Save is only useful while something differs
@@ -164,20 +173,24 @@ public final class SettingsPanel {
         urlField.setActivated(failed);
     }
 
+    // Save stays off until a new URL has passed a test, and the hint beside the buttons says so
     private void updateSaveButton() {
-        boolean changed = hasUnsavedChanges();
-        saveButton.setEnabled(changed);
-        saveHint.setVisibility(!changed && !status.isShowing() ? View.VISIBLE : View.GONE);
-    }
-
-    private boolean hasUnsavedChanges() {
-        try {
-            Config current = readFields();
-            return !current.webhookUrlText().equals(saved.webhookUrlText())
-                    || !current.ignoredPackagesText().equals(saved.ignoredPackagesText())
-                    || current.sendDeviceName() != saved.sendDeviceName();
-        } catch (IllegalArgumentException e) {
-            return true; // Let the user press Save to see what is wrong
+        SaveGate.State state = gate.stateOf(readFieldsOrNull());
+        testButton.setEnabled(state != SaveGate.State.NO_URL);
+        saveButton.setEnabled(state == SaveGate.State.SAVEABLE && !sending);
+        switch (state) {
+            case NO_URL:
+                saveHint.setText(R.string.no_url);
+                saveHint.setVisibility(View.VISIBLE);
+                break;
+            case NEEDS_TEST:
+                saveHint.setText(R.string.save_needs_test);
+                saveHint.setVisibility(sending ? View.GONE : View.VISIBLE);
+                break;
+            default:
+                saveHint.setText(R.string.no_unsaved_changes);
+                saveHint.setVisibility(state == SaveGate.State.UNCHANGED && !status.isShowing()
+                        ? View.VISIBLE : View.GONE);
         }
     }
 
@@ -186,24 +199,21 @@ public final class SettingsPanel {
                 deviceNameSwitch.isChecked());
     }
 
-    // Park the cursor at the start so a long value shows its beginning, not its tail
-    private static void showText(EditText field, String text) {
-        field.setText(text);
-        field.setSelection(0);
+    private Config readFieldsOrNull() {
+        try {
+            return readFields();
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 
-    private static void onTextChanged(EditText field, Runnable callback) {
-        field.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
-
-            @Override
-            public void onTextChanged(CharSequence s, int start, int before, int count) {}
-
-            @Override
-            public void afterTextChanged(Editable s) {
-                callback.run();
-            }
-        });
+    // An empty field starts with https://, with the cursor after it, since that is the only scheme allowed
+    private void showUrl(String url) {
+        if (url.isEmpty()) {
+            urlField.setText(Config.URL_PREFIX);
+            urlField.setSelection(Config.URL_PREFIX.length());
+        } else {
+            TextFields.show(urlField, url);
+        }
     }
 }

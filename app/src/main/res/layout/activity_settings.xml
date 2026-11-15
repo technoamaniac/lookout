@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- A FrameLayout, not <merge>: one root holds the screen and the detail sheet. Children may not clip:
-     focus rings and the focus scale draw outside their views. One screen, so the view count is fine. -->
+     focus rings and the focus scale draw outside their views. The rail, each tab and the sheet live in their
+     own layouts, so a change to one stays in one file. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
@@ -8,7 +9,7 @@
     android:layout_height="match_parent"
     android:clipChildren="false"
     android:clipToPadding="false"
-    tools:ignore="MergeRootFrame,NestedWeights,TooManyViews">
+    tools:ignore="MergeRootFrame">
 
     <!-- 5% overscan-safe margins -->
     <LinearLayout
@@ -25,154 +26,7 @@
         android:paddingBottom="27dp">
 
         <!-- Rail: brand, tabs and the service status -->
-        <LinearLayout
-            android:layout_width="240dp"
-            android:layout_height="match_parent"
-            android:clipChildren="false"
-            android:clipToPadding="false"
-            android:orientation="vertical">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:baselineAligned="false"
-                android:orientation="horizontal">
-
-                <FrameLayout
-                    android:layout_width="56dp"
-                    android:layout_height="56dp"
-                    android:background="@drawable/bg_tile">
-
-                    <ImageView
-                        android:layout_width="44dp"
-                        android:layout_height="44dp"
-                        android:layout_gravity="center"
-                        android:importantForAccessibility="no"
-                        android:src="@drawable/ic_launcher" />
-                </FrameLayout>
-
-                <TextView
-                    style="@style/Text.Headline"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:text="@string/app_name"
-                    android:textSize="28sp" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:clipChildren="false"
-                android:clipToPadding="false"
-                android:orientation="vertical">
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/tab_settings"
-                    style="@style/Widget.Lookout.RailTab"
-                    android:text="@string/tab_settings"
-                    app:icon="@drawable/ic_tab_settings" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/tab_deliveries"
-                    style="@style/Widget.Lookout.RailTab"
-                    android:text="@string/tab_deliveries"
-                    app:icon="@drawable/ic_tab_deliveries" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/tab_updates"
-                    style="@style/Widget.Lookout.RailTab"
-                    android:text="@string/tab_updates"
-                    app:icon="@drawable/ic_tab_updates" />
-            </LinearLayout>
-
-            <Space
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_weight="1" />
-
-            <LinearLayout
-                android:id="@+id/service_on_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_card"
-                android:gravity="center_vertical"
-                android:baselineAligned="false"
-        android:orientation="horizontal"
-                android:padding="16dp">
-
-                <ImageView
-                    android:layout_width="20dp"
-                    android:layout_height="20dp"
-                    android:importantForAccessibility="no"
-                    android:src="@drawable/dot_success" />
-
-                <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                    <TextView
-                        style="@style/Text.Body"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:fontFamily="sans-serif-medium"
-                        android:text="@string/service_enabled" />
-
-                    <TextView
-                        style="@style/Text.Secondary"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/service_enabled_detail" />
-                </LinearLayout>
-            </LinearLayout>
-
-            <LinearLayout
-                android:id="@+id/service_off_card"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:background="@drawable/bg_card"
-                android:backgroundTint="@color/warning_container"
-                android:clipChildren="false"
-                android:clipToPadding="false"
-                android:orientation="vertical"
-                android:padding="16dp"
-                android:visibility="gone">
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:drawablePadding="10dp"
-                    app:drawableStartCompat="@drawable/ic_warning"
-                    app:drawableTint="@color/warning"
-                    android:fontFamily="sans-serif-medium"
-                    android:gravity="center_vertical"
-                    android:text="@string/service_not_enabled"
-                    android:textColor="@color/on_warning_container"
-                    android:textSize="18sp" />
-
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:layout_marginBottom="8dp"
-                    android:text="@string/service_disabled"
-                    android:textColor="@color/on_warning_container"
-                    android:textSize="16sp" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/open_accessibility"
-                    style="@style/Widget.Lookout.Button.Warning"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/open_accessibility" />
-            </LinearLayout>
-        </LinearLayout>
+        <include layout="@layout/rail" />
 
         <!-- Content: the whole page scrolls as one, so the header never sits under the sheet. The
              sheet takes the leftover height (weight) so a short panel still fills the screen. -->
@@ -186,600 +40,72 @@
             android:fillViewport="true"
             android:scrollbars="none">
 
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:clipChildren="false"
-            android:clipToPadding="false"
-            android:orientation="vertical">
-
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:clipChildren="false"
-                android:minHeight="54dp"
-                android:baselineAligned="false"
-        android:orientation="horizontal">
+                android:clipToPadding="false"
+                android:orientation="vertical">
 
                 <LinearLayout
-                    android:layout_width="0dp"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
+                    android:clipChildren="false"
+                    android:minHeight="54dp"
+                    android:baselineAligned="false"
+                    android:orientation="horizontal">
 
-                    <TextView
-                        android:id="@+id/panel_title"
-                        style="@style/Text.Headline"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" />
+                    <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical">
 
-                    <TextView
-                        android:id="@+id/panel_subtitle"
-                        style="@style/Text.Secondary"
+                        <TextView
+                            android:id="@+id/panel_title"
+                            style="@style/Text.Headline"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content" />
+
+                        <TextView
+                            android:id="@+id/panel_subtitle"
+                            style="@style/Text.Secondary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="4dp"
+                            android:singleLine="true" />
+                    </LinearLayout>
+
+                    <!-- Corner alert for a new stable release; selecting it opens the Updates tab -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/update_badge"
+                        style="@style/Widget.Lookout.Button.Badge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="4dp"
-                        android:singleLine="true" />
-                </LinearLayout>
-
-                <!-- Corner alert for a new stable release; selecting it opens the Updates tab -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/update_badge"
-                    style="@style/Widget.Lookout.Button.Badge"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:visibility="gone"
-                    app:icon="@drawable/ic_tab_updates" />
-            </LinearLayout>
-
-            <FrameLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="16dp"
-                android:layout_weight="1"
-                android:background="@drawable/bg_sheet"
-                android:clipChildren="false"
-                android:clipToPadding="false">
-
-                <LinearLayout
-                    android:id="@+id/settings_panel"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:clipChildren="false"
-                    android:clipToPadding="false"
-                    android:orientation="vertical"
-                    android:padding="28dp">
-
-                        <TextView
-                            style="@style/Text.Label"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/label_url" />
-
-                        <EditText
-                            android:id="@+id/url"
-                            style="@style/Widget.Lookout.Field"
-                            android:layout_marginTop="6dp"
-                            android:autofillHints="url"
-                            android:hint="@string/hint_url"
-                            android:imeOptions="actionNext"
-                            android:inputType="textUri" />
-
-                        <TextView
-                            android:id="@+id/url_helper"
-                            style="@style/Text.Secondary"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="@string/helper_url" />
-
-                        <TextView
-                            android:id="@+id/url_error"
-                            style="@style/Text.Secondary"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:drawablePadding="6dp"
-                            android:gravity="center_vertical"
-                            android:textColor="@color/error"
-                            android:visibility="gone"
-                            app:drawableStartCompat="@drawable/ic_alert"
-                            app:drawableTint="@color/error" />
-
-                        <TextView
-                            style="@style/Text.Label"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="20dp"
-                            android:text="@string/label_ignored" />
-
-                        <EditText
-                            android:id="@+id/ignored"
-                            style="@style/Widget.Lookout.Field"
-                            android:layout_marginTop="6dp"
-                            android:autofillHints="none"
-                            android:hint="@string/hint_ignored"
-                            android:imeOptions="actionDone"
-                            android:inputType="text" />
-
-                        <TextView
-                            style="@style/Text.Secondary"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="6dp"
-                            android:text="@string/helper_ignored" />
-
-                        <com.google.android.material.checkbox.MaterialCheckBox
-                            android:id="@+id/send_device_name"
-                            style="@style/Text.Body"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="20dp"
-                            android:text="@string/label_send_device_name" />
-
-                        <TextView
-                            style="@style/Text.Secondary"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="2dp"
-                            android:text="@string/helper_send_device_name" />
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="28dp"
-                            android:clipChildren="false"
-                            android:gravity="center_vertical"
-                            android:baselineAligned="false"
-        android:orientation="horizontal">
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/save"
-                                style="@style/Widget.Lookout.Button.Primary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:text="@string/save"
-                                app:icon="@drawable/ic_check" />
-
-                            <com.google.android.material.button.MaterialButton
-                                android:id="@+id/test"
-                                style="@style/Widget.Lookout.Button.Secondary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="16dp"
-                                android:text="@string/send_test"
-                                app:icon="@drawable/ic_tab_deliveries" />
-
-                            <TextView
-                                android:id="@+id/save_hint"
-                                style="@style/Text.Secondary"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="16dp"
-                                android:text="@string/no_unsaved_changes" />
-                        </LinearLayout>
-
-                        <TextView
-                            android:id="@+id/status"
-                            style="@style/Widget.Lookout.Chip"
-                            android:layout_marginTop="20dp" />
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_tab_updates" />
                 </LinearLayout>
 
                 <FrameLayout
-                    android:id="@+id/deliveries_panel"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="0dp"
+                    android:layout_marginTop="16dp"
+                    android:layout_weight="1"
+                    android:background="@drawable/bg_sheet"
                     android:clipChildren="false"
-                    android:clipToPadding="false"
-                    android:padding="16dp"
-                    android:visibility="gone">
+                    android:clipToPadding="false">
 
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:clipChildren="false"
-                        android:clipToPadding="false"
-                        android:orientation="vertical">
+                    <include layout="@layout/panel_settings" />
 
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="24dp"
-                            android:gravity="center_vertical"
-                            android:baselineAligned="false"
-        android:orientation="horizontal"
-                            android:paddingStart="16dp"
-                            android:paddingEnd="16dp">
+                    <include layout="@layout/panel_deliveries" />
 
-                            <TextView
-                                style="@style/Text.Secondary"
-                                android:layout_width="0dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="32dp"
-                                android:layout_weight="1"
-                                android:text="@string/column_app"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                style="@style/Text.Secondary"
-                                android:layout_width="130dp"
-                                android:layout_height="wrap_content"
-                                android:layout_marginStart="12dp"
-                                android:text="@string/column_result"
-                                android:textSize="14sp" />
-
-                            <TextView
-                                style="@style/Text.Secondary"
-                                android:layout_width="100dp"
-                                android:layout_height="wrap_content"
-                                android:gravity="end"
-                                android:layout_marginStart="12dp"
-                                android:text="@string/column_time"
-                                android:textSize="14sp" />
-                        </LinearLayout>
-
-                        <androidx.recyclerview.widget.RecyclerView
-                            android:id="@+id/deliveries"
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:nestedScrollingEnabled="false"
-                            android:layout_marginTop="4dp"
-                            android:clipChildren="false"
-                            android:clipToPadding="false"
-                            android:paddingTop="4dp"
-                            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/deliveries_empty"
-                        android:layout_width="match_parent"
-                        android:layout_height="match_parent"
-                        android:gravity="center"
-                        android:orientation="vertical"
-                        android:padding="28dp">
-
-                        <FrameLayout
-                            android:layout_width="120dp"
-                            android:layout_height="120dp"
-                            android:background="@drawable/bg_empty_circle">
-
-                            <ImageView
-                                android:layout_width="80dp"
-                                android:layout_height="80dp"
-                                android:layout_gravity="center"
-                                android:importantForAccessibility="no"
-                                android:src="@drawable/ic_empty_watch" />
-                        </FrameLayout>
-
-                        <TextView
-                            style="@style/Text.Title"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="14dp"
-                            android:text="@string/deliveries_empty_title" />
-
-                        <TextView
-                            style="@style/Text.Secondary"
-                            android:layout_width="410dp"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="14dp"
-                            android:gravity="center"
-                            android:text="@string/deliveries_empty"
-                            android:textColor="@color/on_surface_variant"
-                            android:textSize="18sp" />
-                    </LinearLayout>
+                    <include layout="@layout/panel_updates" />
                 </FrameLayout>
-
-                <LinearLayout
-                    android:id="@+id/updates_panel"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:clipChildren="false"
-                    android:clipToPadding="false"
-                    android:orientation="vertical"
-                    android:padding="28dp"
-                    android:visibility="gone">
-
-                    <TextView
-                        style="@style/Text.Secondary"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/installed_version" />
-
-                    <TextView
-                        android:id="@+id/version"
-                        style="@style/Text.Headline"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textSize="56sp" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
-                        android:clipChildren="false"
-                        android:gravity="center_vertical"
-                        android:baselineAligned="false"
-        android:orientation="horizontal">
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/install_update"
-                            style="@style/Widget.Lookout.Button.Primary"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginEnd="16dp"
-                            android:visibility="gone"
-                            app:icon="@drawable/ic_download" />
-
-                        <com.google.android.material.button.MaterialButton
-                            android:id="@+id/check_updates"
-                            style="@style/Widget.Lookout.Button.Primary"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="@string/check_updates"
-                            app:icon="@drawable/ic_refresh" />
-                    </LinearLayout>
-
-                    <LinearLayout
-                        android:id="@+id/update_progress"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
-                        android:orientation="vertical"
-                        android:visibility="gone">
-
-                        <com.google.android.material.progressindicator.LinearProgressIndicator
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:indeterminate="true"
-                            app:indicatorColor="@color/accent"
-                            app:trackColor="@color/outline_variant"
-                            app:trackCornerRadius="3dp"
-                            app:trackThickness="6dp" />
-
-                        <TextView
-                            style="@style/Text.Secondary"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="10dp"
-                            android:text="@string/update_downloading"
-                            android:textColor="@color/on_accent_container" />
-                    </LinearLayout>
-
-                    <TextView
-                        android:id="@+id/update_status"
-                        style="@style/Widget.Lookout.Chip"
-                        android:layout_marginTop="20dp" />
-
-                    <com.google.android.material.checkbox.MaterialCheckBox
-                        android:id="@+id/include_pre_releases"
-                        style="@style/Text.Body"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="20dp"
-                        android:text="@string/label_include_pre_releases" />
-
-                    <TextView
-                        style="@style/Text.Secondary"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="2dp"
-                        android:layout_marginBottom="20dp"
-                        android:text="@string/helper_include_pre_releases" />
-
-                    <Space
-                        android:layout_width="match_parent"
-                        android:layout_height="0dp"
-                        android:layout_weight="1" />
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="1dp"
-                        android:background="@color/outline_variant" />
-
-                    <TextView
-                        style="@style/Text.Secondary"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="16dp"
-                        android:drawablePadding="10dp"
-                        app:drawableStartCompat="@drawable/ic_info"
-                        app:drawableTint="@color/on_surface_variant"
-                        android:text="@string/updates_note" />
-                </LinearLayout>
-            </FrameLayout>
-        </LinearLayout>
+            </LinearLayout>
         </ScrollView>
     </LinearLayout>
 
     <!-- Delivery details: scrim over the screen and a sheet on the right -->
-    <FrameLayout
-        android:id="@+id/detail_overlay"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:background="@color/scrim"
-        android:clickable="true"
-        android:focusable="false"
-        android:visibility="gone">
-
-        <LinearLayout
-            android:layout_width="450dp"
-            android:layout_height="match_parent"
-            android:layout_gravity="end"
-            android:layout_marginTop="27dp"
-            android:layout_marginEnd="48dp"
-            android:layout_marginBottom="27dp"
-            android:background="@drawable/bg_sheet_high"
-            android:clipChildren="false"
-            android:clipToPadding="false"
-            android:elevation="12dp"
-            android:orientation="vertical"
-            android:padding="28dp">
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:baselineAligned="false"
-        android:orientation="horizontal">
-
-                <TextView
-                    style="@style/Text.Title"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/detail_title" />
-
-                <TextView
-                    android:id="@+id/detail_result"
-                    style="@style/Widget.Lookout.Chip" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:baselineAligned="false"
-        android:orientation="horizontal">
-
-                <TextView
-                    style="@style/Text.Secondary"
-                    android:layout_width="110dp"
-                    android:layout_height="wrap_content"
-                    android:text="@string/detail_app" />
-
-                <TextView
-                    android:id="@+id/detail_app"
-                    style="@style/Text.Mono"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:fontFamily="monospace"
-                    android:textStyle="bold" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:baselineAligned="false"
-        android:orientation="horizontal">
-
-                <TextView
-                    style="@style/Text.Secondary"
-                    android:layout_width="110dp"
-                    android:layout_height="wrap_content"
-                    android:text="@string/detail_attempted" />
-
-                <TextView
-                    android:id="@+id/detail_time"
-                    style="@style/Text.Body"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1" />
-            </LinearLayout>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:baselineAligned="false"
-        android:orientation="horizontal">
-
-                <TextView
-                    style="@style/Text.Secondary"
-                    android:layout_width="110dp"
-                    android:layout_height="wrap_content"
-                    android:text="@string/detail_response" />
-
-                <TextView
-                    android:id="@+id/detail_response"
-                    style="@style/Text.Body"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1" />
-            </LinearLayout>
-
-            <TextView
-                style="@style/Text.Secondary"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
-                android:text="@string/detail_payload" />
-
-            <!-- The payload and the buttons share the height left over. The code box fits its text but
-                 stops 20dp above the buttons; past that its text scrolls inside it. Its own padding is
-                 what clips the text, since the sheet lets children draw outside for the focus rings. -->
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:layout_width="match_parent"
-                android:layout_height="0dp"
-                android:layout_marginTop="8dp"
-                android:layout_weight="1"
-                android:clipChildren="false"
-                android:clipToPadding="false">
-
-                <!-- Focusable so the remote can scroll a long payload -->
-                <ScrollView
-                    android:id="@+id/detail_payload_scroll"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginBottom="20dp"
-                    android:background="@drawable/bg_code_scrollable"
-                    android:fadeScrollbars="false"
-                    android:focusable="true"
-                    android:paddingStart="20dp"
-                    android:paddingTop="16dp"
-                    android:paddingEnd="20dp"
-                    android:paddingBottom="16dp"
-                    android:scrollbarStyle="insideInset"
-                    android:scrollbars="vertical"
-                    app:layout_constrainedHeight="true"
-                    app:layout_constraintBottom_toTopOf="@id/detail_actions"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent"
-                    app:layout_constraintVertical_bias="0">
-
-                    <TextView
-                        android:id="@+id/detail_payload"
-                        style="@style/Text.Mono"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:textSize="16sp" />
-                </ScrollView>
-
-                <LinearLayout
-                    android:id="@+id/detail_actions"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:clipChildren="false"
-                    android:gravity="center_vertical"
-                    android:baselineAligned="false"
-            android:orientation="horizontal"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent">
-
-                    <com.google.android.material.button.MaterialButton
-                        android:id="@+id/detail_close"
-                        style="@style/Widget.Lookout.Button.Secondary"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:minWidth="0dp"
-                        android:minHeight="40dp"
-                        android:paddingStart="18dp"
-                        android:paddingEnd="18dp"
-                        android:text="@string/detail_close"
-                        android:textSize="16sp" />
-
-                    <TextView
-                        style="@style/Text.Secondary"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_marginStart="16dp"
-                        android:text="@string/detail_back_hint" />
-                </LinearLayout>
-            </androidx.constraintlayout.widget.ConstraintLayout>
-        </LinearLayout>
-    </FrameLayout>
+    <include layout="@layout/sheet_delivery_detail" />
 </FrameLayout>
