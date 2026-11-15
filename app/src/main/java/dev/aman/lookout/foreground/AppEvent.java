@@ -19,15 +19,22 @@ public final class AppEvent {
         this(packageName, null, null, epochSeconds);
     }
 
-    /**
-     * @param activity the window class that appeared, or null when the system did not name one
-     * @param device   a name for this TV so one webhook can serve several, or null for none
-     */
-    public AppEvent(String packageName, String activity, String device, long epochSeconds) {
+    // Private so the two optional strings are always set by name, never swapped by position
+    private AppEvent(String packageName, String activity, String device, long epochSeconds) {
         this.packageName = Objects.requireNonNull(packageName);
         this.activity = blankToNull(activity);
         this.device = blankToNull(device);
         this.epochSeconds = epochSeconds;
+    }
+
+    /** A copy naming the window class that appeared; null or blank when the system gave none. */
+    public AppEvent withActivity(String activity) {
+        return new AppEvent(packageName, activity, device, epochSeconds);
+    }
+
+    /** A copy naming this TV so one webhook can serve several; null or blank for none. */
+    public AppEvent withDevice(String device) {
+        return new AppEvent(packageName, activity, device, epochSeconds);
     }
 
     public String packageName() {

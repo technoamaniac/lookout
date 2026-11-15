@@ -26,7 +26,7 @@ public final class ForegroundTracker {
         if (packageName == null || !filter.accepts(packageName) || isInForeground(packageName)) {
             return Optional.empty();
         }
-        AppEvent event = new AppEvent(packageName, activity, device.get(), epochSeconds);
+        AppEvent event = new AppEvent(packageName, epochSeconds).withActivity(activity).withDevice(device.get());
         current = event;
         return Optional.of(event);
     }

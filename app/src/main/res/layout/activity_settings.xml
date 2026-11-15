@@ -319,6 +319,21 @@
                             android:layout_marginTop="6dp"
                             android:text="@string/helper_ignored" />
 
+                        <com.google.android.material.checkbox.MaterialCheckBox
+                            android:id="@+id/send_device_name"
+                            style="@style/Text.Body"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="20dp"
+                            android:text="@string/label_send_device_name" />
+
+                        <TextView
+                            style="@style/Text.Secondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:layout_marginTop="2dp"
+                            android:text="@string/helper_send_device_name" />
+
                         <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"

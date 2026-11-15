@@ -8,6 +8,7 @@ public final class PrefsConfigStore implements ConfigStore {
     private static final String FILE = "lookout";
     private static final String KEY_URL = "webhook_url";
     private static final String KEY_IGNORED = "ignored_packages";
+    private static final String KEY_SEND_DEVICE_NAME = "send_device_name";
 
     private final SharedPreferences prefs;
     // SharedPreferences holds listeners weakly, so keep a strong reference
@@ -20,11 +21,13 @@ public final class PrefsConfigStore implements ConfigStore {
     @Override
     public Config load() {
         String ignored = prefs.getString(KEY_IGNORED, "");
+        // Off until the user opts in: the name can be personal
+        boolean sendDeviceName = prefs.getBoolean(KEY_SEND_DEVICE_NAME, false);
         try {
-            return Config.parse(prefs.getString(KEY_URL, ""), ignored);
+            return Config.parse(prefs.getString(KEY_URL, ""), ignored, sendDeviceName);
         } catch (IllegalArgumentException e) {
-            // A URL saved before validation tightened no longer parses; keep the ignored packages
-            return Config.parse("", ignored);
+            // A URL saved before validation tightened no longer parses; keep the other settings
+            return Config.parse("", ignored, sendDeviceName);
         }
     }
 
@@ -33,6 +36,7 @@ public final class PrefsConfigStore implements ConfigStore {
         prefs.edit()
                 .putString(KEY_URL, config.webhookUrlText())
                 .putString(KEY_IGNORED, config.ignoredPackagesText())
+                .putBoolean(KEY_SEND_DEVICE_NAME, config.sendDeviceName())
                 .apply();
     }
 

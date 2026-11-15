@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.text.Editable;
 import android.text.TextWatcher;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -28,6 +29,7 @@ public final class SettingsPanel {
     private final Executor background;
     private final EditText urlField;
     private final EditText ignoredField;
+    private final CompoundButton deviceNameSwitch;
     private final StatusLine status;
     private final View saveButton;
     private final View testButton;
@@ -47,6 +49,7 @@ public final class SettingsPanel {
         this.background = background;
         urlField = activity.findViewById(R.id.url);
         ignoredField = activity.findViewById(R.id.ignored);
+        deviceNameSwitch = activity.findViewById(R.id.send_device_name);
         status = new StatusLine(activity.findViewById(R.id.status));
         saveButton = activity.findViewById(R.id.save);
         testButton = activity.findViewById(R.id.test);
@@ -59,6 +62,8 @@ public final class SettingsPanel {
         showText(ignoredField, prefill.ignored != null ? prefill.ignored : saved.ignoredPackagesText());
         onTextChanged(urlField, this::onFieldsEdited);
         onTextChanged(ignoredField, this::onFieldsEdited);
+        deviceNameSwitch.setChecked(saved.sendDeviceName());
+        deviceNameSwitch.setOnCheckedChangeListener((button, checked) -> onFieldsEdited());
         saveButton.setOnClickListener(v -> save());
         testButton.setOnClickListener(v -> sendTest());
         updateSaveButton();
@@ -115,8 +120,9 @@ public final class SettingsPanel {
         // Recorded too, so a test shows up in the Deliveries tab
         EventSink sink = new RecordingSink(new WebhookSink(config.webhookUrl().get()), log,
                 System::currentTimeMillis);
-        AppEvent testEvent = new AppEvent(activity.getPackageName() + ".test", activity.getClass().getName(),
-                DeviceName.read(activity.getContentResolver()), System.currentTimeMillis() / 1000);
+        AppEvent testEvent = new AppEvent(activity.getPackageName() + ".test", System.currentTimeMillis() / 1000)
+                .withActivity(activity.getClass().getName())
+                .withDevice(config.sendDeviceName() ? DeviceName.read(activity.getContentResolver()) : null);
         background.execute(() -> {
             DeliveryResult result = sink.send(testEvent);
             activity.runOnUiThread(() -> showTestResult(result));
@@ -168,14 +174,16 @@ public final class SettingsPanel {
         try {
             Config current = readFields();
             return !current.webhookUrlText().equals(saved.webhookUrlText())
-                    || !current.ignoredPackagesText().equals(saved.ignoredPackagesText());
+                    || !current.ignoredPackagesText().equals(saved.ignoredPackagesText())
+                    || current.sendDeviceName() != saved.sendDeviceName();
         } catch (IllegalArgumentException e) {
             return true; // Let the user press Save to see what is wrong
         }
     }
 
     private Config readFields() {
-        return Config.parse(urlField.getText().toString(), ignoredField.getText().toString());
+        return Config.parse(urlField.getText().toString(), ignoredField.getText().toString(),
+                deviceNameSwitch.isChecked());
     }
 
     // Park the cursor at the start so a long value shows its beginning, not its tail

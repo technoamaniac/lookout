@@ -15,19 +15,22 @@ import java.util.Set;
 public final class Config {
     private final URL webhookUrl;
     private final List<String> ignoredPackages;
+    private final boolean sendDeviceName;
 
-    private Config(URL webhookUrl, List<String> ignoredPackages) {
+    private Config(URL webhookUrl, List<String> ignoredPackages, boolean sendDeviceName) {
         this.webhookUrl = webhookUrl;
         this.ignoredPackages = Collections.unmodifiableList(ignoredPackages);
+        this.sendDeviceName = sendDeviceName;
     }
 
     /**
      * @param url blank means "not configured"; otherwise it must be an https URL
      * @param ignoredCsv comma-separated packages to never report
+     * @param sendDeviceName whether events carry the TV's name, which can be personal
      * @throws IllegalArgumentException if the URL is malformed or not https
      */
-    public static Config parse(String url, String ignoredCsv) {
-        return new Config(parseUrl(url), parsePackages(ignoredCsv));
+    public static Config parse(String url, String ignoredCsv, boolean sendDeviceName) {
+        return new Config(parseUrl(url), parsePackages(ignoredCsv), sendDeviceName);
     }
 
     public Optional<URL> webhookUrl() {
@@ -36,6 +39,10 @@ public final class Config {
 
     public List<String> ignoredPackages() {
         return ignoredPackages;
+    }
+
+    public boolean sendDeviceName() {
+        return sendDeviceName;
     }
 
     public String webhookUrlText() {

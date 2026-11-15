@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Supplier;
 
 /** Android adapter: wires window events into the tracker and dispatcher. */
 public class LookoutService extends AccessibilityService {
@@ -75,12 +76,17 @@ public class LookoutService extends AccessibilityService {
     // Rebuilt whenever settings or keyboards change, so edits apply without restarting the service
     private void configure() {
         Config config = store.load();
-        tracker = new ForegroundTracker(new PackageFilter(ignoredPackages(config)), () -> DeviceName.read(getContentResolver()));
+        tracker = new ForegroundTracker(new PackageFilter(ignoredPackages(config)), deviceNameFor(config));
         dispatcher = config.webhookUrl()
                 .map(url -> new RetryingDispatcher(recordingSinkFor(url),
                         (task, delayMillis) -> io.schedule(task, delayMillis, TimeUnit.MILLISECONDS),
                         BACKOFF_MS, tracker::isCurrent))
                 .orElse(null);
+    }
+
+    // Asked per event so renaming the TV applies at once; withheld unless the user opted in
+    private Supplier<String> deviceNameFor(Config config) {
+        return config.sendDeviceName() ? () -> DeviceName.read(getContentResolver()) : () -> null;
     }
 
     private static EventSink recordingSinkFor(URL url) {
