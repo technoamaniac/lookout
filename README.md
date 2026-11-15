@@ -1,6 +1,6 @@
 # Lookout
 
-An Android TV service that reports the foreground app and the screen state to a webhook.
+An Android TV service that reports the foreground app, the screen state and, if you allow it, what is playing to a webhook.
 
 TV remote APIs (Sony Bravia, Fire TV and others) often can't tell you which app is open, especially sideloaded ones like SmartTube. Lookout runs on the TV and POSTs each app change to an endpoint you control, such as Home Assistant, n8n or any HTTPS server.
 
@@ -19,7 +19,19 @@ Content-Type: application/json
 
 `event` names the kind of message. `activity` is the window Android reported when the app came to the front, often its main activity but sometimes a dialog or splash window; later screens inside the app do not update it. `device` is the TV's name from its system settings, so one webhook can serve several TVs; it is only sent when **Send this TV's name** is ticked. Both are left out when unknown. `timestamp` is Unix seconds.
 
-Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields: `screen_on`, `screen_off`, `screensaver_started` and `screensaver_stopped`. The screen state is also sent when the service starts. Besides window changes, Lookout only watches these screen and screensaver changes; it reads nothing else about the TV. While the screensaver runs, app changes are not reported, so the app you were using stays as the current one. `screen_off` is best effort: a TV that loses its network as it goes to standby may not manage to send it. These messages have no `package`, so an automation that reads `trigger.json.package` needs the condition `{{ trigger.json.package is defined }}`, or it will blank its state on every screen change.
+Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields: `screen_on`, `screen_off`, `screensaver_started` and `screensaver_stopped`. The screen state is also sent when the service starts. Besides window changes, Lookout only watches these screen and screensaver changes, and playback if you allow it below; it reads nothing else about the TV. While the screensaver runs, app changes are not reported, so the app you were using stays as the current one. `screen_off` is best effort: a TV that loses its network as it goes to standby may not manage to send it. These messages have no `package`, so an automation that reads `trigger.json.package` needs the condition `{{ trigger.json.package is defined }}`, or it will blank its state on every screen change.
+
+### Playback (optional)
+
+Lookout can also report what an app is playing: `{"event": "playback_changed", "package": "org.jellyfin.androidtv", "state": "playing", "title": "Song", "artist": "Band", "timestamp": 1731600000}`. `state` is `playing`, `paused` or `stopped`; `title` and `artist` are left out when the app does not give them, and `device` works as above. It is off until you allow it once from your computer:
+
+```sh
+adb shell cmd notification allow_listener dev.aman.lookout/dev.aman.lookout.playback.MediaAccessService
+```
+
+This gives Lookout Android's notification access, which is the only way an app may read media sessions. Lookout never reads notifications; the service it registers for this does nothing else. Playback messages carry a `package` too, so an automation that tracks the foreground app should check `{{ trigger.json.event == 'app_changed' }}` instead of `package is defined`.
+
+Only apps that mark their media session as active are seen. SmartTube does so unless **Settings → Player → Developer options → Disable playback notifications** is ticked.
 
 Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are retried; other responses are not. Redirects are not followed, so use the final URL.
 
@@ -66,7 +78,7 @@ automation:
 
 ## Limitations
 
-- Reports app changes, not playback.
+- Playback is only reported for apps with an active media session, and only after the one-time grant above.
 - After a restart, Lookout reports the next app change. Android only names the app in front when the service may read window content, which Lookout deliberately does not.
 - In-app updates need the "install unknown apps" permission; some TVs have no screen to grant it, so use `scripts/install.sh` there.
 
@@ -85,6 +97,7 @@ Logic lives in plain-Java packages with JVM unit tests; Android classes stay thi
 | `event`      | `Event`, the JSON builder and `LatestEvents`, which drops superseded ones |
 | `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`      |
 | `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes   |
+| `playback`   | `PlaybackTracker` and `PlaybackEvent`; `MediaSessionWatcher` reads the sessions |
 | `delivery`   | `EventSink` and `WebhookSink`, `RetryingDispatcher`, `DeliveryLog`        |
 | `config`     | `Config`, validated settings; `PrefsConfigStore` persists them            |
 | `update`     | `GitHubReleases`, `UpdateChecker`, `ApkFetcher`, `UpdateInstaller`        |

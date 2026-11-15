@@ -4,6 +4,10 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Added
+
+- Optional playback messages: `playback_changed` with `package`, `state` (`playing`, `paused` or `stopped`) and, when the app gives them, `title` and `artist`. They stay off until you allow Lookout's notification access with adb, as described in the README. Automations that track the foreground app should check `trigger.json.event == 'app_changed'`.
+
 ## [0.2.0] - 2026-11-14
 
 ### Added
