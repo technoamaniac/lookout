@@ -33,6 +33,8 @@ public class LookoutService extends AccessibilityService {
     private static final String SYSTEM_UI = "com.android.systemui";
     private static final long[] BACKOFF_MS = {0, 2_000, 10_000};
 
+    // Lives as long as the service: settings changes reconfigure it, so the app in front is not forgotten
+    private final ForegroundTracker tracker = new ForegroundTracker(new PackageFilter(List.of()), () -> null);
     private final ScheduledExecutorService io = Executors.newSingleThreadScheduledExecutor();
     // Enabling a keyboard changes which packages are ignored, without any settings change of ours
     private final ContentObserver keyboardsChanged = new ContentObserver(new Handler(Looper.getMainLooper())) {
@@ -42,7 +44,6 @@ public class LookoutService extends AccessibilityService {
         }
     };
     private PrefsConfigStore store;
-    private ForegroundTracker tracker;
     private RetryingDispatcher dispatcher;
 
     @Override
@@ -56,7 +57,7 @@ public class LookoutService extends AccessibilityService {
 
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
-        if (tracker == null || dispatcher == null || event.getPackageName() == null) return;
+        if (dispatcher == null || event.getPackageName() == null) return;
         String activity = event.getClassName() == null ? null : event.getClassName().toString();
         tracker.onWindowChanged(event.getPackageName().toString(), activity, System.currentTimeMillis() / 1000)
                 .ifPresent(dispatcher::dispatch);
@@ -76,7 +77,7 @@ public class LookoutService extends AccessibilityService {
     // Rebuilt whenever settings or keyboards change, so edits apply without restarting the service
     private void configure() {
         Config config = store.load();
-        tracker = new ForegroundTracker(new PackageFilter(ignoredPackages(config)), deviceNameFor(config));
+        tracker.reconfigure(new PackageFilter(ignoredPackages(config)), deviceNameFor(config));
         dispatcher = config.webhookUrl()
                 .map(url -> new RetryingDispatcher(recordingSinkFor(url),
                         (task, delayMillis) -> io.schedule(task, delayMillis, TimeUnit.MILLISECONDS),

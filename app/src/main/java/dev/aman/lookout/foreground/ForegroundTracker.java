@@ -5,8 +5,8 @@ import java.util.function.Supplier;
 
 /** Turns raw window-change notifications into foreground-app changes. */
 public final class ForegroundTracker {
-    private final PackageFilter filter;
-    private final Supplier<String> device;
+    private volatile PackageFilter filter;
+    private volatile Supplier<String> device;
     private volatile AppEvent current;
 
     /**
@@ -14,6 +14,15 @@ public final class ForegroundTracker {
      *               renaming the TV takes effect without rebuilding the tracker
      */
     public ForegroundTracker(PackageFilter filter, Supplier<String> device) {
+        this.filter = filter;
+        this.device = device;
+    }
+
+    /**
+     * Applies new settings without forgetting the app in front, so a settings change is not
+     * reported as the same app coming to the front again.
+     */
+    public void reconfigure(PackageFilter filter, Supplier<String> device) {
         this.filter = filter;
         this.device = device;
     }

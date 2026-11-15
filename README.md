@@ -81,6 +81,8 @@ automation:
 ## Limitations
 
 - Reports app changes, not playback. Combine it with the TV's power state.
+- After a restart, Lookout reports the next app change. Android only names the app in front when
+  the service may read window content, which Lookout deliberately does not.
 - In-app updates need the "install unknown apps" permission; some TVs have no screen to grant it,
   so use `scripts/install.sh` there.
 

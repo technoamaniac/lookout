@@ -39,6 +39,21 @@ public class ForegroundTrackerTest {
     }
 
     @Test
+    public void reconfiguringKeepsTheAppInFrontSoItIsNotReportedAgain() {
+        tracker.onWindowChanged("com.example.a", null, 10);
+        tracker.reconfigure(new PackageFilter(List.of("com.example.launcher")), () -> "Den");
+        assertTrue(tracker.onWindowChanged("com.example.a", null, 11).isEmpty());
+    }
+
+    @Test
+    public void reconfiguringAppliesTheNewFilterAndDeviceName() {
+        tracker.reconfigure(new PackageFilter(List.of("com.example.launcher")), () -> "Den");
+        assertTrue(tracker.onWindowChanged("com.example.launcher", null, 10).isEmpty());
+        AppEvent event = tracker.onWindowChanged("com.example.a", null, 11).orElseThrow();
+        assertTrue(event.toJson().contains("\"device\":\"Den\""));
+    }
+
+    @Test
     public void suppressesRepeatsOfTheCurrentApp() {
         tracker.onWindowChanged("com.example.a", null, 10);
         assertTrue(tracker.onWindowChanged("com.example.a", null, 11).isEmpty());
