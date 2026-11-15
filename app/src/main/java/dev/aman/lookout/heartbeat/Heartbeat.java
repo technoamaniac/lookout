@@ -7,10 +7,8 @@ import java.util.function.LongFunction;
 
 /**
  * Sends a heartbeat at a fixed interval: one straight away when started or the interval changes, so the receiver
- * hears at once, then one per interval. The first is queued rather than sent inside {@link #setInterval}, so it reads
- * the state once the caller has finished setting up, such as the playback a starting service has yet to read. It runs
- * on a clock that stops while the TV sleeps, so a TV in deep standby goes quiet. Not thread-safe: use it on the thread
- * its scheduler runs tasks on.
+ * hears at once, then one per interval. It runs on a clock that stops while the TV sleeps, so a TV in deep standby
+ * may go quiet. Not thread-safe: use it on the thread its scheduler runs tasks on.
  */
 public final class Heartbeat {
     /** Runs a task once after a delay; injectable so tests control time. */
@@ -26,7 +24,7 @@ public final class Heartbeat {
     private Runnable cancelNext = () -> {};
 
     /**
-     * @param beatFor builds the heartbeat for an interval in seconds, from the state at that moment
+     * @param beatFor builds the heartbeat for an interval in seconds
      * @param send    delivers it once, without retries: a late heartbeat would wrongly say the TV is reachable
      */
     public Heartbeat(Scheduler scheduler, LongFunction<Event> beatFor, Consumer<Event> send) {
@@ -40,7 +38,7 @@ public final class Heartbeat {
         if (intervalSeconds == this.intervalSeconds) return;
         stop();
         this.intervalSeconds = intervalSeconds;
-        if (intervalSeconds > 0) cancelNext = scheduler.schedule(this::beat, 0);
+        if (intervalSeconds > 0) beat();
     }
 
     public void stop() {
@@ -50,7 +48,8 @@ public final class Heartbeat {
     }
 
     private void beat() {
-        send.accept(beatFor.apply(intervalSeconds));
+        // Scheduled first, so a failure while building or sending one does not end the beats
         cancelNext = scheduler.schedule(this::beat, intervalSeconds * 1000);
+        send.accept(beatFor.apply(intervalSeconds));
     }
 }

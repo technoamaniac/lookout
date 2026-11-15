@@ -7,8 +7,6 @@ import static org.junit.Assert.assertTrue;
 import dev.aman.lookout.foreground.AppEvent;
 import dev.aman.lookout.heartbeat.HeartbeatEvent;
 
-import java.util.List;
-
 import org.junit.Test;
 
 public class RecordingSinkTest {
@@ -35,7 +33,7 @@ public class RecordingSinkTest {
 
     @Test
     public void leavesOutRoutineMessagesThatArrived() {
-        Message beat = Message.of(new HeartbeatEvent(60, null, true, List.of(), "0.4.0", 1), 1_000);
+        Message beat = Message.of(new HeartbeatEvent(60, 1), 1_000);
         new RecordingSink(m -> DeliveryResult.DELIVERED, log, () -> 0).send(beat);
         assertTrue(log.recent().isEmpty());
 

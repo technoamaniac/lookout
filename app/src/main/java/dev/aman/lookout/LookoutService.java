@@ -6,7 +6,6 @@ import android.content.Intent;
 import android.database.ContentObserver;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PowerManager;
 import android.provider.Settings;
 import android.view.accessibility.AccessibilityEvent;
 import android.view.inputmethod.InputMethodInfo;
@@ -28,7 +27,6 @@ import dev.aman.lookout.heartbeat.HeartbeatEvent;
 import dev.aman.lookout.playback.MediaAccessService;
 import dev.aman.lookout.playback.MediaSessionWatcher;
 import dev.aman.lookout.playback.PlaybackTracker;
-import dev.aman.lookout.update.InstalledVersion;
 import dev.aman.lookout.update.PrefsUpdateChannel;
 import dev.aman.lookout.update.RelaunchAfterUpdate;
 
@@ -46,7 +44,7 @@ public class LookoutService extends AccessibilityService {
     private final ForegroundTracker tracker = new ForegroundTracker(new PackageFilter(List.of()), () -> null);
     private final ScheduledExecutorService io = Executors.newSingleThreadScheduledExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
-    // On the main thread, where the trackers it reads are updated; the main looper's clock stops in deep sleep
+    // On the main thread; the main looper's clock stops in deep sleep
     private final Heartbeat heartbeat = new Heartbeat((task, delayMillis) -> {
         main.postDelayed(task, delayMillis);
         return () -> main.removeCallbacks(task);
@@ -73,12 +71,10 @@ public class LookoutService extends AccessibilityService {
     private NetworkWatcher network;
     private DeviceStateReceiver deviceState;
     private MediaSessionWatcher mediaSessions;
-    private String version;
 
     @Override
     protected void onServiceConnected() {
         store = new PrefsConfigStore(this);
-        version = InstalledVersion.name(this);
         // Kept if the system connects again, so nothing loads the outbox twice
         if (outbox == null) {
             outbox = WebhookOutbox.create(this, ((LookoutApplication) getApplication()).deliveryLog(), io);
@@ -174,10 +170,7 @@ public class LookoutService extends AccessibilityService {
     }
 
     private Event heartbeatFor(long intervalSeconds) {
-        PowerManager power = getSystemService(PowerManager.class);
-        boolean screenOn = power == null || power.isInteractive();
-        return new HeartbeatEvent(intervalSeconds, tracker.currentPackage(), screenOn, playback.sessions(), version,
-                System.currentTimeMillis() / 1000).withDevice(deviceName.get());
+        return new HeartbeatEvent(intervalSeconds, System.currentTimeMillis() / 1000).withDevice(deviceName.get());
     }
 
     // Keyboards and system chrome raise window events over the real foreground app

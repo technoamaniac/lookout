@@ -126,12 +126,4 @@ public class PlaybackTrackerTest {
         assertTrue(tracker.onSessionsChanged(
                 List.of(snapshot("a", PlayState.BUFFERING, "Song"), snapshot("a", PlayState.STOPPED, null)), 12).isEmpty());
     }
-
-    @Test
-    public void listsTheSessionsLastReportedOnePerApp() {
-        PlaybackTracker tracker = new PlaybackTracker(() -> null);
-        tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PAUSED, null, null),
-                new PlaybackSnapshot("a", PlayState.PLAYING, "Song", null)), 1);
-        assertEquals(List.of(new PlaybackSnapshot("a", PlayState.PLAYING, "Song", null)), tracker.sessions());
-    }
 }

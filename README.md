@@ -84,7 +84,7 @@ Content-Type: application/json
 
 `event` names the kind of message. `activity` is the window Android reported when the app came to the front, often its main activity but sometimes a dialog or splash window; later screens inside the app do not update it. `device` is the TV's name from its system settings, so one webhook can serve several TVs; it is only sent when **Send this TV's name** is ticked. Both are left out when unknown. `timestamp` is Unix seconds.
 
-Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields: `screen_on`, `screen_off`, `screensaver_started` and `screensaver_stopped`. The screen state is also sent when the service starts. Besides window changes, Lookout only watches these screen and screensaver changes, and playback if you allow it below; it reads nothing else about the TV. While the screensaver runs, app changes are not reported, so the app you were using stays as the current one. `screen_off` is best effort: a TV that loses its network as it goes to standby may not manage to send it.
+Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields: `screen_on`, `screen_off`, `screensaver_started` and `screensaver_stopped`. The screen state is also sent when the service starts. Besides window changes, Lookout only watches these screen and screensaver changes, and playback if you allow it below; it reads nothing else about the TV. While the screensaver runs, app changes are not reported, so the app you were using stays as the current one.
 
 ### Playback (optional)
 
@@ -104,27 +104,17 @@ Every message carries an `id`, also sent as the `webhook-id` header, that stays 
 
 ### Heartbeat (optional)
 
-Pick an interval under **Heartbeat** on the Settings tab and Lookout also sends the current state regularly, so your smart home can tell the TV is reachable and catch up on anything it missed:
+Pick an interval under **Heartbeat** on the Settings tab and Lookout also sends a short message regularly, so your smart home can tell Lookout is running and the TV is reachable:
 
 ```json
 {
   "event": "heartbeat",
   "interval": 300,
-  "package": "org.smarttube.stable",
-  "screen": "on",
-  "playback": [
-    {
-      "package": "org.smarttube.stable",
-      "state": "playing",
-      "title": "Video title"
-    }
-  ],
-  "version": "0.4.0",
   "timestamp": 1731600000
 }
 ```
 
-`interval` is the seconds until the next one, so a receiver can treat the TV as gone once a few are overdue without hard-coding the time. `package` is left out until Lookout has seen an app come to the front; `playback` lists every session it follows, empty without the grant above. A heartbeat that fails is not resent, since a late one would wrongly say the TV is reachable, and **Deliveries** lists only the ones that fail. The TV's clock stops in deep standby, and so do heartbeats: a missing one means the TV is asleep, off, offline, or Lookout is not running.
+It carries nothing about the TV's state: use the events above for that. `interval` is the seconds until the next one, so a receiver can treat the TV as gone once a few are overdue without hard-coding the time. A heartbeat that fails is not resent, since a late one would wrongly say the TV is reachable, and **Deliveries** lists only the ones that fail. A missing one means the TV is off or offline, or Lookout is not running; a TV that deep-sleeps in standby may stop sending too.
 
 ## Limitations
 

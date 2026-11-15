@@ -54,12 +54,6 @@ public final class ForegroundTracker {
         return Optional.of(event);
     }
 
-    /** The app last reported in front, or null before the first. */
-    public String currentPackage() {
-        AppEvent last = current;
-        return last == null ? null : last.packageName();
-    }
-
     private boolean isInForeground(String packageName) {
         AppEvent last = current;
         return last != null && last.packageName().equals(packageName);

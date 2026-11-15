@@ -38,67 +38,57 @@ public class HeartbeatTest {
     @Test
     public void beatsAtOnceThenEveryInterval() {
         heartbeat.setInterval(300);
-        tasks.runNext();
         assertEquals(List.of(300L), beats);
-        assertEquals(List.of(0L, 300_000L), tasks.delays);
+        assertEquals(List.of(300_000L), tasks.delays);
 
         tasks.runNext();
         assertEquals(List.of(300L, 300L), beats);
         assertEquals(1, tasks.pending.size());
     }
 
-    // A starting service reads its playback after setting the interval; the first beat must include it
-    @Test
-    public void theFirstBeatWaitsForTheCallerToFinish() {
-        heartbeat.setInterval(300);
-        assertEquals(List.of(), beats);
-        assertEquals(List.of(0L), tasks.delays);
-    }
-
     @Test
     public void theSameIntervalAgainChangesNothing() {
         heartbeat.setInterval(300);
-        tasks.runNext();
         heartbeat.setInterval(300);
         assertEquals(1, beats.size());
         assertEquals(1, tasks.pending.size());
     }
 
     @Test
-    public void aNewIntervalReplacesTheOldSchedule() {
+    public void aNewIntervalBeatsAtOnceAndReplacesTheOldSchedule() {
         heartbeat.setInterval(300);
-        tasks.runNext();
         heartbeat.setInterval(60);
-        tasks.runNext();
         assertEquals(List.of(300L, 60L), beats);
         assertEquals(1, tasks.pending.size());
         assertEquals(60_000L, (long) tasks.delays.get(tasks.delays.size() - 1));
     }
 
     @Test
+    public void aFailedBeatDoesNotEndTheBeats() {
+        Heartbeat failing = new Heartbeat(tasks, interval -> new AppEvent("beat", 0), event -> {
+            throw new IllegalStateException();
+        });
+        try {
+            failing.setInterval(300);
+        } catch (IllegalStateException expected) {
+            // The next beat must be queued anyway
+        }
+        assertEquals(1, tasks.pending.size());
+    }
+
+    @Test
     public void zeroStopsIt() {
         heartbeat.setInterval(300);
-        tasks.runNext();
         heartbeat.setInterval(0);
         assertEquals(1, beats.size());
         assertEquals(0, tasks.pending.size());
     }
 
     @Test
-    public void stoppingBeforeTheFirstBeatSendsNone() {
-        heartbeat.setInterval(300);
-        heartbeat.stop();
-        assertEquals(0, beats.size());
-        assertEquals(0, tasks.pending.size());
-    }
-
-    @Test
     public void startsAgainAfterStopping() {
         heartbeat.setInterval(300);
-        tasks.runNext();
         heartbeat.stop();
         heartbeat.setInterval(300);
-        tasks.runNext();
         assertEquals(2, beats.size());
         assertEquals(1, tasks.pending.size());
     }

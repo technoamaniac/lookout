@@ -38,11 +38,6 @@ public final class PlaybackTracker {
         return events;
     }
 
-    /** The sessions as last reported, one per app. */
-    public List<PlaybackSnapshot> sessions() {
-        return new ArrayList<>(known.values());
-    }
-
     // Buffering is a pause for data, not a change of mind: apps pass through it while starting, seeking
     // and shutting down, and announcing it as playing would flap. An app keeps the state it was in.
     private Map<String, PlaybackSnapshot> settled(Map<String, PlaybackSnapshot> sessions) {
