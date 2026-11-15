@@ -23,6 +23,7 @@ An Android TV accessibility service that reports the foreground app to an HTTPS 
 - The repository is public. Keep `README.md` short and user-first: what Lookout does, how to install and use it, then one compact Development section. Say each thing once, in plain words; leave implementation detail to the code and its comments, and maintainer rules to this file.
 - Write prose in `CLAUDE.md`, `README.md` and `CHANGELOG.md` as one line per paragraph or list item, never hard-wrapped at a column width: editors soft-wrap it, and GitHub shows single newlines in release notes as line breaks. Code blocks, tables and headings keep their own line layout.
 - Update the README in the same change as any behaviour it describes.
+- Show every message in the README as a formatted JSON block with a realistic example, and explain its fields in short bullets, not a paragraph. Avoid large blocks of text anywhere in the README: prefer short bullets, numbered steps and small code blocks. The install and setup steps must be easy enough for a child to follow: short plain sentences, one action per step, no jargon without a word of explanation.
 - Record every user-visible change in `CHANGELOG.md` under `[Unreleased]`, in the same change. Releasing means renaming that section to `[x.y.z]` before tagging: the release job takes its notes from the section named after the tag and fails without one. Pre-releases fall back to `[Unreleased]`. Write for users of the TV app, not for maintainers.
 
 ## Platform constraints

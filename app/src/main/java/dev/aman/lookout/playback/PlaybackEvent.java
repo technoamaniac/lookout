@@ -11,31 +11,31 @@ public final class PlaybackEvent implements Event {
 
     private final String packageName;
     private final PlayState state;
-    private final String title;
-    private final String artist;
+    private final MediaDetails details;
+    private final long positionSeconds;
     private final String device;
     private final long epochSeconds;
 
-    /** @param title what is playing, or null; likewise for {@code artist} */
-    public PlaybackEvent(String packageName, PlayState state, String title, String artist, long epochSeconds) {
-        this(packageName, state, title, artist, null, epochSeconds);
+    /** @param positionSeconds how far into the media the app is, or {@link PlaybackSnapshot#NO_POSITION} */
+    public PlaybackEvent(String packageName, PlayState state, MediaDetails details, long positionSeconds,
+                         long epochSeconds) {
+        this(packageName, state, details, positionSeconds, null, epochSeconds);
     }
 
-    // Private so the optional strings are always set by name, never swapped by position
-    private PlaybackEvent(String packageName, PlayState state, String title, String artist, String device,
-                          long epochSeconds) {
+    private PlaybackEvent(String packageName, PlayState state, MediaDetails details, long positionSeconds,
+                          String device, long epochSeconds) {
         this.packageName = Objects.requireNonNull(packageName);
         this.state = Objects.requireNonNull(state);
         if (state == PlayState.BUFFERING) throw new IllegalArgumentException("Buffering is not reported");
-        this.title = title;
-        this.artist = artist;
+        this.details = Objects.requireNonNull(details);
+        this.positionSeconds = positionSeconds;
         this.device = device;
         this.epochSeconds = epochSeconds;
     }
 
     /** A copy naming this TV so one webhook can serve several; null or blank for none. */
     public PlaybackEvent withDevice(String device) {
-        return new PlaybackEvent(packageName, state, title, artist, device, epochSeconds);
+        return new PlaybackEvent(packageName, state, details, positionSeconds, device, epochSeconds);
     }
 
     public String packageName() {
@@ -59,13 +59,12 @@ public final class PlaybackEvent implements Event {
 
     @Override
     public JsonFields fields() {
-        return new JsonFields()
+        JsonFields fields = new JsonFields()
                 .string("event", TYPE)
                 .string("package", packageName)
-                .string("state", state.json())
-                .optionalString("title", title)
-                .optionalString("artist", artist)
-                .optionalString("device", device)
-                .number("timestamp", epochSeconds);
+                .string("state", state.json());
+        details.addTo(fields);
+        if (positionSeconds >= 0) fields.number("position", positionSeconds);
+        return fields.optionalString("device", device).number("timestamp", epochSeconds);
     }
 }

@@ -8,6 +8,7 @@ import android.media.session.MediaSessionManager;
 import android.media.session.PlaybackState;
 import android.os.Handler;
 import android.os.Looper;
+import android.os.SystemClock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,12 +86,54 @@ public final class MediaSessionWatcher {
     private void publish() {
         List<PlaybackSnapshot> snapshots = new ArrayList<>();
         for (MediaController controller : watched) {
+            PlaybackState state = controller.getPlaybackState();
             MediaMetadata metadata = controller.getMetadata();
-            snapshots.add(new PlaybackSnapshot(controller.getPackageName(), stateOf(controller.getPlaybackState()),
-                    metadata == null ? null : metadata.getString(MediaMetadata.METADATA_KEY_TITLE),
-                    metadata == null ? null : metadata.getString(MediaMetadata.METADATA_KEY_ARTIST)));
+            snapshots.add(new PlaybackSnapshot(controller.getPackageName(), stateOf(state), detailsOf(metadata),
+                    positionOf(state, metadata)));
         }
         listener.accept(snapshots);
+    }
+
+    private static MediaDetails detailsOf(MediaMetadata m) {
+        if (m == null) return MediaDetails.NONE;
+        return MediaDetails.builder()
+                .title(firstOf(m, MediaMetadata.METADATA_KEY_TITLE, MediaMetadata.METADATA_KEY_DISPLAY_TITLE))
+                .artist(m.getString(MediaMetadata.METADATA_KEY_ARTIST))
+                .album(m.getString(MediaMetadata.METADATA_KEY_ALBUM))
+                .albumArtist(m.getString(MediaMetadata.METADATA_KEY_ALBUM_ARTIST))
+                .subtitle(m.getString(MediaMetadata.METADATA_KEY_DISPLAY_SUBTITLE))
+                .description(m.getString(MediaMetadata.METADATA_KEY_DISPLAY_DESCRIPTION))
+                .genre(m.getString(MediaMetadata.METADATA_KEY_GENRE))
+                .year(m.getLong(MediaMetadata.METADATA_KEY_YEAR))
+                .durationMillis(m.getLong(MediaMetadata.METADATA_KEY_DURATION))
+                .artwork(m.getString(MediaMetadata.METADATA_KEY_ART_URI),
+                        m.getString(MediaMetadata.METADATA_KEY_ALBUM_ART_URI),
+                        m.getString(MediaMetadata.METADATA_KEY_DISPLAY_ICON_URI))
+                .build();
+    }
+
+    private static String firstOf(MediaMetadata m, String... keys) {
+        for (String key : keys) {
+            String value = m.getString(key);
+            if (value != null && !value.trim().isEmpty()) return value;
+        }
+        return null;
+    }
+
+    // The app reports the position as of its last update, so a playing session has moved on since
+    // and never past the end, for an app that stalls without saying so
+    private static long positionOf(PlaybackState state, MediaMetadata metadata) {
+        if (state == null || state.getPosition() == PlaybackState.PLAYBACK_POSITION_UNKNOWN) {
+            return PlaybackSnapshot.NO_POSITION;
+        }
+        long millis = state.getPosition();
+        if (state.getState() == PlaybackState.STATE_PLAYING && state.getLastPositionUpdateTime() > 0) {
+            millis += (long) ((SystemClock.elapsedRealtime() - state.getLastPositionUpdateTime())
+                    * state.getPlaybackSpeed());
+        }
+        long duration = metadata == null ? 0 : metadata.getLong(MediaMetadata.METADATA_KEY_DURATION);
+        if (duration > 0) millis = Math.min(millis, duration);
+        return Math.max(0, millis) / 1_000;
     }
 
     // Everything unlisted means nothing is playing

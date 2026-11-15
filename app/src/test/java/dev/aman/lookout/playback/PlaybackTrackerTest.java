@@ -11,7 +11,7 @@ public class PlaybackTrackerTest {
     private final PlaybackTracker tracker = new PlaybackTracker(() -> "Den");
 
     private static PlaybackSnapshot snapshot(String app, PlayState state, String title) {
-        return new PlaybackSnapshot(app, state, title, null);
+        return new PlaybackSnapshot(app, state, MediaDetails.builder().title(title).build(), 0);
     }
 
     @Test
@@ -28,6 +28,31 @@ public class PlaybackTrackerTest {
     public void reportsNothingWhenNothingChanged() {
         tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PLAYING, "Song")), 10);
         assertTrue(tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PLAYING, "Song")), 11).isEmpty());
+    }
+
+    @Test
+    public void aMovingPositionAloneIsNotAChange() {
+        MediaDetails details = MediaDetails.builder().title("Song").durationMillis(60_000).build();
+        tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PLAYING, details, 5)), 10);
+        assertTrue(tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PLAYING, details, 9)), 11)
+                .isEmpty());
+    }
+
+    @Test
+    public void aChangeCarriesThePositionItHappenedAt() {
+        MediaDetails details = MediaDetails.builder().title("Song").build();
+        tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PLAYING, details, 5)), 10);
+        PlaybackEvent paused = tracker.onSessionsChanged(
+                List.of(new PlaybackSnapshot("a", PlayState.PAUSED, details, 9)), 11).get(0);
+        assertTrue(paused.fields().compact().contains("\"position\":9"));
+    }
+
+    @Test
+    public void aNewAlbumOrArtworkIsAChange() {
+        tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PLAYING,
+                MediaDetails.builder().title("Song").album("One").build(), 0)), 10);
+        assertEquals(1, tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PLAYING,
+                MediaDetails.builder().title("Song").album("Two").build(), 0)), 11).size());
     }
 
     @Test

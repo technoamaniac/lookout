@@ -24,26 +24,52 @@ Your TV remote API can tell Home Assistant the TV is on. It usually can't tell i
 
 ## Install
 
-Requires Android 9+ and `adb` access to the TV (wireless debugging is enough). Download the APK from [Releases](../../releases/latest), then:
+You need:
 
-```sh
-adb connect <tv-ip>:<port>
-./scripts/install.sh lookout-<version>.apk
-```
+- An Android TV with Android 9 or newer.
+- A computer with `adb` on the same network. Turn on **wireless debugging** on the TV first.
+- A webhook address that starts with `https://`, for example from Home Assistant.
 
-The script installs the APK and enables the service, keeping other enabled services. It is safe to re-run, for example after a factory reset.
+### 1. Put Lookout on the TV
 
-Open **Lookout** on the TV, enter your webhook URL, press **Test webhook**, then **Save**. The URL must be HTTPS, and Save stays off until a test event reaches it. **Ignored packages** optionally lists apps never to report, such as a launcher, separated by commas. To stop reports for a while, turn off **Enabled** under the status in the side rail; it applies at once and keeps your settings.
+1. Download the `.apk` file from [Releases](../../releases/latest).
+2. On your computer, connect to the TV. Use the address and port the TV shows under wireless debugging:
 
-To avoid typing with the remote, send either field from your computer, then press **Save** on the TV, after **Test webhook** for a new URL:
+   ```sh
+   adb connect <tv-ip>:<port>
+   ```
+
+3. Install it:
+
+   ```sh
+   ./scripts/install.sh lookout-<version>.apk
+   ```
+
+That is all. It is safe to run again, for example after a factory reset.
+
+### 2. Tell Lookout where to send things
+
+Open **Lookout** on the TV, then:
+
+1. Type your webhook address.
+2. Press **Test webhook**. Wait until it says "Test event delivered". If it says something else, check the address.
+3. Press **Save**.
+
+Done. Lookout now sends a message whenever something changes.
+
+Typing with the remote is slow. To fill the address in from your computer instead, run this, then press **Test webhook** and **Save** on the TV:
 
 ```sh
 adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
-  --es url "https://example.com/hooks/lookout" \
-  --es ignored "com.spocky.projengmenu,com.google.android.apps.tv.dreamx"
+  --es url "https://example.com/hooks/lookout"
 ```
 
-On the TV, **Deliveries** shows the last 10 attempts, kept across restarts (**Filter** at the top lists heartbeats too, with their own last 10); press OK on one to see the exact payload. **Updates** installs the latest stable release (tick **Include pre-releases** to be offered release candidates too), and Lookout reopens once it is installed. Android only accepts an update signed with the same key as the installed app, and Lookout contacts GitHub only while that screen is open.
+### Things you can do on the TV
+
+- **Enabled** (under the status on the left) turns all reports off and on. Your settings stay.
+- **Ignored packages** is a list of apps never to report, such as a launcher, separated by commas. For example: `com.spocky.projengmenu,com.google.android.apps.tv.dreamx`. You can also send it from your computer with `--es ignored "..."` in the command above.
+- **Deliveries** shows the last 10 messages and whether they arrived. Press OK on one to see exactly what was sent. **Filter** at the top also shows heartbeats.
+- **Updates** installs the newest version. Tick **Include pre-releases** to get test versions too. Lookout only talks to GitHub while this tab is open.
 
 ## Home Assistant example
 
@@ -82,13 +108,44 @@ Content-Type: application/json
 }
 ```
 
-`event` names the kind of message. `activity` is the window Android reported when the app came to the front, often its main activity but sometimes a dialog or splash window; later screens inside the app do not update it. `device` is the TV's name from its system settings, so one webhook can serve several TVs; it is only sent when **Send this TV's name** is ticked. Both are left out when unknown. `timestamp` is Unix seconds.
+- `event` names the kind of message.
+- `activity` is the window Android reported when the app came to the front, often its main activity but sometimes a dialog or splash window. Later screens inside the app do not update it. It is left out when unknown.
+- `device` is the TV's name from its system settings, so one webhook can serve several TVs. It is only sent when **Send this TV's name** is ticked.
+- `timestamp` is Unix seconds.
 
-Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields: `screen_on`, `screen_off`, `screensaver_started` and `screensaver_stopped`. The screen state is also sent when the service starts. Besides window changes, Lookout only watches these screen and screensaver changes, and playback if you allow it below; it reads nothing else about the TV. While the screensaver runs, app changes are not reported, so the app you were using stays as the current one.
+Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields:
+
+- `screen_on` and `screen_off`. The screen state is also sent when the service starts.
+- `screensaver_started` and `screensaver_stopped`. While the screensaver runs, app changes are not reported, so the app you were using stays as the current one.
+
+Besides window changes, Lookout only watches these screen and screensaver changes, and playback if you allow it below. It reads nothing else about the TV.
 
 ### Playback (optional)
 
-Lookout can also report what an app is playing: `{"event": "playback_changed", "package": "org.smarttube.stable", "state": "playing", "title": "Video title", "artist": "Channel", "timestamp": 1731600000}`. `state` is `playing`, `paused` or `stopped`; `title` and `artist` are left out when the app does not give them, and `device` works as above. It is off until you allow it once from your computer:
+Lookout can also report what an app is playing:
+
+```json
+{
+  "event": "playback_changed",
+  "package": "org.smarttube.stable",
+  "state": "playing",
+  "title": "Video title",
+  "artist": "Channel",
+  "album": "Playlist",
+  "duration": 215,
+  "position": 42,
+  "artwork": "https://example.com/cover.jpg",
+  "timestamp": 1731600000
+}
+```
+
+- `state` is `playing`, `paused` or `stopped`.
+- Only `event`, `package`, `state` and `timestamp` are always there. The rest is left out when the app does not give it: `title`, `artist`, `album`, `album_artist`, `subtitle`, `description`, `genre`, `year`, `duration`, `position` and `artwork`.
+- `duration` and `position` are in seconds. `position` is how far in the app was when the message was sent. It is not sent again as it moves, only with a change of state or of what is playing.
+- `artwork` is a web address. Text is cut at 200 characters.
+- `device` works as above.
+
+It is off until you allow it once from your computer:
 
 ```sh
 adb shell cmd notification allow_listener dev.aman.lookout/dev.aman.lookout.playback.MediaAccessService
@@ -98,9 +155,24 @@ This gives Lookout Android's notification access, which is the only way an app m
 
 Only apps that mark their media session as active are seen. SmartTube does so unless **Settings → Player → Developer options → Disable playback notifications** is ticked.
 
-Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are retried, at once when the network comes back and otherwise with waits that grow to 15 minutes, until the message is delivered or a newer one of its kind replaces it; other responses are not retried. Messages waiting to be sent survive a restart, an update or a reboot. Redirects are not followed, so use the final URL.
+### Delivery
 
-Every message carries an `id`, also sent as the `webhook-id` header, that stays the same on each attempt, so a receiver can drop a repeat. A message sent a minute or more after it happened also has `"delayed": true`, so automations can skip stale changes.
+```json
+{
+  "event": "app_changed",
+  "package": "org.smarttube.stable",
+  "timestamp": 1731600000,
+  "id": "c0ffee00-1234-4abc-8def-0123456789ab",
+  "delayed": true
+}
+```
+
+- Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are retried; other responses are not.
+- Retries happen at once when the network comes back, otherwise after waits that grow to 15 minutes. They stop when the message is delivered or a newer one of its kind replaces it.
+- Waiting messages survive a restart, an update or a reboot.
+- Redirects are not followed, so use the final URL.
+- `id` is also sent as the `webhook-id` header and stays the same on each attempt, so a receiver can drop a repeat.
+- `delayed` is `true` on a message sent a minute or more after it happened, so automations can skip stale changes. It is left out otherwise.
 
 ### Heartbeat (optional)
 
@@ -114,7 +186,10 @@ Pick an interval under **Heartbeat** on the Settings tab and Lookout also sends 
 }
 ```
 
-It carries nothing about the TV's state: use the events above for that. `interval` is the seconds until the next one, so a receiver can treat the TV as gone once a few are overdue without hard-coding the time. A heartbeat that fails is not resent, since a late one would wrongly say the TV is reachable, and **Deliveries** lists them once you turn them on under **Filter**. A missing one means the TV is off or offline, or Lookout is not running; a TV that deep-sleeps in standby may stop sending too.
+- It carries nothing about the TV's state: use the events above for that.
+- `interval` is the seconds until the next one, so a receiver can treat the TV as gone once a few are overdue.
+- A heartbeat that fails is not resent, since a late one would wrongly say the TV is reachable. **Deliveries** lists them once you turn them on under **Filter**.
+- A missing one means the TV is off or offline, or Lookout is not running. A TV that deep-sleeps in standby may stop sending too.
 
 ## Limitations
 

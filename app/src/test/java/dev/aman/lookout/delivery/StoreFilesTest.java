@@ -9,8 +9,10 @@ import static org.junit.Assert.assertTrue;
 import dev.aman.lookout.event.EventCategory;
 import dev.aman.lookout.foreground.AppEvent;
 import dev.aman.lookout.heartbeat.HeartbeatEvent;
+import dev.aman.lookout.playback.MediaDetails;
 import dev.aman.lookout.playback.PlayState;
 import dev.aman.lookout.playback.PlaybackEvent;
+import dev.aman.lookout.playback.PlaybackSnapshot;
 
 import java.io.File;
 import java.io.IOException;
@@ -29,7 +31,8 @@ public class StoreFilesTest {
     private final Message app = Message.of(new AppEvent("com.example.a", 1).withActivity("Main"), 1_000);
     // Quotes and a newline in the title must survive the round trip
     private final Message playback = Message.of(
-            new PlaybackEvent("com.example.p", PlayState.PLAYING, "Say \"hi\"\nnow", null, 2), 2_000).markedDelayed();
+            new PlaybackEvent("com.example.p", PlayState.PLAYING, MediaDetails.builder().title("Say \"hi\"\nnow").build(),
+                    PlaybackSnapshot.NO_POSITION, 2), 2_000).markedDelayed();
 
     private File file(String name) {
         return new File(folder.getRoot(), name);

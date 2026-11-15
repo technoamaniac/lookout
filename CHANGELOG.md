@@ -10,6 +10,7 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 - Reports that could not be delivered are kept, even across a restart, an update or a reboot, and retried until they arrive or a newer report of the same kind replaces them, at once when the network comes back. After an outage your smart home gets the current state, not a backlog.
 - Every message has an `id`, also sent as the `webhook-id` header, that stays the same on each attempt, so a receiver can drop a repeat. A message sent a minute or more after it happened has `"delayed": true`.
 - An optional **Heartbeat** on the Settings tab sends a short message every 1, 5 or 15 minutes, with the `interval` in seconds, so your smart home can tell Lookout is running and the TV is reachable. It carries nothing else: no app, screen or playback. It is off by default. A heartbeat that fails is not resent. **Deliveries** hides heartbeats until you turn them on under the new **Filter** button at the top, and keeps their last 10 apart from your other deliveries, so they never push those out. Only failed heartbeats are kept across a restart.
+- Playback messages carry more of what the app shares, when it does: `album`, `album_artist`, `subtitle`, `description`, `genre`, `year`, `duration` and `position` in seconds, and an `artwork` web address. Text is cut at 200 characters. Apps that only give a display title are now shown with it as the `title`. A change of position alone is not a new message.
 
 ### Changed
 

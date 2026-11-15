@@ -24,13 +24,14 @@ public final class PlaybackTracker {
         for (PlaybackSnapshot snapshot : current.values()) {
             PlaybackSnapshot before = known.get(snapshot.packageName());
             if (!snapshot.equals(before) && !isStillIdle(before, snapshot)) {
-                events.add(event(snapshot.packageName(), snapshot.state(), snapshot.title(), snapshot.artist(), epochSeconds));
+                events.add(event(snapshot, epochSeconds));
             }
         }
         // A session that disappears while playing has stopped, even though it never said so
         for (PlaybackSnapshot before : known.values()) {
             if (!current.containsKey(before.packageName()) && before.state() != PlayState.STOPPED) {
-                events.add(event(before.packageName(), PlayState.STOPPED, null, null, epochSeconds));
+                events.add(event(new PlaybackSnapshot(before.packageName(), PlayState.STOPPED, MediaDetails.NONE,
+                        PlaybackSnapshot.NO_POSITION), epochSeconds));
             }
         }
         known.clear();
@@ -50,8 +51,7 @@ public final class PlaybackTracker {
             PlaybackSnapshot before = known.get(session.packageName());
             // Never seen before: say nothing until the app settles on something
             if (before != null) {
-                settled.put(session.packageName(),
-                        new PlaybackSnapshot(session.packageName(), before.state(), session.title(), session.artist()));
+                settled.put(session.packageName(), session.inState(before.state()));
             }
         }
         return settled;
@@ -86,7 +86,8 @@ public final class PlaybackTracker {
         }
     }
 
-    private PlaybackEvent event(String packageName, PlayState state, String title, String artist, long epochSeconds) {
-        return new PlaybackEvent(packageName, state, title, artist, epochSeconds).withDevice(device.get());
+    private PlaybackEvent event(PlaybackSnapshot snapshot, long epochSeconds) {
+        return new PlaybackEvent(snapshot.packageName(), snapshot.state(), snapshot.details(),
+                snapshot.positionSeconds(), epochSeconds).withDevice(device.get());
     }
 }
