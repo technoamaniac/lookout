@@ -17,6 +17,7 @@ import dev.aman.lookout.delivery.EventSink;
 import dev.aman.lookout.delivery.RecordingSink;
 import dev.aman.lookout.delivery.RetryingDispatcher;
 import dev.aman.lookout.delivery.WebhookSink;
+import dev.aman.lookout.device.DeviceEvent;
 import dev.aman.lookout.device.DeviceStateReceiver;
 import dev.aman.lookout.event.Event;
 import dev.aman.lookout.event.LatestEvents;
@@ -61,7 +62,7 @@ public class LookoutService extends AccessibilityService {
                 Settings.Secure.getUriFor(Settings.Secure.ENABLED_INPUT_METHODS), false, keyboardsChanged);
         configure();
         if (deviceState != null) deviceState.stop();
-        deviceState = new DeviceStateReceiver(this, this::dispatch, () -> deviceName.get());
+        deviceState = new DeviceStateReceiver(this, this::onDeviceEvent, () -> deviceName.get());
         deviceState.start();
     }
 
@@ -83,6 +84,13 @@ public class LookoutService extends AccessibilityService {
         getContentResolver().unregisterContentObserver(keyboardsChanged);
         io.shutdownNow();
         super.onDestroy();
+    }
+
+    // The screensaver's own window is not an app the user opened, so app changes wait until it ends
+    private void onDeviceEvent(DeviceEvent event) {
+        if (event.kind() == DeviceEvent.Kind.SCREENSAVER_STARTED) tracker.pause();
+        if (event.kind() == DeviceEvent.Kind.SCREENSAVER_STOPPED) tracker.resume();
+        dispatch(event);
     }
 
     // Recorded first so an older undelivered event of the same kind goes stale

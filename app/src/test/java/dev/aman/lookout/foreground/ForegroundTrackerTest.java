@@ -74,6 +74,29 @@ public class ForegroundTrackerTest {
     }
 
     @Test
+    public void reportsNothingWhilePaused() {
+        tracker.onWindowChanged("com.example.a", null, 10).orElseThrow();
+        tracker.pause();
+        assertTrue(tracker.onWindowChanged("com.example.screensaver", null, 11).isEmpty());
+    }
+
+    @Test
+    public void theAppInFrontBeforeAPauseIsNotReportedAgainAfterIt() {
+        tracker.onWindowChanged("com.example.a", null, 10).orElseThrow();
+        tracker.pause();
+        tracker.onWindowChanged("com.example.screensaver", null, 11);
+        tracker.resume();
+        assertTrue(tracker.onWindowChanged("com.example.a", null, 12).isEmpty());
+    }
+
+    @Test
+    public void reportsAgainAfterResuming() {
+        tracker.pause();
+        tracker.resume();
+        assertTrue(tracker.onWindowChanged("com.example.a", null, 10).isPresent());
+    }
+
+    @Test
     public void ignoresNullPackage() {
         assertTrue(tracker.onWindowChanged(null, null, 10).isEmpty());
     }

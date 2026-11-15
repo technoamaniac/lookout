@@ -13,6 +13,7 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 ### Fixed
 
 - Changing a setting no longer reports the app already in front as a new app change.
+- The screensaver is no longer reported as the app in front. App changes wait until it ends, and the app that was showing before it is not reported again.
 
 ## [0.1.0] - 2026-11-14
 

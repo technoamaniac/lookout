@@ -8,6 +8,7 @@ public final class ForegroundTracker {
     private volatile PackageFilter filter;
     private volatile Supplier<String> device;
     private volatile AppEvent current;
+    private volatile boolean paused;
 
     /**
      * @param device supplies the name stamped on each event, or null for none; asked per event so
@@ -28,11 +29,24 @@ public final class ForegroundTracker {
     }
 
     /**
+     * Stops reporting while something other than an app owns the screen, such as the screensaver:
+     * its window is not an app the user opened, and the app that was in front is still there
+     * afterwards.
+     */
+    public void pause() {
+        paused = true;
+    }
+
+    public void resume() {
+        paused = false;
+    }
+
+    /**
      * Returns an event only when the foreground app actually changed, so the activity reported is
      * the one that opened the app, not later screens inside it.
      */
     public Optional<AppEvent> onWindowChanged(String packageName, String activity, long epochSeconds) {
-        if (packageName == null || !filter.accepts(packageName) || isInForeground(packageName)) {
+        if (paused || packageName == null || !filter.accepts(packageName) || isInForeground(packageName)) {
             return Optional.empty();
         }
         AppEvent event = new AppEvent(packageName, epochSeconds).withActivity(activity).withDevice(device.get());
