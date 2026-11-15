@@ -93,13 +93,14 @@ public final class MediaSessionWatcher {
         listener.accept(snapshots);
     }
 
-    // Buffering is the pause before playing, not a stop; everything unlisted means nothing is playing
+    // Everything unlisted means nothing is playing
     private static PlayState stateOf(PlaybackState state) {
         if (state == null) return PlayState.STOPPED;
         switch (state.getState()) {
             case PlaybackState.STATE_PLAYING:
-            case PlaybackState.STATE_BUFFERING:
                 return PlayState.PLAYING;
+            case PlaybackState.STATE_BUFFERING:
+                return PlayState.BUFFERING;
             case PlaybackState.STATE_PAUSED:
                 return PlayState.PAUSED;
             default:

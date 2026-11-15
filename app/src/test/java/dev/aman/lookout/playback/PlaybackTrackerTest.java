@@ -84,4 +84,46 @@ public class PlaybackTrackerTest {
         assertEquals(1, events.size());
         assertEquals(PlayState.PLAYING, events.get(0).state());
     }
+
+    @Test
+    public void bufferingWhilePlayingIsStillPlaying() {
+        tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PLAYING, "Song")), 10);
+        assertTrue(tracker.onSessionsChanged(List.of(snapshot("a", PlayState.BUFFERING, "Song")), 11).isEmpty());
+        assertTrue(tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PLAYING, "Song")), 12).isEmpty());
+    }
+
+    @Test
+    public void bufferingWhileStoppedOrPausedDoesNotStartPlayback() {
+        assertTrue(tracker.onSessionsChanged(List.of(snapshot("a", PlayState.STOPPED, null)), 10).isEmpty());
+        assertTrue(tracker.onSessionsChanged(List.of(snapshot("a", PlayState.BUFFERING, null)), 11).isEmpty());
+        assertTrue(tracker.onSessionsChanged(List.of(snapshot("a", PlayState.STOPPED, null)), 12).isEmpty());
+        tracker.onSessionsChanged(List.of(snapshot("b", PlayState.PAUSED, "Show")), 13);
+        assertTrue(tracker.onSessionsChanged(List.of(snapshot("b", PlayState.BUFFERING, "Show")), 14).isEmpty());
+    }
+
+    @Test
+    public void anAppThatBuffersFirstIsAnnouncedWhenItStartsPlaying() {
+        assertTrue(tracker.onSessionsChanged(List.of(snapshot("a", PlayState.BUFFERING, "Song")), 10).isEmpty());
+        List<PlaybackEvent> events = tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PLAYING, "Song")), 11);
+        assertEquals(1, events.size());
+        assertEquals(PlayState.PLAYING, events.get(0).state());
+    }
+
+    @Test
+    public void aTitleChangeWhileBufferingIsReportedInTheStateTheAppWasIn() {
+        tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PLAYING, "One")), 10);
+        List<PlaybackEvent> events = tracker.onSessionsChanged(List.of(snapshot("a", PlayState.BUFFERING, "Two")), 11);
+        assertEquals(1, events.size());
+        assertEquals(PlayState.PLAYING, events.get(0).state());
+        assertTrue(events.get(0).toJson().contains("\"title\":\"Two\""));
+    }
+
+    @Test
+    public void aBufferingSessionSpeaksForItsAppOverAnIdleSiblingInAnyOrder() {
+        tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PLAYING, "Song")), 10);
+        assertTrue(tracker.onSessionsChanged(
+                List.of(snapshot("a", PlayState.STOPPED, null), snapshot("a", PlayState.BUFFERING, "Song")), 11).isEmpty());
+        assertTrue(tracker.onSessionsChanged(
+                List.of(snapshot("a", PlayState.BUFFERING, "Song"), snapshot("a", PlayState.STOPPED, null)), 12).isEmpty());
+    }
 }

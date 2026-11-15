@@ -26,6 +26,7 @@ public final class PlaybackEvent implements Event {
                           long epochSeconds) {
         this.packageName = Objects.requireNonNull(packageName);
         this.state = Objects.requireNonNull(state);
+        if (state == PlayState.BUFFERING) throw new IllegalArgumentException("Buffering is not reported");
         this.title = title;
         this.artist = artist;
         this.device = device;

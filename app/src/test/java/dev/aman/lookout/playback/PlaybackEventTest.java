@@ -44,4 +44,9 @@ public class PlaybackEventTest {
                         + "  \"timestamp\": 5\n}",
                 new PlaybackEvent("a", PlayState.PLAYING, null, null, 5).toPrettyJson());
     }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void bufferingIsNeverReported() {
+        new PlaybackEvent("a", PlayState.BUFFERING, null, null, 5);
+    }
 }
