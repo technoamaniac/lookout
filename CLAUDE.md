@@ -45,6 +45,9 @@ export JAVA_HOME=$(/usr/libexec/java_home -v 17)   # JDK 17
 ./gradlew test assembleDebug lintDebug             # CI runs test and assembleDebug
 ```
 
+A Homebrew JDK is not registered with `java_home`, so there use
+`JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`.
+
 Lint, tests and the release build (`assembleRelease`, which runs R8) should all pass before
 anything is committed. There is no emulator in CI, so say plainly when something was not tried on
 a real TV.
