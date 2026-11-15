@@ -4,6 +4,10 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Changed
+
+- The app's side rail shows just the name, without the old "Foreground app → webhook" tagline, which no longer described everything Lookout reports. The description in the TV's accessibility settings now lists what it reports.
+
 ### Fixed
 
 - In the delivery details, the payload box now stops above the Close button and its text scrolls inside the box, with a scroll bar, instead of the whole box scrolling and running behind the button.

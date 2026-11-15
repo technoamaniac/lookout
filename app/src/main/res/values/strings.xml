@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Lookout</string>
-    <string name="service_description">Reports the foreground app to your webhook.</string>
-    <string name="tagline">Foreground app → webhook</string>
+    <string name="service_description">Reports the app in front, the screen state and, if you allow it, playback to your webhook. It never reads what is on screen.</string>
     <string name="helper_ignored">Comma-separated. Keyboards and system UI are always ignored.</string>
     <string name="label_url">Webhook URL</string>
     <string name="hint_url">https://example.com/hooks/lookout</string>
