@@ -42,4 +42,24 @@ public class RailFocusTest {
             assertEquals(DEFAULT, RailFocus.onKey(key, OTHER, RAIL, false));
         }
     }
+
+    // Rows and buttons: Android moves them, and a text field is the exception because it would move its cursor first
+    @Test
+    public void upAndDownLeaveARowToAndroidWhileItStaysOnThePage() {
+        assertEquals(RailFocus.Vertical.LEAVE_TO_ANDROID, RailFocus.onVertical(false, PAGE));
+    }
+
+    @Test
+    public void upAndDownFocusWhatAndroidFoundFromATextField() {
+        assertEquals(RailFocus.Vertical.FOCUS_FOUND, RailFocus.onVertical(true, PAGE));
+    }
+
+    // Android can prefer a side menu item to the field beside it, so a text field must not follow it there
+    @Test
+    public void upAndDownSearchThePageWhenAndroidWouldLeaveIt() {
+        for (boolean textField : new boolean[] {false, true}) {
+            assertEquals(RailFocus.Vertical.SEARCH_PAGE, RailFocus.onVertical(textField, RAIL));
+            assertEquals(RailFocus.Vertical.SEARCH_PAGE, RailFocus.onVertical(textField, OTHER));
+        }
+    }
 }

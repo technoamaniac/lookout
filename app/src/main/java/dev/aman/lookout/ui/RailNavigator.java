@@ -52,16 +52,22 @@ public final class RailNavigator {
     }
 
     /**
-     * Up and Down stay on the page. While Android's own search finds something on the page it is left to move the
-     * focus. From a text field it can pick a side menu item over the field right beside it, and then the page is
-     * searched alone, from the whole field rather than from its text cursor. With nothing further, the page scrolls.
+     * Carries out {@link RailFocus#onVertical}; the page scrolls when there is nothing further.
      *
      * @return whether the key was handled here
      */
     private boolean moveWithinPage(View focused, int direction) {
-        if (areaOf(focused.focusSearch(direction)) == RailFocus.Area.PAGE) return false;
-        View next = searchPage(focused, direction);
-        if (next == null || !next.requestFocus(direction)) page.arrowScroll(direction);
+        View found = focused.focusSearch(direction);
+        switch (RailFocus.onVertical(focused instanceof EditText, areaOf(found))) {
+            case LEAVE_TO_ANDROID:
+                return false;
+            case FOCUS_FOUND:
+                break;
+            case SEARCH_PAGE:
+                found = searchPage(focused, direction);
+                break;
+        }
+        if (found == null || !found.requestFocus(direction)) page.arrowScroll(direction);
         return true;
     }
 
