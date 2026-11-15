@@ -10,6 +10,7 @@ import android.widget.TextView;
 import dev.aman.lookout.R;
 import dev.aman.lookout.config.Config;
 import dev.aman.lookout.config.ConfigStore;
+import dev.aman.lookout.config.DeviceName;
 import dev.aman.lookout.delivery.DeliveryLog;
 import dev.aman.lookout.delivery.DeliveryResult;
 import dev.aman.lookout.delivery.EventSink;
@@ -114,7 +115,8 @@ public final class SettingsPanel {
         // Recorded too, so a test shows up in the Deliveries tab
         EventSink sink = new RecordingSink(new WebhookSink(config.webhookUrl().get()), log,
                 System::currentTimeMillis);
-        AppEvent testEvent = new AppEvent(activity.getPackageName() + ".test", System.currentTimeMillis() / 1000);
+        AppEvent testEvent = new AppEvent(activity.getPackageName() + ".test", activity.getClass().getName(),
+                DeviceName.read(activity.getContentResolver()), System.currentTimeMillis() / 1000);
         background.execute(() -> {
             DeliveryResult result = sink.send(testEvent);
             activity.runOnUiThread(() -> showTestResult(result));

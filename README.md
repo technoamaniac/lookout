@@ -16,11 +16,18 @@ ignored. Each change is sent as:
 POST <webhook url>
 Content-Type: application/json
 
-{"package": "org.smarttube.stable", "timestamp": 1731600000}
+{"event": "app_changed", "package": "org.smarttube.stable",
+ "activity": "org.smarttube.stable.MainActivity", "device": "Living room",
+ "timestamp": 1731600000}
 ```
 
-`timestamp` is Unix seconds. Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are
-retried; other responses are not. Redirects are not followed, so use the final URL.
+`event` names the kind of message. `activity` is the window Android reported when the app came to
+the front, often its main activity but sometimes a dialog or splash window; later screens inside
+the app do not update it. `device` is the TV's name from its system settings, so one webhook can
+serve several TVs. Both are left out when unknown. `timestamp` is Unix seconds.
+
+Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are retried; other responses are
+not. Redirects are not followed, so use the final URL.
 
 ## Install
 

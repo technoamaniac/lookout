@@ -10,6 +10,7 @@ import android.view.inputmethod.InputMethodInfo;
 import android.view.inputmethod.InputMethodManager;
 
 import dev.aman.lookout.config.Config;
+import dev.aman.lookout.config.DeviceName;
 import dev.aman.lookout.config.PrefsConfigStore;
 import dev.aman.lookout.delivery.DeliveryLog;
 import dev.aman.lookout.delivery.EventSink;
@@ -55,7 +56,8 @@ public class LookoutService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (tracker == null || dispatcher == null || event.getPackageName() == null) return;
-        tracker.onWindowChanged(event.getPackageName().toString(), System.currentTimeMillis() / 1000)
+        String activity = event.getClassName() == null ? null : event.getClassName().toString();
+        tracker.onWindowChanged(event.getPackageName().toString(), activity, System.currentTimeMillis() / 1000)
                 .ifPresent(dispatcher::dispatch);
     }
 
@@ -73,7 +75,7 @@ public class LookoutService extends AccessibilityService {
     // Rebuilt whenever settings or keyboards change, so edits apply without restarting the service
     private void configure() {
         Config config = store.load();
-        tracker = new ForegroundTracker(new PackageFilter(ignoredPackages(config)));
+        tracker = new ForegroundTracker(new PackageFilter(ignoredPackages(config)), () -> DeviceName.read(getContentResolver()));
         dispatcher = config.webhookUrl()
                 .map(url -> new RetryingDispatcher(recordingSinkFor(url),
                         (task, delayMillis) -> io.schedule(task, delayMillis, TimeUnit.MILLISECONDS),

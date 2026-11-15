@@ -1,22 +1,32 @@
 package dev.aman.lookout.foreground;
 
 import java.util.Optional;
+import java.util.function.Supplier;
 
 /** Turns raw window-change notifications into foreground-app changes. */
 public final class ForegroundTracker {
     private final PackageFilter filter;
+    private final Supplier<String> device;
     private volatile AppEvent current;
 
-    public ForegroundTracker(PackageFilter filter) {
+    /**
+     * @param device supplies the name stamped on each event, or null for none; asked per event so
+     *               renaming the TV takes effect without rebuilding the tracker
+     */
+    public ForegroundTracker(PackageFilter filter, Supplier<String> device) {
         this.filter = filter;
+        this.device = device;
     }
 
-    /** Returns an event only when the foreground app actually changed. */
-    public Optional<AppEvent> onWindowChanged(String packageName, long epochSeconds) {
+    /**
+     * Returns an event only when the foreground app actually changed, so the activity reported is
+     * the one that opened the app, not later screens inside it.
+     */
+    public Optional<AppEvent> onWindowChanged(String packageName, String activity, long epochSeconds) {
         if (packageName == null || !filter.accepts(packageName) || isInForeground(packageName)) {
             return Optional.empty();
         }
-        AppEvent event = new AppEvent(packageName, epochSeconds);
+        AppEvent event = new AppEvent(packageName, activity, device.get(), epochSeconds);
         current = event;
         return Optional.of(event);
     }

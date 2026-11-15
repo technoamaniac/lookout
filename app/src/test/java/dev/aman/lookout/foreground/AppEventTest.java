@@ -6,20 +6,34 @@ import org.junit.Test;
 
 public class AppEventTest {
     @Test
-    public void serialisesPackageAndTimestamp() {
-        assertEquals("{\"package\":\"com.example.tv\",\"timestamp\":42}",
+    public void serialisesEventPackageAndTimestamp() {
+        assertEquals("{\"event\":\"app_changed\",\"package\":\"com.example.tv\",\"timestamp\":42}",
                 new AppEvent("com.example.tv", 42).toJson());
     }
 
     @Test
+    public void includesActivityAndDeviceWhenKnown() {
+        assertEquals("{\"event\":\"app_changed\",\"package\":\"com.example.tv\","
+                        + "\"activity\":\"com.example.tv.Main\",\"device\":\"Den\",\"timestamp\":42}",
+                new AppEvent("com.example.tv", "com.example.tv.Main", "Den", 42).toJson());
+    }
+
+    @Test
+    public void leavesOutBlankActivityAndDevice() {
+        assertEquals("{\"event\":\"app_changed\",\"package\":\"com.example.tv\",\"timestamp\":42}",
+                new AppEvent("com.example.tv", " ", "", 42).toJson());
+    }
+
+    @Test
     public void escapesQuotesBackslashesAndControlChars() {
-        assertEquals("{\"package\":\"a\\\"b\\\\c\\u000ad\",\"timestamp\":1}",
+        assertEquals("{\"event\":\"app_changed\",\"package\":\"a\\\"b\\\\c\\u000ad\",\"timestamp\":1}",
                 new AppEvent("a\"b\\c\nd", 1).toJson());
     }
 
     @Test
     public void prettyJsonHasTheSameFieldsIndentedForReading() {
-        assertEquals("{\n  \"package\": \"com.example.tv\",\n  \"timestamp\": 42\n}",
-                new AppEvent("com.example.tv", 42).toPrettyJson());
+        assertEquals("{\n  \"event\": \"app_changed\",\n  \"package\": \"com.example.tv\","
+                        + "\n  \"activity\": \"com.example.tv.Main\",\n  \"timestamp\": 42\n}",
+                new AppEvent("com.example.tv", "com.example.tv.Main", null, 42).toPrettyJson());
     }
 }
