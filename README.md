@@ -19,7 +19,7 @@ Content-Type: application/json
 
 `event` names the kind of message. `activity` is the window Android reported when the app came to the front, often its main activity but sometimes a dialog or splash window; later screens inside the app do not update it. `device` is the TV's name from its system settings, so one webhook can serve several TVs; it is only sent when **Send this TV's name** is ticked. Both are left out when unknown. `timestamp` is Unix seconds.
 
-Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields: `screen_on`, `screen_off`, `screensaver_started` and `screensaver_stopped`. The screen state is also sent when the service starts. Besides window changes, Lookout only watches these screen and screensaver changes; it reads nothing else about the TV. `screen_off` is best effort: a TV that loses its network as it goes to standby may not manage to send it.
+Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields: `screen_on`, `screen_off`, `screensaver_started` and `screensaver_stopped`. The screen state is also sent when the service starts. Besides window changes, Lookout only watches these screen and screensaver changes; it reads nothing else about the TV. `screen_off` is best effort: a TV that loses its network as it goes to standby may not manage to send it. These messages have no `package`, so an automation that reads `trigger.json.package` needs the condition `{{ trigger.json.package is defined }}`, or it will blank its state on every screen change.
 
 Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are retried; other responses are not. Redirects are not followed, so use the final URL.
 
