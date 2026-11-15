@@ -6,6 +6,7 @@ import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ScrollView;
 import android.widget.TextView;
 
 import java.text.DateFormat;
@@ -28,6 +29,7 @@ final class DeliveryDetailSheet {
     private final TextView app;
     private final TextView time;
     private final TextView response;
+    private final ScrollView payloadScroll;
     private final TextView payload;
     private final View closeButton;
     private final DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
@@ -41,6 +43,7 @@ final class DeliveryDetailSheet {
         app = activity.findViewById(R.id.detail_app);
         time = activity.findViewById(R.id.detail_time);
         response = activity.findViewById(R.id.detail_response);
+        payloadScroll = activity.findViewById(R.id.detail_payload_scroll);
         payload = activity.findViewById(R.id.detail_payload);
         closeButton = activity.findViewById(R.id.detail_close);
         closeButton.setOnClickListener(v -> hide());
@@ -59,6 +62,8 @@ final class DeliveryDetailSheet {
         time.setText(dateTimeFormat.format(new Date(record.attemptedAtMillis())));
         response.setText(DeliveryAppearance.responseFor(record.result()));
         payload.setText(highlight(record.event().toPrettyJson()));
+        // The sheet is reused, so start each payload at its top rather than where the last one was left
+        payloadScroll.scrollTo(0, 0);
         // The screen behind must not take D-pad focus while the sheet is open
         mainContent.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         overlay.setVisibility(View.VISIBLE);

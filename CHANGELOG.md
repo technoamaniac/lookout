@@ -4,6 +4,11 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Fixed
+
+- In the delivery details, the payload box now stops above the Close button and its text scrolls inside the box, with a scroll bar, instead of the whole box scrolling and running behind the button.
+- Opening another delivery's details now shows its payload from the top, instead of keeping the scroll position of the last one you looked at.
+
 ## [0.3.0] - 2026-11-14
 
 ### Added

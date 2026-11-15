@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The code box when the remote can scroll it: a ring while focused, so the user sees where focus is.
+     Drawn as the background, which stays put while the text scrolls, unlike a foreground. -->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape>
+            <solid android:color="@color/surface" />
+            <stroke android:width="3dp" android:color="@color/focus_ring" />
+            <corners android:radius="12dp" />
+        </shape>
+    </item>
+    <item android:drawable="@drawable/bg_code" />
+</selector>
