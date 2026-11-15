@@ -67,6 +67,13 @@ public class ForegroundTrackerTest {
     }
 
     @Test
+    public void ignoredPackagesDoNotDisplaceTheCurrentApp() {
+        tracker.onWindowChanged("com.example.a", null, 10).orElseThrow();
+        assertTrue(tracker.onWindowChanged("com.android.systemui", null, 11).isEmpty());
+        assertTrue(tracker.onWindowChanged("com.example.a", null, 12).isEmpty());
+    }
+
+    @Test
     public void ignoresNullPackage() {
         assertTrue(tracker.onWindowChanged(null, null, 10).isEmpty());
     }

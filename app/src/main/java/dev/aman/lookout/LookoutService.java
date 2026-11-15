@@ -60,6 +60,7 @@ public class LookoutService extends AccessibilityService {
         getContentResolver().registerContentObserver(
                 Settings.Secure.getUriFor(Settings.Secure.ENABLED_INPUT_METHODS), false, keyboardsChanged);
         configure();
+        if (deviceState != null) deviceState.stop();
         deviceState = new DeviceStateReceiver(this, this::dispatch, () -> deviceName.get());
         deviceState.start();
     }
