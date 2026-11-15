@@ -6,7 +6,7 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ### Added
 
-- A **Send reports** switch under the status in the side rail pauses all reports at once, without changing your settings. While it is off, failed deliveries stop retrying too. Turning it back on sends the latest app, screen and playback state that changed while it was off, plus anything that had not been delivered yet, so your smart home catches up straight away.
+- A **Send to webhook** switch under the status in the side rail pauses all reports at once, without changing your settings. While it is off, failed deliveries stop retrying too. Turning it back on sends the latest app, screen and playback state that changed while it was off, plus anything that had not been delivered yet, so your smart home catches up straight away.
 - Reports that could not be delivered are kept, even across a restart, an update or a reboot, and retried until they arrive or a newer report of the same kind replaces them, at once when the network comes back. After an outage your smart home gets the current state, not a backlog.
 - Every message has an `id`, also sent as the `webhook-id` header, that stays the same on each attempt, so a receiver can drop a repeat. A message sent a minute or more after it happened has `"delayed": true`.
 - An optional **Heartbeat** on the Settings tab sends the app in front, the screen state and playback every 1, 5 or 15 minutes, with the `interval` in seconds, so your smart home can tell the TV is reachable. It is off by default. A heartbeat that fails is not resent, and **Deliveries** lists only the ones that fail.
@@ -23,6 +23,7 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 ### Fixed
 
 - Pressing Down on the **Updates** tab now moves to the status card below it, instead of jumping into the page.
+- Up and Down leave the webhook URL and ignored packages fields with one press, instead of first moving the cursor to the start or end of the text.
 - In the delivery details, the payload box now stops above the Close button and its text scrolls inside the box, with a scroll bar, instead of the whole box scrolling and running behind the button.
 - Opening another delivery's details now shows its payload from the top, instead of keeping the scroll position of the last one you looked at.
 

@@ -15,7 +15,8 @@ public class LookoutApplication extends Application {
     public void onCreate() {
         super.onCreate();
         // Ten small records, read once per process start
-        deliveryLog = new DeliveryLog(DeliveryLog.CAPACITY, new DeliveryLogFile(new File(getFilesDir(), "deliveries.json")));
+        File logFile = new File(getFilesDir(), "deliveries.json");
+        deliveryLog = new DeliveryLog(DeliveryLog.CAPACITY, new DeliveryLogFile(logFile));
     }
 
     public DeliveryLog deliveryLog() {

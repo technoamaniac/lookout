@@ -8,8 +8,9 @@ import java.util.function.LongFunction;
 /**
  * Sends a heartbeat at a fixed interval: one straight away when started or the interval changes, so the receiver
  * hears at once, then one per interval. The first is queued rather than sent inside {@link #setInterval}, so it reads
- * the state once the caller has finished setting up, such as the playback a starting service has yet to read. It runs on a clock that stops while the TV sleeps, so a TV in deep standby
- * goes quiet. Not thread-safe: use it on the thread its scheduler runs tasks on.
+ * the state once the caller has finished setting up, such as the playback a starting service has yet to read. It runs
+ * on a clock that stops while the TV sleeps, so a TV in deep standby goes quiet. Not thread-safe: use it on the thread
+ * its scheduler runs tasks on.
  */
 public final class Heartbeat {
     /** Runs a task once after a delay; injectable so tests control time. */

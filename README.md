@@ -33,7 +33,7 @@ adb connect <tv-ip>:<port>
 
 The script installs the APK and enables the service, keeping other enabled services. It is safe to re-run, for example after a factory reset.
 
-Open **Lookout** on the TV, enter your webhook URL, press **Test webhook**, then **Save**. The URL must be HTTPS, and Save stays off until a test event reaches it. **Ignored packages** optionally lists apps never to report, such as a launcher, separated by commas. To stop reports for a while, turn off **Send reports** under the status in the side rail; it applies at once and keeps your settings.
+Open **Lookout** on the TV, enter your webhook URL, press **Test webhook**, then **Save**. The URL must be HTTPS, and Save stays off until a test event reaches it. **Ignored packages** optionally lists apps never to report, such as a launcher, separated by commas. To stop reports for a while, turn off **Send to webhook** under the status in the side rail; it applies at once and keeps your settings.
 
 To avoid typing with the remote, send either field from your computer, then press **Save** on the TV, after **Test webhook** for a new URL:
 

@@ -65,7 +65,7 @@ public final class Message {
         return occurredAtMillis;
     }
 
-    /** See {@link Event#listedWhenDelivered()}. Not kept in saved files: it only decides whether an attempt is recorded. */
+    /** See {@link Event#listedWhenDelivered()}. Not saved: it only decides whether an attempt is recorded. */
     public boolean listedWhenDelivered() {
         return listedWhenDelivered;
     }

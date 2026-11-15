@@ -54,7 +54,7 @@
     <string name="helper_url">HTTPS only. Save turns on once Test webhook reaches it. Typing is slow: you can send it from a computer with adb.</string>
     <string name="service_enabled_detail">Reporting app changes</string>
     <string name="service_paused_detail">Paused: nothing is sent</string>
-    <string name="label_reporting">Send reports</string>
+    <string name="label_reporting">Send to webhook</string>
     <string name="service_not_enabled">Service not enabled</string>
     <string name="no_unsaved_changes">No unsaved changes</string>
     <string name="column_app">App</string>

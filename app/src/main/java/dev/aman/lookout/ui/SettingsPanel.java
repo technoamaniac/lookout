@@ -61,6 +61,8 @@ public final class SettingsPanel {
         TextFields.show(ignoredField, prefill.ignored != null ? prefill.ignored : saved.ignoredPackagesText());
         TextFields.onChanged(urlField, this::onFieldsEdited);
         TextFields.onChanged(ignoredField, this::onFieldsEdited);
+        TextFields.leaveOnUpDown(urlField);
+        TextFields.leaveOnUpDown(ignoredField);
         deviceNameSwitch.setChecked(saved.sendDeviceName());
         deviceNameSwitch.setOnCheckedChangeListener((button, checked) -> onFieldsEdited());
         heartbeat.show(saved.heartbeatMinutes());
