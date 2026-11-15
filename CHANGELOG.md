@@ -15,3 +15,7 @@ and versions follow [Semantic Versioning](https://semver.org/).
 ### Fixed
 
 - Changing a setting no longer reports the app already in front as a new app change.
+
+## [0.1.0] - 2026-11-14
+
+Initial release.
