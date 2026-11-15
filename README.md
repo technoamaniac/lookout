@@ -1,12 +1,73 @@
-# <img src="docs/logo.svg" alt="" width="40" height="40" align="center"> Lookout
+# <img src="docs/logo.svg" alt="" width="40" height="40" align="top"> Lookout
 
-An Android TV service that reports the foreground app, the screen state and, if you allow it, what is playing to a webhook.
+Lets your smart home know what your Android TV is doing: which app is open, whether the screen is on, and what's playing.
 
-TV remote APIs (Sony Bravia, Fire TV and others) often can't tell you which app is open, especially sideloaded ones like SmartTube. Lookout runs on the TV and POSTs each app change to an endpoint you control, such as Home Assistant, n8n or any HTTPS server.
+Your TV remote API can tell Home Assistant the TV is on. It usually can't tell it that you just opened SmartTube, paused an episode or let the screensaver kick in, and sideloaded apps are invisible to it. Lookout runs on the TV itself, so it sees every app, and sends each change to your webhook the moment it happens.
 
-## How it works
+## What you can do with it
 
-An accessibility service listens for window changes only. It never reads window content, so it sees which app is in front, not what is on screen. System UI, keyboards and Lookout itself are ignored. Each change is sent as:
+- Dim the lights when playback starts and bring them back up when you pause.
+- Switch the soundbar to its movie mode for Plex or Netflix, and to music for Spotify.
+- Pause the kitchen speaker when the TV wakes up.
+- Turn the receiver off when the screensaver starts, instead of waiting for a timer.
+- Get a notification when YouTube opens after bedtime.
+- Show what's on the TV on your dashboard, with the title when the app shares it.
+
+## Why Lookout
+
+- **Works with any app**, including sideloaded ones. There is nothing to set up per app.
+- **Private by design.** It sees which app is in front, never what is on screen. Playback reporting is off until you switch it on.
+- **Instant, not polled.** Each change is pushed as it happens and retried if the network blips.
+- **Any receiver.** Home Assistant, Node-RED, n8n or your own HTTPS server: it is a plain JSON POST.
+- **Keeps itself current.** It updates from this repository's releases after checking each download's SHA-256.
+- **Free and open source** under the Apache 2.0 license.
+
+## Install
+
+Requires Android 9+ and `adb` access to the TV (wireless debugging is enough). Download the APK from [Releases](../../releases/latest), then:
+
+```sh
+adb connect <tv-ip>:<port>
+./scripts/install.sh lookout-<version>.apk
+```
+
+The script installs the APK and enables the service, keeping other enabled services. It is safe to re-run, for example after a factory reset.
+
+Open **Lookout** on the TV, enter your webhook URL, press **Save**, then **Send test**. The URL must be HTTPS. **Ignored packages** optionally lists apps never to report, such as a launcher, separated by commas.
+
+To avoid typing with the remote, send either field from your computer and press Save on the TV:
+
+```sh
+adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
+  --es url "https://example.com/hooks/lookout" \
+  --es ignored "com.spocky.projengmenu,com.google.android.apps.tv.dreamx"
+```
+
+On the TV, **Deliveries** shows the last 10 attempts until Lookout restarts; press OK on one to see the exact payload. **Updates** installs the latest stable release (tick **Include pre-releases** to be offered release candidates too). Android only accepts an update signed with the same key as the installed app, and Lookout contacts GitHub only while that screen is open.
+
+## Home Assistant example
+
+```yaml
+automation:
+  - alias: TV foreground app
+    triggers:
+      - trigger: webhook
+        webhook_id: !secret lookout_webhook_id
+        local_only: false
+    conditions:
+      - condition: template
+        value_template: "{{ trigger.json.event == 'app_changed' }}"
+    actions:
+      - action: input_text.set_value
+        target: { entity_id: input_text.tv_foreground_app }
+        data: { value: "{{ trigger.json.package }}" }
+```
+
+The condition matters: screen and playback messages arrive on the same webhook.
+
+## What it sends
+
+An accessibility service listens for window changes only. It never reads window content, so it sees which app is in front, not what is on screen. System UI, keyboards and Lookout itself are ignored. Each app change is sent as:
 
 ```json
 POST <webhook url>
@@ -23,7 +84,7 @@ Content-Type: application/json
 
 `event` names the kind of message. `activity` is the window Android reported when the app came to the front, often its main activity but sometimes a dialog or splash window; later screens inside the app do not update it. `device` is the TV's name from its system settings, so one webhook can serve several TVs; it is only sent when **Send this TV's name** is ticked. Both are left out when unknown. `timestamp` is Unix seconds.
 
-Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields: `screen_on`, `screen_off`, `screensaver_started` and `screensaver_stopped`. The screen state is also sent when the service starts. Besides window changes, Lookout only watches these screen and screensaver changes, and playback if you allow it below; it reads nothing else about the TV. While the screensaver runs, app changes are not reported, so the app you were using stays as the current one. `screen_off` is best effort: a TV that loses its network as it goes to standby may not manage to send it. These messages have no `package`, so an automation that reads `trigger.json.package` needs the condition `{{ trigger.json.package is defined }}`, or it will blank its state on every screen change.
+Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields: `screen_on`, `screen_off`, `screensaver_started` and `screensaver_stopped`. The screen state is also sent when the service starts. Besides window changes, Lookout only watches these screen and screensaver changes, and playback if you allow it below; it reads nothing else about the TV. While the screensaver runs, app changes are not reported, so the app you were using stays as the current one. `screen_off` is best effort: a TV that loses its network as it goes to standby may not manage to send it.
 
 ### Playback (optional)
 
@@ -33,56 +94,15 @@ Lookout can also report what an app is playing: `{"event": "playback_changed", "
 adb shell cmd notification allow_listener dev.aman.lookout/dev.aman.lookout.playback.MediaAccessService
 ```
 
-This gives Lookout Android's notification access, which is the only way an app may read media sessions. Lookout never reads notifications; the service it registers for this does nothing else. Playback messages carry a `package` too, so an automation that tracks the foreground app should check `{{ trigger.json.event == 'app_changed' }}` instead of `package is defined`.
+This gives Lookout Android's notification access, which is the only way an app may read media sessions. Lookout never reads notifications; the service it registers for this does nothing else.
 
 Only apps that mark their media session as active are seen. SmartTube does so unless **Settings → Player → Developer options → Disable playback notifications** is ticked.
 
 Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are retried; other responses are not. Redirects are not followed, so use the final URL.
 
-## Install
-
-Requires Android 9+ and `adb` access to the TV (wireless debugging is enough). Download the APK from [Releases](../../releases/latest), then:
-
-```sh
-adb connect <tv-ip>:<port>
-./scripts/install.sh lookout-v0.1.0.apk
-```
-
-The script installs the APK and enables the service, keeping other enabled services. It is safe to re-run, for example after a factory reset.
-
-Open **Lookout** on the TV, enter your webhook URL, press **Save**, then **Send test**. The URL must be HTTPS. **Ignored packages** optionally lists apps never to report, such as a launcher, separated by commas.
-
-To avoid typing with the remote, send either field from your computer and press Save on the TV:
-
-```sh
-adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
-  --es url "https://example.com/hooks/lookout" \
-  --es ignored "com.spocky.projengmenu,com.google.android.apps.tv.dreamx"
-```
-
-## Using the app
-
-- **Deliveries** shows the last 10 attempts until Lookout restarts. Press OK on one to see the exact payload.
-- **Updates** installs the latest stable release from this repository (tick **Include pre-releases** to be offered release candidates too) after checking its SHA-256. Android only accepts it if it is signed with the same key as the installed app. Lookout contacts GitHub only while this screen is open.
-
-## Home Assistant example
-
-```yaml
-automation:
-  - alias: TV foreground app
-    triggers:
-      - trigger: webhook
-        webhook_id: !secret lookout_webhook_id
-        local_only: false
-    actions:
-      - action: input_text.set_value
-        target: { entity_id: input_text.tv_foreground_app }
-        data: { value: "{{ trigger.json.package }}" }
-```
-
 ## Limitations
 
-- Playback is only reported for apps with an active media session, and only after the one-time grant above.
+- Playback is only reported for apps with an active media session, and only after the one-time grant above. Jellyfin's default video player has none yet, so its episodes and movies are not reported.
 - After a restart, Lookout reports the next app change. Android only names the app in front when the service may read window content, which Lookout deliberately does not.
 - In-app updates need the "install unknown apps" permission; some TVs have no screen to grant it, so use `scripts/install.sh` there.
 
