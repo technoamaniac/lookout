@@ -4,6 +4,8 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-11-14
+
 ### Added
 
 - Each message now carries `event` (`app_changed`) and, when known, `activity`, the window that brought the app to the front.
