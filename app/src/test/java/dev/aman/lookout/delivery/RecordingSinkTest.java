@@ -2,7 +2,6 @@ package dev.aman.lookout.delivery;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 
 import dev.aman.lookout.foreground.AppEvent;
 import dev.aman.lookout.heartbeat.HeartbeatEvent;
@@ -32,12 +31,9 @@ public class RecordingSinkTest {
     }
 
     @Test
-    public void leavesOutRoutineMessagesThatArrived() {
+    public void recordsDeliveredHeartbeatsToo() {
         Message beat = Message.of(new HeartbeatEvent(60, 1), 1_000);
         new RecordingSink(m -> DeliveryResult.DELIVERED, log, () -> 0).send(beat);
-        assertTrue(log.recent().isEmpty());
-
-        new RecordingSink(m -> DeliveryResult.TEMPORARY_FAILURE, log, () -> 0).send(beat);
         assertSame(beat, log.recent().get(0).message());
     }
 }

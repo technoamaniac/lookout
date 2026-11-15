@@ -2,10 +2,21 @@ package dev.aman.lookout.ui;
 
 import dev.aman.lookout.R;
 import dev.aman.lookout.delivery.DeliveryResult;
+import dev.aman.lookout.event.EventCategory;
 
 /** How each delivery outcome looks and reads, shared by the list and the detail sheet. */
 final class DeliveryAppearance {
     private DeliveryAppearance() {}
+
+    static int labelFor(EventCategory category) {
+        switch (category) {
+            case HEARTBEAT:
+                return R.string.category_heartbeat;
+            case CHANGE:
+                return R.string.category_change;
+        }
+        throw new IllegalArgumentException("No label for " + category);
+    }
 
     static int labelFor(DeliveryResult result) {
         switch (result) {

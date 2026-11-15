@@ -1,6 +1,7 @@
 package dev.aman.lookout.delivery;
 
 import dev.aman.lookout.event.Event;
+import dev.aman.lookout.event.EventCategory;
 import dev.aman.lookout.event.JsonFields;
 
 import java.util.Objects;
@@ -16,34 +17,29 @@ public final class Message {
     private final String summary;
     private final JsonFields fields;
     private final long occurredAtMillis;
-    private final boolean listedWhenDelivered;
+    private final EventCategory category;
 
     /** Restores a saved message; {@code fields} already include the id. */
-    public Message(String id, String supersessionKey, String summary, JsonFields fields, long occurredAtMillis) {
-        this(id, supersessionKey, summary, fields, occurredAtMillis, true);
-    }
-
-    private Message(String id, String supersessionKey, String summary, JsonFields fields, long occurredAtMillis,
-                    boolean listedWhenDelivered) {
+    public Message(String id, String supersessionKey, String summary, EventCategory category, JsonFields fields,
+                   long occurredAtMillis) {
         this.id = Objects.requireNonNull(id);
         this.supersessionKey = Objects.requireNonNull(supersessionKey);
         this.summary = Objects.requireNonNull(summary);
         this.fields = fields.copy();
         this.occurredAtMillis = occurredAtMillis;
-        this.listedWhenDelivered = listedWhenDelivered;
+        this.category = Objects.requireNonNull(category);
     }
 
     /** A new message for {@code event}, with a fresh id. */
     public static Message of(Event event, long occurredAtMillis) {
         String id = UUID.randomUUID().toString();
-        return new Message(id, event.supersessionKey(), event.summary(), event.fields().string("id", id),
-                occurredAtMillis, event.listedWhenDelivered());
+        return new Message(id, event.supersessionKey(), event.summary(), event.category(), event.fields().string("id", id),
+                occurredAtMillis);
     }
 
     /** The same message flagged as sent well after it happened, so automations can skip it. Keeps the id. */
     public Message markedDelayed() {
-        return new Message(id, supersessionKey, summary, fields.copy().bool("delayed", true), occurredAtMillis,
-                listedWhenDelivered);
+        return new Message(id, supersessionKey, summary, category, fields.copy().bool("delayed", true), occurredAtMillis);
     }
 
     public String id() {
@@ -65,9 +61,9 @@ public final class Message {
         return occurredAtMillis;
     }
 
-    /** See {@link Event#listedWhenDelivered()}. Not saved: it only decides whether an attempt is recorded. */
-    public boolean listedWhenDelivered() {
-        return listedWhenDelivered;
+    /** See {@link Event#category()}. */
+    public EventCategory category() {
+        return category;
     }
 
     public JsonFields fields() {

@@ -43,7 +43,7 @@ adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
   --es ignored "com.spocky.projengmenu,com.google.android.apps.tv.dreamx"
 ```
 
-On the TV, **Deliveries** shows the last 10 attempts, kept across restarts; press OK on one to see the exact payload. **Updates** installs the latest stable release (tick **Include pre-releases** to be offered release candidates too), and Lookout reopens once it is installed. Android only accepts an update signed with the same key as the installed app, and Lookout contacts GitHub only while that screen is open.
+On the TV, **Deliveries** shows the last 10 attempts, kept across restarts (**Filter** at the top lists heartbeats too, with their own last 10); press OK on one to see the exact payload. **Updates** installs the latest stable release (tick **Include pre-releases** to be offered release candidates too), and Lookout reopens once it is installed. Android only accepts an update signed with the same key as the installed app, and Lookout contacts GitHub only while that screen is open.
 
 ## Home Assistant example
 
@@ -114,7 +114,7 @@ Pick an interval under **Heartbeat** on the Settings tab and Lookout also sends 
 }
 ```
 
-It carries nothing about the TV's state: use the events above for that. `interval` is the seconds until the next one, so a receiver can treat the TV as gone once a few are overdue without hard-coding the time. A heartbeat that fails is not resent, since a late one would wrongly say the TV is reachable, and **Deliveries** lists only the ones that fail. A missing one means the TV is off or offline, or Lookout is not running; a TV that deep-sleeps in standby may stop sending too.
+It carries nothing about the TV's state: use the events above for that. `interval` is the seconds until the next one, so a receiver can treat the TV as gone once a few are overdue without hard-coding the time. A heartbeat that fails is not resent, since a late one would wrongly say the TV is reachable, and **Deliveries** lists them once you turn them on under **Filter**. A missing one means the TV is off or offline, or Lookout is not running; a TV that deep-sleeps in standby may stop sending too.
 
 ## Limitations
 

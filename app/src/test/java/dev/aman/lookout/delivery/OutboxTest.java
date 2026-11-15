@@ -142,7 +142,7 @@ public class OutboxTest {
     @Test
     public void settlesARestoredMessageMatchedById() {
         Message app = app("a");
-        Message copy = new Message(app.id(), app.supersessionKey(), app.summary(), app.fields(),
+        Message copy = new Message(app.id(), app.supersessionKey(), app.summary(), app.category(), app.fields(),
                 app.occurredAtMillis());
         outbox.add(copy);
         outbox.settle(app);

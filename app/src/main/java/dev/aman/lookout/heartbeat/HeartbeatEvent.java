@@ -1,6 +1,7 @@
 package dev.aman.lookout.heartbeat;
 
 import dev.aman.lookout.event.Event;
+import dev.aman.lookout.event.EventCategory;
 import dev.aman.lookout.event.JsonFields;
 
 /**
@@ -39,10 +40,9 @@ public final class HeartbeatEvent implements Event {
         return TYPE;
     }
 
-    // One every few minutes would push real events out of the short Deliveries list
     @Override
-    public boolean listedWhenDelivered() {
-        return false;
+    public EventCategory category() {
+        return EventCategory.HEARTBEAT;
     }
 
     @Override

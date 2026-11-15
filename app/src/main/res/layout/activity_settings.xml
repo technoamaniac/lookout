@@ -108,4 +108,7 @@
 
     <!-- Delivery details: scrim over the screen and a sheet on the right -->
     <include layout="@layout/sheet_delivery_detail" />
+
+    <!-- Delivery filter: the same scrim and sheet -->
+    <include layout="@layout/sheet_delivery_filter" />
 </FrameLayout>

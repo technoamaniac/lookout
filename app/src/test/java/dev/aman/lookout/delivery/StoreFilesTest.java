@@ -6,7 +6,9 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import dev.aman.lookout.event.EventCategory;
 import dev.aman.lookout.foreground.AppEvent;
+import dev.aman.lookout.heartbeat.HeartbeatEvent;
 import dev.aman.lookout.playback.PlayState;
 import dev.aman.lookout.playback.PlaybackEvent;
 
@@ -113,6 +115,22 @@ public class StoreFilesTest {
         assertEquals(DeliveryResult.TEMPORARY_FAILURE, loaded.get(0).result());
         assertEquals(9_000, loaded.get(0).attemptedAtMillis());
         assertEquals(DeliveryResult.DELIVERED, loaded.get(1).result());
+    }
+
+    @Test
+    public void aSavedHeartbeatKeepsItsKind() {
+        DeliveryLogFile store = new DeliveryLogFile(file("deliveries.json"));
+        store.save(List.of(new DeliveryRecord(Message.of(new HeartbeatEvent(60, 3), 3_000), DeliveryResult.DELIVERED, 3_000)));
+        assertEquals(EventCategory.HEARTBEAT, new DeliveryLogFile(file("deliveries.json")).load().get(0).message().category());
+    }
+
+    // Written by 0.4.0-rc.2 and earlier, before messages had a category
+    @Test
+    public void aSavedMessageWithoutAKindIsAChange() throws IOException {
+        Files.write(file("deliveries.json").toPath(), ("{\"version\":1,\"records\":[{\"message\":{\"id\":\"x\","
+                + "\"key\":\"app\",\"summary\":\"a\",\"occurred_at\":1,\"fields\":[[\"event\",\"\\\"app_changed\\\"\"]]},"
+                + "\"result\":\"DELIVERED\",\"attempted_at\":2}]}").getBytes(StandardCharsets.UTF_8));
+        assertEquals(EventCategory.CHANGE, new DeliveryLogFile(file("deliveries.json")).load().get(0).message().category());
     }
 
     @Test

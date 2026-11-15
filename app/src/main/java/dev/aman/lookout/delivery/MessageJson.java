@@ -1,5 +1,6 @@
 package dev.aman.lookout.delivery;
 
+import dev.aman.lookout.event.EventCategory;
 import dev.aman.lookout.event.JsonFields;
 
 import org.json.JSONArray;
@@ -23,6 +24,7 @@ final class MessageJson {
                 .put("id", message.id())
                 .put("key", message.supersessionKey())
                 .put("summary", message.summary())
+                .put("category", message.category().name())
                 .put("occurred_at", message.occurredAtMillis())
                 .put("fields", fields);
     }
@@ -34,7 +36,8 @@ final class MessageJson {
             JSONArray pair = pairs.getJSONArray(i);
             fields.encoded(pair.getString(0), pair.getString(1));
         }
-        return new Message(json.getString("id"), json.getString("key"), json.getString("summary"), fields,
-                json.getLong("occurred_at"));
+        // Files saved before kinds existed have none, and held only changes
+        return new Message(json.getString("id"), json.getString("key"), json.getString("summary"),
+                EventCategory.fromName(json.optString("category")), fields, json.getLong("occurred_at"));
     }
 }

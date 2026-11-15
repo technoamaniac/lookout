@@ -2,7 +2,7 @@ package dev.aman.lookout.event;
 
 /** Something Lookout reports to the webhook. */
 public interface Event {
-    /** What the Deliveries tab shows for this event: the app's package, or the kind of event. */
+    /** What the Deliveries tab shows for this event: the app's package, or the type of event. */
     String summary();
 
     /**
@@ -14,8 +14,8 @@ public interface Event {
     /** The payload's fields; a new builder on each call, so callers may add to it. */
     JsonFields fields();
 
-    /** Whether the Deliveries tab lists it once delivered; frequent routine messages list only failures. */
-    default boolean listedWhenDelivered() {
-        return true;
+    /** What sort of event this is; a change unless it says otherwise. */
+    default EventCategory category() {
+        return EventCategory.CHANGE;
     }
 }
