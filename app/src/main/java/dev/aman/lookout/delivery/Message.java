@@ -16,26 +16,34 @@ public final class Message {
     private final String summary;
     private final JsonFields fields;
     private final long occurredAtMillis;
+    private final boolean listedWhenDelivered;
 
     /** Restores a saved message; {@code fields} already include the id. */
     public Message(String id, String supersessionKey, String summary, JsonFields fields, long occurredAtMillis) {
+        this(id, supersessionKey, summary, fields, occurredAtMillis, true);
+    }
+
+    private Message(String id, String supersessionKey, String summary, JsonFields fields, long occurredAtMillis,
+                    boolean listedWhenDelivered) {
         this.id = Objects.requireNonNull(id);
         this.supersessionKey = Objects.requireNonNull(supersessionKey);
         this.summary = Objects.requireNonNull(summary);
         this.fields = fields.copy();
         this.occurredAtMillis = occurredAtMillis;
+        this.listedWhenDelivered = listedWhenDelivered;
     }
 
     /** A new message for {@code event}, with a fresh id. */
     public static Message of(Event event, long occurredAtMillis) {
         String id = UUID.randomUUID().toString();
         return new Message(id, event.supersessionKey(), event.summary(), event.fields().string("id", id),
-                occurredAtMillis);
+                occurredAtMillis, event.listedWhenDelivered());
     }
 
     /** The same message flagged as sent well after it happened, so automations can skip it. Keeps the id. */
-    public Message delayed() {
-        return new Message(id, supersessionKey, summary, fields.copy().bool("delayed", true), occurredAtMillis);
+    public Message markedDelayed() {
+        return new Message(id, supersessionKey, summary, fields.copy().bool("delayed", true), occurredAtMillis,
+                listedWhenDelivered);
     }
 
     public String id() {
@@ -55,6 +63,11 @@ public final class Message {
     /** When the event happened, by the wall clock. */
     public long occurredAtMillis() {
         return occurredAtMillis;
+    }
+
+    /** See {@link Event#listedWhenDelivered()}. Not kept in saved files: it only decides whether an attempt is recorded. */
+    public boolean listedWhenDelivered() {
+        return listedWhenDelivered;
     }
 
     public JsonFields fields() {

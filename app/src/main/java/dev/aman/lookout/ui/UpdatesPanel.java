@@ -14,6 +14,7 @@ import android.widget.TextView;
 import dev.aman.lookout.R;
 import dev.aman.lookout.update.ApkFetcher;
 import dev.aman.lookout.update.GitHubReleases;
+import dev.aman.lookout.update.InstalledVersion;
 import dev.aman.lookout.update.Release;
 import dev.aman.lookout.update.UpdateChannel;
 import dev.aman.lookout.update.UpdateChecker;
@@ -61,7 +62,7 @@ public final class UpdatesPanel {
         checkButton = activity.findViewById(R.id.check_updates);
         progress = activity.findViewById(R.id.update_progress);
         installButton = activity.findViewById(R.id.install_update);
-        installed = installedVersion();
+        installed = Version.parse(InstalledVersion.name(activity));
         activity.<TextView>findViewById(R.id.version).setText(activity.getString(R.string.version, installed));
         checkButton.setOnClickListener(v -> check(false));
         installButton.setOnClickListener(v -> install());
@@ -185,13 +186,5 @@ public final class UpdatesPanel {
         }
         checkButton.setEnabled(!busy);
         installButton.setEnabled(!busy);
-    }
-
-    private Version installedVersion() {
-        try {
-            return Version.parse(activity.getPackageManager().getPackageInfo(activity.getPackageName(), 0).versionName);
-        } catch (PackageManager.NameNotFoundException e) {
-            throw new IllegalStateException("The app is not installed under its own package name", e);
-        }
     }
 }

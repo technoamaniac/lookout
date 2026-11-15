@@ -43,7 +43,7 @@ adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
   --es ignored "com.spocky.projengmenu,com.google.android.apps.tv.dreamx"
 ```
 
-On the TV, **Deliveries** shows the last 10 attempts, kept across restarts; press OK on one to see the exact payload. **Updates** installs the latest stable release (tick **Include pre-releases** to be offered release candidates too). Android only accepts an update signed with the same key as the installed app, and Lookout contacts GitHub only while that screen is open.
+On the TV, **Deliveries** shows the last 10 attempts, kept across restarts; press OK on one to see the exact payload. **Updates** installs the latest stable release (tick **Include pre-releases** to be offered release candidates too), and Lookout reopens once it is installed. Android only accepts an update signed with the same key as the installed app, and Lookout contacts GitHub only while that screen is open.
 
 ## Home Assistant example
 
@@ -88,7 +88,7 @@ Lookout also reports the TV itself, with the same `event`, `device` and `timesta
 
 ### Playback (optional)
 
-Lookout can also report what an app is playing: `{"event": "playback_changed", "package": "org.jellyfin.androidtv", "state": "playing", "title": "Song", "artist": "Band", "timestamp": 1731600000}`. `state` is `playing`, `paused` or `stopped`; `title` and `artist` are left out when the app does not give them, and `device` works as above. It is off until you allow it once from your computer:
+Lookout can also report what an app is playing: `{"event": "playback_changed", "package": "org.smarttube.stable", "state": "playing", "title": "Video title", "artist": "Channel", "timestamp": 1731600000}`. `state` is `playing`, `paused` or `stopped`; `title` and `artist` are left out when the app does not give them, and `device` works as above. It is off until you allow it once from your computer:
 
 ```sh
 adb shell cmd notification allow_listener dev.aman.lookout/dev.aman.lookout.playback.MediaAccessService
@@ -101,6 +101,30 @@ Only apps that mark their media session as active are seen. SmartTube does so un
 Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are retried, at once when the network comes back and otherwise with waits that grow to 15 minutes, until the message is delivered or a newer one of its kind replaces it; other responses are not retried. Messages waiting to be sent survive a restart, an update or a reboot. Redirects are not followed, so use the final URL.
 
 Every message carries an `id`, also sent as the `webhook-id` header, that stays the same on each attempt, so a receiver can drop a repeat. A message sent a minute or more after it happened also has `"delayed": true`, so automations can skip stale changes.
+
+### Heartbeat (optional)
+
+Pick an interval under **Heartbeat** on the Settings tab and Lookout also sends the current state regularly, so your smart home can tell the TV is reachable and catch up on anything it missed:
+
+```json
+{
+  "event": "heartbeat",
+  "interval": 300,
+  "package": "org.smarttube.stable",
+  "screen": "on",
+  "playback": [
+    {
+      "package": "org.smarttube.stable",
+      "state": "playing",
+      "title": "Video title"
+    }
+  ],
+  "version": "0.4.0",
+  "timestamp": 1731600000
+}
+```
+
+`interval` is the seconds until the next one, so a receiver can treat the TV as gone once a few are overdue without hard-coding the time. `package` is left out until Lookout has seen an app come to the front; `playback` lists every session it follows, empty without the grant above. A heartbeat that fails is not resent, since a late one would wrongly say the TV is reachable, and **Deliveries** lists only the ones that fail. The TV's clock stops in deep standby, and so do heartbeats: a missing one means the TV is asleep, off, offline, or Lookout is not running.
 
 ## Limitations
 
@@ -118,17 +142,18 @@ Needs JDK 17 and the Android SDK (platform 37).
 
 Logic lives in plain-Java packages with JVM unit tests; Android classes stay thin.
 
-| Package      | Contents                                                                            |
-| ------------ | ----------------------------------------------------------------------------------- |
-| `event`      | `Event` and the JSON builder                                                        |
-| `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`                |
-| `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes             |
-| `playback`   | `PlaybackTracker` and `PlaybackEvent`; `MediaSessionWatcher` reads the sessions     |
-| `delivery`   | `Outbox`, `OutboxSender` and `WebhookSink`; `DeliveryLog`                           |
-| `config`     | `Config`, validated settings; `SaveGate`; `PrefsConfigStore` persists them          |
-| `update`     | `GitHubReleases`, `UpdateChecker`, `ApkFetcher`, `UpdateInstaller`                  |
-| `ui`         | One panel class per tab                                                             |
-| (root)       | `LookoutService` and `SettingsActivity`; their names are stored on the TV           |
+| Package      | Contents                                                                                  |
+| ------------ | ----------------------------------------------------------------------------------------- |
+| `event`      | `Event` and the JSON builder                                                              |
+| `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`                      |
+| `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes                   |
+| `playback`   | `PlaybackTracker` and `PlaybackEvent`; `MediaSessionWatcher` reads the sessions           |
+| `delivery`   | `Outbox`, `OutboxSender` and `WebhookSink`; `DeliveryLog`                                 |
+| `heartbeat`  | `Heartbeat` sends `HeartbeatEvent` at the chosen interval                                 |
+| `config`     | `Config`, validated settings; `SaveGate`; `PrefsConfigStore` persists them                |
+| `update`     | `GitHubReleases`, `UpdateChecker`, `ApkFetcher`, `UpdateInstaller`, `RelaunchAfterUpdate` |
+| `ui`         | One panel class per tab                                                                   |
+| (root)       | `LookoutService` and `SettingsActivity`; their names are stored on the TV                 |
 
 To send events somewhere other than a webhook, implement `EventSink`.
 

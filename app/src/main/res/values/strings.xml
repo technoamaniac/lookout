@@ -7,6 +7,12 @@
     <string name="hint_url">https://example.com/hooks/lookout</string>
     <string name="label_send_device_name">Send this TV\'s name</string>
     <string name="helper_send_device_name">Adds the name from system settings, so one webhook can tell several TVs apart.</string>
+    <string name="label_heartbeat">Heartbeat</string>
+    <string name="heartbeat_off">Off</string>
+    <string name="heartbeat_1">1 minute</string>
+    <string name="heartbeat_5">5 minutes</string>
+    <string name="heartbeat_15">15 minutes</string>
+    <string name="helper_heartbeat">Regularly sends the app in front, the screen state and playback, so your smart home can tell the TV is reachable. A missed one is not resent.</string>
     <string name="label_ignored">Ignored packages (optional)</string>
     <string name="hint_ignored">com.example.launcher</string>
     <string name="save">Save</string>

@@ -67,6 +67,7 @@ public final class Outbox {
         final Message message;
         boolean settled;
         int failures;
+        // On the sender's monotonic clock; 0, the start, means due at once
         long dueAtMillis;
 
         Entry(Message message, boolean settled) {

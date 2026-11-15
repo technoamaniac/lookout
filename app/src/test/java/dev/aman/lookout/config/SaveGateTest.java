@@ -77,4 +77,10 @@ public class SaveGateTest {
         assertEquals(SaveGate.State.UNCHANGED, gate.stateOf(fresh));
         assertEquals(SaveGate.State.NEEDS_TEST, gate.stateOf(SAVED));
     }
+
+    @Test
+    public void aHeartbeatChangeNeedsNoTest() {
+        Config saved = Config.parse("https://ha.example/hook", "", false);
+        assertEquals(SaveGate.State.SAVEABLE, new SaveGate(saved).stateOf(saved.withHeartbeatMinutes(5)));
+    }
 }

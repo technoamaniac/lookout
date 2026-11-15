@@ -30,7 +30,7 @@ public class MessageTest {
     @Test
     public void aDelayedCopyKeepsTheIdAndLeavesTheOriginalAlone() {
         Message message = Message.of(event, 0);
-        Message delayed = message.delayed();
+        Message delayed = message.markedDelayed();
         assertEquals(message.id(), delayed.id());
         assertTrue(delayed.toJson().endsWith(",\"delayed\":true}"));
         assertFalse(message.toJson().contains("delayed"));

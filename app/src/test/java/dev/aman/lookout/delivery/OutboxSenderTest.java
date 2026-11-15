@@ -300,4 +300,38 @@ public class OutboxSenderTest {
         assertEquals(1, store.saved.items().size());
         assertFalse(store.saved.items().get(0).settled());
     }
+
+    @Test
+    public void sendsAHeartbeatOnceWithoutSavingOrRetryingIt() {
+        sender.update(WEBHOOK, true);
+        scheduler.runQueued();
+        int saves = store.saves;
+        webhooks.otherwise = DeliveryResult.TEMPORARY_FAILURE;
+        sender.sendNow(new AppEvent("beat", 1));
+        scheduler.advance(60 * 60_000L);
+        assertEquals(List.of("ha.example beat"), webhooks.sent);
+        assertEquals(saves, store.saves);
+    }
+
+    @Test
+    public void sendsNoHeartbeatWhilePaused() {
+        sender.update(WEBHOOK, false);
+        sender.sendNow(new AppEvent("beat", 1));
+        scheduler.runQueued();
+        assertTrue(webhooks.sent.isEmpty());
+    }
+
+    @Test
+    public void aDeliveredHeartbeatRetriesWhatIsWaitingAtOnce() {
+        sender.update(WEBHOOK, true);
+        webhooks.results.add(DeliveryResult.TEMPORARY_FAILURE);
+        report("a");
+        scheduler.runQueued();
+
+        sender.sendNow(new AppEvent("beat", 1));
+        scheduler.runQueued();
+
+        assertEquals(List.of("ha.example a", "ha.example beat", "ha.example a"), webhooks.sent);
+        assertEquals(0, scheduler.pendingTimed());
+    }
 }

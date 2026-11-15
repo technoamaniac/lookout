@@ -84,6 +84,59 @@
             android:layout_marginTop="2dp"
             android:text="@string/helper_send_device_name" />
 
+        <TextView
+            style="@style/Text.Label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/label_heartbeat" />
+
+        <RadioGroup
+            android:id="@+id/heartbeat"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/heartbeat_off"
+                style="@style/Text.Body"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="24dp"
+                android:text="@string/heartbeat_off" />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/heartbeat_1"
+                style="@style/Text.Body"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="24dp"
+                android:text="@string/heartbeat_1" />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/heartbeat_5"
+                style="@style/Text.Body"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="24dp"
+                android:text="@string/heartbeat_5" />
+
+            <com.google.android.material.radiobutton.MaterialRadioButton
+                android:id="@+id/heartbeat_15"
+                style="@style/Text.Body"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/heartbeat_15" />
+        </RadioGroup>
+
+        <TextView
+            style="@style/Text.Secondary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="2dp"
+            android:text="@string/helper_heartbeat" />
+
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"

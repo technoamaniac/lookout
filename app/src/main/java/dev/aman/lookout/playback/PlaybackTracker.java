@@ -1,7 +1,6 @@
 package dev.aman.lookout.playback;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -10,7 +9,8 @@ import java.util.function.Supplier;
 /** Turns the media sessions seen now into events for what changed since last time. Not thread-safe. */
 public final class PlaybackTracker {
     private final Supplier<String> device;
-    private final Map<String, PlaybackSnapshot> known = new HashMap<>();
+    // In the order the sessions were last reported, most important first
+    private final Map<String, PlaybackSnapshot> known = new LinkedHashMap<>();
 
     /** @param device supplies the name stamped on each event, or null for none */
     public PlaybackTracker(Supplier<String> device) {
@@ -36,6 +36,11 @@ public final class PlaybackTracker {
         known.clear();
         known.putAll(current);
         return events;
+    }
+
+    /** The sessions as last reported, one per app. */
+    public List<PlaybackSnapshot> sessions() {
+        return new ArrayList<>(known.values());
     }
 
     // Buffering is a pause for data, not a change of mind: apps pass through it while starting, seeking

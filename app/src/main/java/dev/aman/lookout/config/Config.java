@@ -20,11 +20,14 @@ public final class Config {
     private final URL webhookUrl;
     private final List<String> ignoredPackages;
     private final boolean sendDeviceName;
+    private final int heartbeatMinutes;
 
-    private Config(URL webhookUrl, List<String> ignoredPackages, boolean sendDeviceName) {
+    private Config(URL webhookUrl, List<String> ignoredPackages, boolean sendDeviceName, int heartbeatMinutes) {
+        if (heartbeatMinutes < 0) throw new IllegalArgumentException("Heartbeat interval cannot be negative");
         this.webhookUrl = webhookUrl;
         this.ignoredPackages = Collections.unmodifiableList(ignoredPackages);
         this.sendDeviceName = sendDeviceName;
+        this.heartbeatMinutes = heartbeatMinutes;
     }
 
     /**
@@ -34,7 +37,12 @@ public final class Config {
      * @throws IllegalArgumentException if the URL is malformed or not https
      */
     public static Config parse(String url, String ignoredCsv, boolean sendDeviceName) {
-        return new Config(parseUrl(url), parsePackages(ignoredCsv), sendDeviceName);
+        return new Config(parseUrl(url), parsePackages(ignoredCsv), sendDeviceName, 0);
+    }
+
+    /** A copy that sends a heartbeat every {@code minutes}; 0 sends none, the default. */
+    public Config withHeartbeatMinutes(int minutes) {
+        return new Config(webhookUrl, ignoredPackages, sendDeviceName, minutes);
     }
 
     public Optional<URL> webhookUrl() {
@@ -47,6 +55,11 @@ public final class Config {
 
     public boolean sendDeviceName() {
         return sendDeviceName;
+    }
+
+    /** Minutes between heartbeats, or 0 for none. */
+    public int heartbeatMinutes() {
+        return heartbeatMinutes;
     }
 
     public String webhookUrlText() {
@@ -64,12 +77,12 @@ public final class Config {
         if (!(other instanceof Config)) return false;
         Config that = (Config) other;
         return webhookUrlText().equals(that.webhookUrlText()) && ignoredPackages.equals(that.ignoredPackages)
-                && sendDeviceName == that.sendDeviceName;
+                && sendDeviceName == that.sendDeviceName && heartbeatMinutes == that.heartbeatMinutes;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(webhookUrlText(), ignoredPackages, sendDeviceName);
+        return Objects.hash(webhookUrlText(), ignoredPackages, sendDeviceName, heartbeatMinutes);
     }
 
     private static URL parseUrl(String raw) {

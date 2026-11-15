@@ -14,29 +14,20 @@ import java.util.Optional;
 public final class DeliveryLogFile implements DeliveryLogStore {
     private static final int VERSION = 1;
 
-    private final AtomicTextFile file;
+    private final JsonFile file;
 
     public DeliveryLogFile(File file) {
-        this.file = new AtomicTextFile(file);
+        this.file = new JsonFile(file, VERSION);
     }
 
     // An unreadable file, or a result this version does not know, starts an empty log; the next save replaces it
     @Override
     public List<DeliveryRecord> load() {
+        Optional<JSONObject> json = file.read();
+        if (!json.isPresent()) return List.of();
         try {
-            Optional<String> text = file.read();
-            if (!text.isPresent()) return List.of();
-            JSONObject json = new JSONObject(text.get());
-            if (json.optInt("version") != VERSION) return List.of();
-            List<DeliveryRecord> records = new ArrayList<>();
-            JSONArray saved = json.getJSONArray("records");
-            for (int i = 0; i < saved.length(); i++) {
-                JSONObject record = saved.getJSONObject(i);
-                records.add(new DeliveryRecord(MessageJson.fromJson(record.getJSONObject("message")),
-                        DeliveryResult.valueOf(record.getString("result")), record.getLong("attempted_at")));
-            }
-            return records;
-        } catch (IOException | JSONException | IllegalArgumentException e) {
+            return decode(json.get());
+        } catch (JSONException | IllegalArgumentException e) {
             return List.of();
         }
     }
@@ -44,16 +35,32 @@ public final class DeliveryLogFile implements DeliveryLogStore {
     @Override
     public void save(List<DeliveryRecord> newestFirst) {
         try {
-            JSONArray records = new JSONArray();
-            for (DeliveryRecord record : newestFirst) {
-                records.put(new JSONObject()
-                        .put("message", MessageJson.toJson(record.message()))
-                        .put("result", record.result().name())
-                        .put("attempted_at", record.attemptedAtMillis()));
-            }
-            file.write(new JSONObject().put("version", VERSION).put("records", records).toString());
+            file.write(encode(newestFirst));
         } catch (IOException | JSONException e) {
             // The log is still shown from memory; the previous file stays whole
         }
+    }
+
+    private static JSONObject encode(List<DeliveryRecord> newestFirst) throws JSONException {
+        JSONArray records = new JSONArray();
+        for (DeliveryRecord record : newestFirst) {
+            records.put(new JSONObject()
+                    .put("message", MessageJson.toJson(record.message()))
+                    .put("result", record.result().name())
+                    .put("attempted_at", record.attemptedAtMillis()));
+        }
+        return new JSONObject().put("records", records);
+    }
+
+    // DeliveryResult.valueOf throws IllegalArgumentException for a result this version does not know
+    private static List<DeliveryRecord> decode(JSONObject json) throws JSONException {
+        List<DeliveryRecord> records = new ArrayList<>();
+        JSONArray saved = json.getJSONArray("records");
+        for (int i = 0; i < saved.length(); i++) {
+            JSONObject record = saved.getJSONObject(i);
+            records.add(new DeliveryRecord(MessageJson.fromJson(record.getJSONObject("message")),
+                    DeliveryResult.valueOf(record.getString("result")), record.getLong("attempted_at")));
+        }
+        return records;
     }
 }

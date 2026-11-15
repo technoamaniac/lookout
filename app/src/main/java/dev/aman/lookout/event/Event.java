@@ -13,4 +13,9 @@ public interface Event {
 
     /** The payload's fields; a new builder on each call, so callers may add to it. */
     JsonFields fields();
+
+    /** Whether the Deliveries tab lists it once delivered; frequent routine messages list only failures. */
+    default boolean listedWhenDelivered() {
+        return true;
+    }
 }

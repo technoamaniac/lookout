@@ -19,6 +19,7 @@ public final class InstallResultReceiver extends BroadcastReceiver {
             if (confirm != null) context.startActivity(confirm.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK));
         } else if (status != PackageInstaller.STATUS_SUCCESS) {
             // On success the new version replaces this process, so there is nothing to show
+            new RelaunchAfterUpdate(new PrefsUpdateChannel(context)).cancel();
             String message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
             if (message == null) message = context.getString(R.string.update_failed_no_reason, status);
             Toast.makeText(context, context.getString(R.string.update_failed, message), Toast.LENGTH_LONG).show();

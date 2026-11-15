@@ -14,7 +14,7 @@ public enum PlayState {
         this.json = json;
     }
 
-    String json() {
+    public String json() {
         return json;
     }
 }

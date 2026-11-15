@@ -1,5 +1,6 @@
 package dev.aman.lookout.delivery;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
@@ -26,7 +27,7 @@ public class StoreFilesTest {
     private final Message app = Message.of(new AppEvent("com.example.a", 1).withActivity("Main"), 1_000);
     // Quotes and a newline in the title must survive the round trip
     private final Message playback = Message.of(
-            new PlaybackEvent("com.example.p", PlayState.PLAYING, "Say \"hi\"\nnow", null, 2), 2_000).delayed();
+            new PlaybackEvent("com.example.p", PlayState.PLAYING, "Say \"hi\"\nnow", null, 2), 2_000).markedDelayed();
 
     private File file(String name) {
         return new File(folder.getRoot(), name);
@@ -78,15 +79,25 @@ public class StoreFilesTest {
 
     @Test
     public void aFailedSaveKeepsThePreviousOutbox() {
-        File target = file("outbox.json");
-        OutboxFile store = new OutboxFile(target);
+        OutboxFile store = new OutboxFile(file("outbox.json"));
         store.save(new Outbox.Snapshot(null, List.of(new Outbox.Item(app, false))));
-        // A directory where the temporary file goes makes the next write fail
-        assertTrue(new File(target.getPath() + ".tmp").mkdir());
-
-        store.save(Outbox.Snapshot.EMPTY);
+        // A folder that cannot be written to makes the next save fail before it touches the file
+        assertTrue(folder.getRoot().setWritable(false));
+        try {
+            store.save(Outbox.Snapshot.EMPTY);
+        } finally {
+            folder.getRoot().setWritable(true);
+        }
 
         assertEquals(1, store.load().items().size());
+    }
+
+    @Test
+    public void savingLeavesNoTemporaryFilesBehind() {
+        OutboxFile store = new OutboxFile(file("outbox.json"));
+        store.save(new Outbox.Snapshot(null, List.of(new Outbox.Item(app, false))));
+        store.save(Outbox.Snapshot.EMPTY);
+        assertArrayEquals(new String[] {"outbox.json"}, folder.getRoot().list());
     }
 
     @Test
@@ -109,5 +120,15 @@ public class StoreFilesTest {
         Files.write(file("deliveries.json").toPath(),
                 "{\"version\":1,\"records\":[{\"result\":\"LOST\"}]}".getBytes(StandardCharsets.UTF_8));
         assertTrue(new DeliveryLogFile(file("deliveries.json")).load().isEmpty());
+    }
+
+    @Test
+    public void loadingClearsTemporaryFilesACrashLeftBehind() throws IOException {
+        Files.write(file("outbox.json123.tmp").toPath(), "{".getBytes(StandardCharsets.UTF_8));
+        Files.write(file("deliveries.json456.tmp").toPath(), "{".getBytes(StandardCharsets.UTF_8));
+
+        new OutboxFile(file("outbox.json")).load();
+
+        assertArrayEquals(new String[] {"deliveries.json456.tmp"}, folder.getRoot().list());
     }
 }

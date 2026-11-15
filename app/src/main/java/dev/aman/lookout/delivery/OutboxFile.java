@@ -14,29 +14,20 @@ import java.util.Optional;
 public final class OutboxFile implements OutboxStore {
     private static final int VERSION = 1;
 
-    private final AtomicTextFile file;
+    private final JsonFile file;
 
     public OutboxFile(File file) {
-        this.file = new AtomicTextFile(file);
+        this.file = new JsonFile(file, VERSION);
     }
 
-    // An unreadable or unknown file starts an empty outbox rather than stopping delivery; the next save replaces it
+    // An unreadable file starts an empty outbox rather than stopping delivery; the next save replaces it
     @Override
     public Outbox.Snapshot load() {
+        Optional<JSONObject> json = file.read();
+        if (!json.isPresent()) return Outbox.Snapshot.EMPTY;
         try {
-            Optional<String> text = file.read();
-            if (!text.isPresent()) return Outbox.Snapshot.EMPTY;
-            JSONObject json = new JSONObject(text.get());
-            if (json.optInt("version") != VERSION) return Outbox.Snapshot.EMPTY;
-            List<Outbox.Item> items = new ArrayList<>();
-            JSONArray saved = json.getJSONArray("items");
-            for (int i = 0; i < saved.length(); i++) {
-                JSONObject item = saved.getJSONObject(i);
-                items.add(new Outbox.Item(MessageJson.fromJson(item.getJSONObject("message")),
-                        item.getBoolean("settled")));
-            }
-            return new Outbox.Snapshot(json.has("webhook") ? json.getString("webhook") : null, items);
-        } catch (IOException | JSONException e) {
+            return decode(json.get());
+        } catch (JSONException e) {
             return Outbox.Snapshot.EMPTY;
         }
     }
@@ -44,17 +35,31 @@ public final class OutboxFile implements OutboxStore {
     @Override
     public void save(Outbox.Snapshot snapshot) {
         try {
-            JSONArray items = new JSONArray();
-            for (Outbox.Item item : snapshot.items()) {
-                items.put(new JSONObject()
-                        .put("message", MessageJson.toJson(item.message()))
-                        .put("settled", item.settled()));
-            }
-            JSONObject json = new JSONObject().put("version", VERSION).put("items", items);
-            if (snapshot.webhook() != null) json.put("webhook", snapshot.webhook());
-            file.write(json.toString());
+            file.write(encode(snapshot));
         } catch (IOException | JSONException e) {
             // Delivery carries on from memory; the previous file stays whole
         }
+    }
+
+    private static JSONObject encode(Outbox.Snapshot snapshot) throws JSONException {
+        JSONArray items = new JSONArray();
+        for (Outbox.Item item : snapshot.items()) {
+            items.put(new JSONObject()
+                    .put("message", MessageJson.toJson(item.message()))
+                    .put("settled", item.settled()));
+        }
+        // A null webhook leaves the key out
+        return new JSONObject().put("webhook", snapshot.webhook()).put("items", items);
+    }
+
+    private static Outbox.Snapshot decode(JSONObject json) throws JSONException {
+        List<Outbox.Item> items = new ArrayList<>();
+        JSONArray saved = json.getJSONArray("items");
+        for (int i = 0; i < saved.length(); i++) {
+            JSONObject item = saved.getJSONObject(i);
+            items.add(new Outbox.Item(MessageJson.fromJson(item.getJSONObject("message")),
+                    item.getBoolean("settled")));
+        }
+        return new Outbox.Snapshot(json.has("webhook") ? json.getString("webhook") : null, items);
     }
 }

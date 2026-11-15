@@ -23,6 +23,7 @@ public final class ServiceStatusPanel {
     private final View runningCard;
     private final View notEnabledCard;
     private final View openSettingsButton;
+    private final View lastTab;
     private final ReportingSwitch reporting;
     private final CompoundButton reportingToggle;
     private final ImageView dot;
@@ -36,6 +37,7 @@ public final class ServiceStatusPanel {
         notEnabledCard = activity.findViewById(R.id.service_off_card);
         openSettingsButton = activity.findViewById(R.id.open_accessibility);
         openSettingsButton.setOnClickListener(v -> openAccessibilitySettings());
+        lastTab = activity.findViewById(R.id.tab_updates);
         reportingToggle = activity.findViewById(R.id.reporting_toggle);
         dot = activity.findViewById(R.id.service_dot);
         detail = activity.findViewById(R.id.service_detail);
@@ -50,6 +52,8 @@ public final class ServiceStatusPanel {
         boolean enabled = isEnabled();
         runningCard.setVisibility(enabled ? View.VISIBLE : View.GONE);
         notEnabledCard.setVisibility(enabled ? View.GONE : View.VISIBLE);
+        // Down from the last tab goes to whichever card shows, not into the page beside it
+        lastTab.setNextFocusDownId(enabled ? R.id.reporting_toggle : R.id.open_accessibility);
         // Fires the listener only when the stored value differs, which then just writes it back
         reportingToggle.setChecked(reporting.isReportingOn());
         showReporting(reportingToggle.isChecked());

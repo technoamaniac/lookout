@@ -68,4 +68,19 @@ public class ConfigTest {
         assertTrue(Config.parse("", "", true).sendDeviceName());
         assertFalse(Config.parse("", "", false).sendDeviceName());
     }
+
+    @Test
+    public void heartbeatIsOffUnlessChosenAndPartOfEquality() {
+        Config config = Config.parse("https://ha.example/hook", "", false);
+        assertEquals(0, config.heartbeatMinutes());
+        Config every5 = config.withHeartbeatMinutes(5);
+        assertEquals(5, every5.heartbeatMinutes());
+        assertNotEquals(config, every5);
+        assertEquals(every5, Config.parse("https://ha.example/hook", "", false).withHeartbeatMinutes(5));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void rejectsANegativeHeartbeat() {
+        Config.parse("", "", false).withHeartbeatMinutes(-1);
+    }
 }

@@ -29,7 +29,8 @@ public final class DeliveryLog {
         this.capacity = capacity;
         this.store = store;
         for (DeliveryRecord record : store.load()) {
-            if (records.size() < capacity) records.addLast(record);
+            if (records.size() == capacity) break;
+            records.addLast(record);
         }
     }
 

@@ -2,6 +2,7 @@ package dev.aman.lookout.event;
 
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.StringJoiner;
 
@@ -27,6 +28,14 @@ public final class JsonFields {
 
     public JsonFields bool(String name, boolean value) {
         fields.put(name, Boolean.toString(value));
+        return this;
+    }
+
+    /** Adds an array of objects; nested objects stay on one line in {@link #pretty()}. */
+    public JsonFields objects(String name, List<JsonFields> objects) {
+        StringJoiner array = new StringJoiner(",", "[", "]");
+        for (JsonFields object : objects) array.add(object.compact());
+        fields.put(name, array.toString());
         return this;
     }
 

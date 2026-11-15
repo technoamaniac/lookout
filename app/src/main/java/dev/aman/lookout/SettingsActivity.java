@@ -25,6 +25,8 @@ public class SettingsActivity extends AppCompatActivity {
     // Optional intent extras prefill the fields so ADB can seed a long URL; nothing is saved until Save
     public static final String EXTRA_URL = "url";
     public static final String EXTRA_IGNORED = "ignored";
+    /** Opens on the Updates tab, which shows the version just installed. */
+    public static final String EXTRA_SHOW_UPDATES = "show_updates";
 
     private static final int UPDATES_TAB = 2;
 
@@ -57,6 +59,10 @@ public class SettingsActivity extends AppCompatActivity {
             badge.setSuppressed(tab == UPDATES_TAB);
         });
         new UpdatesPanel(this, background, new PrefsUpdateChannel(this), badge::show).check(true);
+        // Only when first opened: a recreated screen keeps the tab the user moved to
+        if (savedInstanceState == null && getIntent().getBooleanExtra(EXTRA_SHOW_UPDATES, false)) {
+            tabs.focus(UPDATES_TAB);
+        }
     }
 
     @Override

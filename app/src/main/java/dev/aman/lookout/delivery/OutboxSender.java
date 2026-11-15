@@ -64,10 +64,11 @@ public final class OutboxSender {
         scheduler.execute(() -> outbox.restore(store.load()));
     }
 
+    // Timed here, when it happened; the id is made on the worker, since the first random UUID can be slow to make
     public void report(Event event) {
-        Message message = Message.of(event, wallMillis.getAsLong());
+        long occurredAtMillis = wallMillis.getAsLong();
         scheduler.execute(() -> {
-            outbox.add(message);
+            outbox.add(Message.of(event, occurredAtMillis));
             store.save(outbox.snapshot());
             queueDelivery();
         });
@@ -83,7 +84,7 @@ public final class OutboxSender {
             // As text, because URL.equals resolves host names
             String text = webhook == null ? null : webhook.toString();
             if (outbox.useWebhook(text)) store.save(outbox.snapshot());
-            // Apart from the outbox's webhook, which a restored outbox already has before the first update
+            // Tracked apart from the outbox's webhook: a restored outbox has one before the first update builds a sink
             if (!Objects.equals(text, sinkWebhook)) {
                 sinkWebhook = text;
                 sink = webhook == null ? null : sinks.apply(webhook);
@@ -92,6 +93,22 @@ public final class OutboxSender {
             if (on && !this.on) outbox.retryNow();
             this.on = on;
             queueDelivery();
+        });
+    }
+
+    /**
+     * Sends an event once, now, if reporting is on: never saved, retried or replayed, for a message that means
+     * something only when it is on time, such as a heartbeat.
+     */
+    public void sendNow(Event event) {
+        long occurredAtMillis = wallMillis.getAsLong();
+        scheduler.execute(() -> {
+            if (!on || sink == null) return;
+            // It just reached the webhook, so anything waiting out a retry would too
+            if (sink.send(Message.of(event, occurredAtMillis)) == DeliveryResult.DELIVERED) {
+                outbox.retryNow();
+                queueDelivery();
+            }
         });
     }
 
@@ -120,7 +137,7 @@ public final class OutboxSender {
             return;
         }
         Message message = next.get();
-        DeliveryResult result = sink.send(isLate(message) ? message.delayed() : message);
+        DeliveryResult result = sink.send(isLate(message) ? message.markedDelayed() : message);
         if (result.isRetryable()) {
             outbox.failed(message, elapsedMillis.getAsLong());
         } else {

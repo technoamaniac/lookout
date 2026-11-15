@@ -12,9 +12,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-/** Hands a downloaded APK to Android's package installer. */
+/** Hands a downloaded APK to Android's package installer, and asks the new version to reopen Lookout. */
 public final class UpdateInstaller {
     public void install(Context context, File apk) throws IOException {
+        RelaunchAfterUpdate relaunch = new RelaunchAfterUpdate(new PrefsUpdateChannel(context));
         PackageInstaller installer = context.getPackageManager().getPackageInstaller();
         PackageInstaller.SessionParams params =
                 new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
@@ -37,8 +38,11 @@ public final class UpdateInstaller {
             PendingIntent result = PendingIntent.getBroadcast(context, sessionId,
                     new Intent(context, InstallResultReceiver.class),
                     PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+            // Before the commit, which may end this process at once
+            relaunch.request(System.currentTimeMillis());
             session.commit(result.getIntentSender());
         } catch (IOException | RuntimeException e) {
+            relaunch.cancel();
             installer.abandonSession(sessionId);
             throw e;
         }

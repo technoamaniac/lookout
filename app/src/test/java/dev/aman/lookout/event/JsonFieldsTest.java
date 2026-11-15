@@ -2,6 +2,8 @@ package dev.aman.lookout.event;
 
 import static org.junit.Assert.assertEquals;
 
+import java.util.List;
+
 import org.junit.Test;
 
 public class JsonFieldsTest {
@@ -44,5 +46,12 @@ public class JsonFieldsTest {
     @Test
     public void prettyPrintsOneFieldPerLine() {
         assertEquals("{\n  \"a\": \"x\",\n  \"b\": 2\n}", new JsonFields().string("a", "x").number("b", 2).pretty());
+    }
+
+    @Test
+    public void writesArraysOfObjects() {
+        assertEquals("{\"a\":[{\"b\":1},{\"c\":\"x\"}],\"d\":[]}", new JsonFields()
+                .objects("a", List.of(new JsonFields().number("b", 1), new JsonFields().string("c", "x")))
+                .objects("d", List.of()).compact());
     }
 }

@@ -1,15 +1,17 @@
 package dev.aman.lookout.update;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 
 /**
- * Keeps the choice in its own preferences file: the service reconfigures itself whenever the
- * webhook settings change, and this choice is none of its business.
+ * Keeps the update choices in their own preferences file: the service reconfigures itself whenever the
+ * webhook settings change, and these are none of its business. Also keeps a pending reopen after an update.
  */
-public final class PrefsUpdateChannel implements UpdateChannel {
+public final class PrefsUpdateChannel implements UpdateChannel, RelaunchAfterUpdate.Store {
     private static final String FILE = "updates";
     private static final String KEY_PRE_RELEASES = "include_pre_releases";
+    private static final String KEY_RELAUNCH_REQUESTED_AT = "relaunch_requested_at";
 
     private final SharedPreferences prefs;
 
@@ -26,5 +28,17 @@ public final class PrefsUpdateChannel implements UpdateChannel {
     @Override
     public void setIncludesPreReleases(boolean include) {
         prefs.edit().putBoolean(KEY_PRE_RELEASES, include).apply();
+    }
+
+    @Override
+    public long relaunchRequestedAtMillis() {
+        return prefs.getLong(KEY_RELAUNCH_REQUESTED_AT, 0);
+    }
+
+    // Committed, not applied: installing may end this process before an asynchronous write lands
+    @SuppressLint("ApplySharedPref")
+    @Override
+    public void setRelaunchRequestedAtMillis(long millis) {
+        prefs.edit().putLong(KEY_RELAUNCH_REQUESTED_AT, millis).commit();
     }
 }

@@ -2,6 +2,7 @@ package dev.aman.lookout.foreground;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Collections;
@@ -105,5 +106,14 @@ public class ForegroundTrackerTest {
     public void emptyFilterAcceptsEverything() {
         ForegroundTracker open = new ForegroundTracker(new PackageFilter(Collections.emptyList()), () -> null);
         assertTrue(open.onWindowChanged("com.android.systemui", null, 1).isPresent());
+    }
+
+    @Test
+    public void knowsTheAppLastReportedInFront() {
+        ForegroundTracker tracker = new ForegroundTracker(new PackageFilter(List.of("ignored")), () -> null);
+        assertNull(tracker.currentPackage());
+        tracker.onWindowChanged("com.example.a", null, 1);
+        tracker.onWindowChanged("ignored", null, 2);
+        assertEquals("com.example.a", tracker.currentPackage());
     }
 }
