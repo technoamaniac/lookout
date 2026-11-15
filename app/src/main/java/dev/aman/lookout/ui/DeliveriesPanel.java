@@ -78,12 +78,8 @@ public final class DeliveriesPanel {
     }
 
     private void refresh() {
-        DeliveryFilter filter = filterSheet.filter();
-        List<DeliveryRecord> recent = filter.apply(log.recent());
+        List<DeliveryRecord> recent = filterSheet.filter().apply(log.recent());
         adapter.show(recent);
         emptyMessage.setVisibility(recent.isEmpty() ? View.VISIBLE : View.GONE);
-        int hidden = filter.hiddenCount();
-        filterButton.setText(hidden == 0 ? activity.getString(R.string.filter)
-                : activity.getString(R.string.filter_hidden, hidden));
     }
 }

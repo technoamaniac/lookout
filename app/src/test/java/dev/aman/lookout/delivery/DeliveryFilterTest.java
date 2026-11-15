@@ -34,13 +34,6 @@ public class DeliveryFilterTest {
     }
 
     @Test
-    public void countsTheCategoriesLeftOut() {
-        assertEquals(1, DeliveryFilter.DEFAULT.hiddenCount());
-        assertEquals(0, DeliveryFilter.DEFAULT.with(EventCategory.HEARTBEAT, true).hiddenCount());
-        assertEquals(2, DeliveryFilter.DEFAULT.with(EventCategory.CHANGE, false).hiddenCount());
-    }
-
-    @Test
     public void changingAFilterLeavesTheOriginalAlone() {
         DeliveryFilter withBeats = DeliveryFilter.DEFAULT.with(EventCategory.HEARTBEAT, true);
         assertFalse(DeliveryFilter.DEFAULT.shows(EventCategory.HEARTBEAT));

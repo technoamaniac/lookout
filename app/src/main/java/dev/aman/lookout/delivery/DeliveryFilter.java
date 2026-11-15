@@ -22,11 +22,6 @@ public final class DeliveryFilter {
         return shown.contains(category);
     }
 
-    /** How many categories are left out, for a label that says the list is not showing everything. */
-    public int hiddenCount() {
-        return EventCategory.values().length - shown.size();
-    }
-
     /** A copy that lists {@code category} or not. */
     public DeliveryFilter with(EventCategory category, boolean shown) {
         Set<EventCategory> next = EnumSet.noneOf(EventCategory.class);

@@ -123,6 +123,61 @@ public class DeliveryLogTest {
         assertEquals("new", saves.get(0).get(0).message().summary());
     }
 
+    private static DeliveryRecord failedBeat(long epochSeconds) {
+        return new DeliveryRecord(Message.of(new HeartbeatEvent(60, epochSeconds), epochSeconds * 1000),
+                DeliveryResult.TEMPORARY_FAILURE, 1000);
+    }
+
+    private static final class Saves implements DeliveryLogStore {
+        final List<List<DeliveryRecord>> saves = new ArrayList<>();
+
+        @Override
+        public List<DeliveryRecord> load() {
+            return List.of();
+        }
+
+        @Override
+        public void save(List<DeliveryRecord> newestFirst) {
+            saves.add(newestFirst);
+        }
+    }
+
+    @Test
+    public void deliveredHeartbeatsAreShownButNeverSaved() {
+        Saves store = new Saves();
+        DeliveryLog log = new DeliveryLog(2, store);
+
+        log.add(beat(1));
+
+        assertEquals(1, log.recent().size());
+        assertTrue(store.saves.isEmpty());
+    }
+
+    @Test
+    public void failedHeartbeatsAreSaved() {
+        Saves store = new Saves();
+        DeliveryLog log = new DeliveryLog(2, store);
+
+        log.add(failedBeat(1));
+        log.add(beat(2));
+
+        assertEquals(1, store.saves.size());
+        assertEquals(1, store.saves.get(0).size());
+    }
+
+    // A delivered heartbeat can push a saved failed one out of the log, and the file must follow
+    @Test
+    public void savesWhenAnUnsavedRecordEvictsASavedOne() {
+        Saves store = new Saves();
+        DeliveryLog log = new DeliveryLog(1, store);
+        log.add(failedBeat(1));
+
+        log.add(beat(2));
+
+        assertEquals(2, store.saves.size());
+        assertTrue(store.saves.get(1).isEmpty());
+    }
+
     @Test
     public void loadsNoMoreThanItsCapacity() {
         DeliveryLog log = new DeliveryLog(1, new DeliveryLogStore() {
