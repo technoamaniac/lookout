@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" width="96" height="96">
+  <!-- Same shapes as app/src/main/res/drawable/ic_launcher.xml, with the launcher tile's rounded corners -->
+  <rect width="96" height="96" rx="20" fill="#10151C"/>
+  <path d="M18,56A30,30 0 0,1 78,56Z" fill="#7CC4FF"/>
+  <path d="M36,56A12,12 0 0,1 60,56Z" fill="#10151C"/>
+  <path d="M14.5,65.5H81.5M26.5,74.5H69.5M38.5,83.5H57.5" stroke="#7CC4FF" stroke-linecap="round" stroke-width="5" fill="none"/>
+</svg>

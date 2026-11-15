@@ -1,4 +1,4 @@
-# Lookout
+# <img src="docs/logo.svg" alt="" width="40" height="40" align="center"> Lookout
 
 An Android TV service that reports the foreground app, the screen state and, if you allow it, what is playing to a webhook.
 
