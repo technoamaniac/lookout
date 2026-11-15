@@ -74,6 +74,16 @@ public class RetryingDispatcherTest {
     }
 
     @Test
+    public void stoppingDropsRetriesAlreadyScheduled() {
+        RetryingDispatcher dispatcher = dispatcher(e -> { attempts++; return TEMPORARY_FAILURE; }, true);
+        dispatcher.dispatch(EVENT);
+        scheduler.runDue();
+        dispatcher.stop();
+        scheduler.runAll();
+        assertEquals(1, attempts);
+    }
+
+    @Test
     public void retriesWithBackoffUntilSuccess() {
         dispatcher(e -> ++attempts == 3 ? DELIVERED : TEMPORARY_FAILURE, true).dispatch(EVENT);
         scheduler.runAll();

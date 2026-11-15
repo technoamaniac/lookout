@@ -21,7 +21,6 @@ import dev.aman.lookout.delivery.RetryingDispatcher;
 import dev.aman.lookout.delivery.WebhookSink;
 import dev.aman.lookout.device.DeviceEvent;
 import dev.aman.lookout.device.DeviceStateReceiver;
-import dev.aman.lookout.event.Event;
 import dev.aman.lookout.event.LatestEvents;
 import dev.aman.lookout.foreground.ForegroundTracker;
 import dev.aman.lookout.foreground.PackageFilter;
@@ -35,7 +34,6 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 /** Android adapter: wires window, device and playback events through the trackers to the reporting gate. */
@@ -61,7 +59,7 @@ public class LookoutService extends AccessibilityService {
         }
     };
     private final LatestEvents latest = new LatestEvents();
-    private final ReportingGate reporting = new ReportingGate(latest);
+    private final ReportingGate reporting = new ReportingGate(latest, this::senderFor);
     // Replaced whenever settings change, so the opt-in applies to device events too
     private volatile Supplier<String> deviceName = () -> null;
     private final PlaybackTracker playback = new PlaybackTracker(() -> deviceName.get());
@@ -128,9 +126,7 @@ public class LookoutService extends AccessibilityService {
         Config config = store.load();
         deviceName = deviceNameFor(config);
         tracker.reconfigure(new PackageFilter(ignoredPackages(config)), deviceName);
-        // The sender first, so resuming sends what changed during the pause to the current webhook
-        reporting.setSender(config.webhookUrl().map(this::senderFor).orElse(null));
-        reporting.setOn(store.isReportingOn());
+        reporting.update(config.webhookUrl().orElse(null), store.isReportingOn());
     }
 
     // Asked per event so renaming the TV applies at once; withheld unless the user opted in
@@ -138,11 +134,10 @@ public class LookoutService extends AccessibilityService {
         return config.sendDeviceName() ? () -> DeviceName.read(getContentResolver()) : () -> null;
     }
 
-    private Consumer<Event> senderFor(URL url) {
-        RetryingDispatcher dispatcher = new RetryingDispatcher(recordingSinkFor(url),
+    private ReportingGate.Sender senderFor(URL url) {
+        return new RetryingDispatcher(reporting.settling(url, recordingSinkFor(url)),
                 (task, delayMillis) -> io.schedule(task, delayMillis, TimeUnit.MILLISECONDS),
-                BACKOFF_MS, latest::isCurrent);
-        return dispatcher::dispatch;
+                BACKOFF_MS, latest::isPending);
     }
 
     private static EventSink recordingSinkFor(URL url) {
