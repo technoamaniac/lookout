@@ -1,6 +1,7 @@
 package dev.aman.lookout.ui;
 
 import dev.aman.lookout.R;
+import dev.aman.lookout.delivery.DeliveryRecord;
 import dev.aman.lookout.delivery.DeliveryResult;
 import dev.aman.lookout.event.EventCategory;
 
@@ -18,8 +19,14 @@ final class DeliveryAppearance {
         throw new IllegalArgumentException("No label for " + category);
     }
 
-    static int labelFor(DeliveryResult result) {
-        switch (result) {
+    // A failure that will not be tried again reads differently from one that will
+    private static boolean isNotResent(DeliveryRecord record) {
+        return record.result().isRetryable() && !record.message().category().resentWhenFailed();
+    }
+
+    static int labelFor(DeliveryRecord record) {
+        if (isNotResent(record)) return R.string.delivery_not_resent;
+        switch (record.result()) {
             case DELIVERED:
                 return R.string.delivery_delivered;
             case PERMANENT_FAILURE:
@@ -29,8 +36,9 @@ final class DeliveryAppearance {
         }
     }
 
-    static int responseFor(DeliveryResult result) {
-        switch (result) {
+    static int responseFor(DeliveryRecord record) {
+        if (isNotResent(record)) return R.string.response_not_resent;
+        switch (record.result()) {
             case DELIVERED:
                 return R.string.response_delivered;
             case PERMANENT_FAILURE:
@@ -51,8 +59,9 @@ final class DeliveryAppearance {
         }
     }
 
-    static int iconFor(DeliveryResult result) {
-        switch (result) {
+    static int iconFor(DeliveryRecord record) {
+        if (isNotResent(record)) return R.drawable.ic_warning;
+        switch (record.result()) {
             case DELIVERED:
                 return R.drawable.ic_status_ok;
             case PERMANENT_FAILURE:

@@ -69,6 +69,11 @@ public final class DeliveriesPanel {
         });
     }
 
+    /** The filter button sits in the page header, outside the panel, so it follows the selected tab itself. */
+    public void setSelected(boolean selected) {
+        filterButton.setVisibility(selected ? View.VISIBLE : View.GONE);
+    }
+
     private void showFilter() {
         closeSheetOnBack.setEnabled(true);
         filterSheet.show(() -> {

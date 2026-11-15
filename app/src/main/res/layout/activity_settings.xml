@@ -76,12 +76,26 @@
                             android:singleLine="true" />
                     </LinearLayout>
 
+                    <!-- Opens the delivery filter; shown only on the Deliveries tab, beside the title -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/filter_button"
+                        style="@style/Widget.Lookout.Button.Secondary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:minHeight="40dp"
+                        android:text="@string/filter"
+                        android:textSize="16sp"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_filter" />
+
                     <!-- Corner alert for a new stable release; selecting it opens the Updates tab -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/update_badge"
                         style="@style/Widget.Lookout.Button.Badge"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_marginStart="12dp"
                         android:layout_marginTop="4dp"
                         android:visibility="gone"
                         app:icon="@drawable/ic_tab_updates" />

@@ -36,6 +36,11 @@ public final class PanelTabs {
         select(0);
     }
 
+    /** The selected tab, in the order of the rail. */
+    public int selected() {
+        return selected;
+    }
+
     /** Runs now with the current tab, and again whenever the selection changes. */
     public void onSelected(IntConsumer listener) {
         onSelected = listener;

@@ -3,14 +3,21 @@ package dev.aman.lookout.event;
 /** The sort of thing an {@link Event} reports; the Deliveries tab can filter by it. */
 public enum EventCategory {
     /** A change on the TV: the app in front, the screen, the screensaver or playback. */
-    CHANGE(true),
+    CHANGE(true, true),
     /** The periodic "still here". */
-    HEARTBEAT(false);
+    HEARTBEAT(false, false);
 
     private final boolean keptWhenDelivered;
+    private final boolean resentWhenFailed;
 
-    EventCategory(boolean keptWhenDelivered) {
+    EventCategory(boolean keptWhenDelivered, boolean resentWhenFailed) {
         this.keptWhenDelivered = keptWhenDelivered;
+        this.resentWhenFailed = resentWhenFailed;
+    }
+
+    /** Whether a failed attempt is tried again later. A heartbeat is sent once: a late one would say the TV is reachable. */
+    public boolean resentWhenFailed() {
+        return resentWhenFailed;
     }
 
     /**

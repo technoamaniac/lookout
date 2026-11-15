@@ -2,7 +2,9 @@ package dev.aman.lookout;
 
 import android.content.ComponentName;
 import android.os.Bundle;
+import android.view.KeyEvent;
 
+import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 import dev.aman.lookout.config.PrefsConfigStore;
@@ -11,6 +13,7 @@ import dev.aman.lookout.delivery.WebhookTester;
 import dev.aman.lookout.ui.DeliveriesPanel;
 import dev.aman.lookout.ui.PanelHeader;
 import dev.aman.lookout.ui.PanelTabs;
+import dev.aman.lookout.ui.RailNavigator;
 import dev.aman.lookout.ui.ServiceStatusPanel;
 import dev.aman.lookout.ui.SettingsPanel;
 import dev.aman.lookout.ui.UpdateBadge;
@@ -28,6 +31,7 @@ public class SettingsActivity extends AppCompatActivity {
     /** Opens on the Updates tab, which shows the version just installed. */
     public static final String EXTRA_SHOW_UPDATES = "show_updates";
 
+    private static final int DELIVERIES_TAB = 1;
     private static final int UPDATES_TAB = 2;
 
     private final ExecutorService background = Executors.newSingleThreadExecutor();
@@ -35,6 +39,7 @@ public class SettingsActivity extends AppCompatActivity {
     private final ExecutorService webhookTests = Executors.newSingleThreadExecutor();
     private ServiceStatusPanel serviceStatus;
     private DeliveriesPanel deliveries;
+    private RailNavigator navigator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -44,6 +49,14 @@ public class SettingsActivity extends AppCompatActivity {
         PanelTabs tabs = new PanelTabs(this,
                 new int[] {R.id.tab_settings, R.id.tab_deliveries, R.id.tab_updates},
                 new int[] {R.id.settings_panel, R.id.deliveries_panel, R.id.updates_panel});
+        navigator = new RailNavigator(this, tabs);
+        // Added before the panels, so a sheet that is open closes first on Back
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (navigator.leaveOnBack()) finish();
+            }
+        });
         PanelHeader header = new PanelHeader(this);
         DeliveryLog log = ((LookoutApplication) getApplication()).deliveryLog();
 
@@ -57,12 +70,18 @@ public class SettingsActivity extends AppCompatActivity {
         tabs.onSelected(tab -> {
             header.show(tab);
             badge.setSuppressed(tab == UPDATES_TAB);
+            deliveries.setSelected(tab == DELIVERIES_TAB);
         });
         new UpdatesPanel(this, background, new PrefsUpdateChannel(this), badge::show).check(true);
         // Only when first opened: a recreated screen keeps the tab the user moved to
         if (savedInstanceState == null && getIntent().getBooleanExtra(EXTRA_SHOW_UPDATES, false)) {
             tabs.focus(UPDATES_TAB);
         }
+    }
+
+    @Override
+    public boolean dispatchKeyEvent(KeyEvent event) {
+        return navigator.onKey(event) || super.dispatchKeyEvent(event);
     }
 
     @Override

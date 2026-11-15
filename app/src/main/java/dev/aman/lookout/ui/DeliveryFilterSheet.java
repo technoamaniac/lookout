@@ -16,6 +16,7 @@ final class DeliveryFilterSheet {
     private final View overlay;
     private final ViewGroup mainContent;
     private final View doneButton;
+    private final LinearLayout options;
     private final Runnable onChanged;
     private DeliveryFilter filter = DeliveryFilter.DEFAULT;
     private Runnable onClosed = () -> {};
@@ -27,7 +28,7 @@ final class DeliveryFilterSheet {
         mainContent = activity.findViewById(R.id.main_content);
         doneButton = activity.findViewById(R.id.filter_done);
         doneButton.setOnClickListener(v -> hide());
-        LinearLayout options = activity.findViewById(R.id.filter_options);
+        options = activity.findViewById(R.id.filter_options);
         for (EventCategory category : EventCategory.values()) options.addView(optionFor(activity, category));
     }
 
@@ -45,7 +46,8 @@ final class DeliveryFilterSheet {
         // The screen behind must not take D-pad focus while the sheet is open
         mainContent.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         overlay.setVisibility(View.VISIBLE);
-        doneButton.requestFocus();
+        // The options are what the sheet is for, so focus starts on the first; Done is a Down away
+        options.getChildAt(0).requestFocus();
     }
 
     void hide() {

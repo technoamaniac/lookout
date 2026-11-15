@@ -12,7 +12,7 @@ import java.util.function.LongSupplier;
 /**
  * Works through the {@link Outbox}: every event goes into it and is saved first, then delivered newest first, one at a
  * time. Failed deliveries are retried with a growing wait that never gives up while the event is current, and at once
- * when the network comes back. The Send to webhook switch only pauses delivery; events are still recorded, so turning
+ * when the network comes back. The Enabled switch only pauses delivery; events are still recorded, so turning
  * it back on sends what changed meanwhile.
  *
  * <p>Everything, deliveries included, runs on the scheduler's one thread, so a webhook change or a new event can never
@@ -77,7 +77,7 @@ public final class OutboxSender {
     /**
      * @param webhook where events go, or null while there is none. Unrelated settings changes call this too, and
      *                change nothing.
-     * @param on      the Send to webhook switch
+     * @param on      the Enabled switch
      */
     public void update(URL webhook, boolean on) {
         scheduler.execute(() -> {
