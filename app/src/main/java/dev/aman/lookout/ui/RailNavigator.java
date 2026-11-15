@@ -52,16 +52,21 @@ public final class RailNavigator {
     }
 
     /**
-     * Up and Down stay on the page: Android's own search from a page field can pick a side menu item over the field
-     * right beside it, so the page is searched alone, from the whole field rather than from its text cursor.
-     * With nothing further, the page scrolls instead.
+     * Up and Down stay on the page. Android's own search is used while it finds something on the page; from a text
+     * field it can pick a side menu item over the field right beside it, and then the page is searched alone, from the
+     * whole field rather than from its text cursor. With nothing further, the page scrolls instead.
      */
     private boolean moveWithinPage(View focused, int direction) {
-        Rect from = new Rect(0, 0, focused.getWidth(), focused.getHeight());
-        page.offsetDescendantRectToMyCoords(focused, from);
-        View next = FocusFinder.getInstance().findNextFocusFromRect(page, from, direction);
+        View next = focused.focusSearch(direction);
+        if (areaOf(next) != RailFocus.Area.PAGE) next = searchPage(focused, direction);
         if (next == null || !next.requestFocus(direction)) page.arrowScroll(direction);
         return true;
+    }
+
+    private View searchPage(View focused, int direction) {
+        Rect from = new Rect(0, 0, focused.getWidth(), focused.getHeight());
+        page.offsetDescendantRectToMyCoords(focused, from);
+        return FocusFinder.getInstance().findNextFocusFromRect(page, from, direction);
     }
 
     /**
