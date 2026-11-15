@@ -4,6 +4,8 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-11-14
+
 ### Added
 
 - **Include pre-releases** on the Updates tab: tick it to be offered release candidates as well as stable releases. It is off by default.
