@@ -11,7 +11,7 @@ public final class UpdateChecker {
         this.source = source;
     }
 
-    public Optional<Release> newerThan(Version installed) throws IOException {
-        return source.latest().filter(release -> release.version().compareTo(installed) > 0);
+    public Optional<Release> newerThan(Version installed, boolean includePreReleases) throws IOException {
+        return source.latest(includePreReleases).filter(release -> release.version().compareTo(installed) > 0);
     }
 }

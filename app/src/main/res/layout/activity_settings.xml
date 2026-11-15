@@ -186,12 +186,21 @@
             </LinearLayout>
         </LinearLayout>
 
-        <!-- Content: panel header, then the sheet holding the three panels -->
-        <LinearLayout
+        <!-- Content: the whole page scrolls as one, so the header never sits under the sheet. The
+             sheet takes the leftover height (weight) so a short panel still fills the screen. -->
+        <ScrollView
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_marginStart="32dp"
             android:layout_weight="1"
+            android:clipChildren="false"
+            android:clipToPadding="false"
+            android:fillViewport="true"
+            android:scrollbars="none">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:clipChildren="false"
             android:clipToPadding="false"
             android:orientation="vertical">
@@ -245,20 +254,14 @@
                 android:clipChildren="false"
                 android:clipToPadding="false">
 
-                <ScrollView
+                <LinearLayout
                     android:id="@+id/settings_panel"
                     android:layout_width="match_parent"
-                    android:layout_height="match_parent"
+                    android:layout_height="wrap_content"
                     android:clipChildren="false"
-                    android:clipToPadding="false">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:clipChildren="false"
-                        android:clipToPadding="false"
-                        android:orientation="vertical"
-                        android:padding="28dp">
+                    android:clipToPadding="false"
+                    android:orientation="vertical"
+                    android:padding="28dp">
 
                         <TextView
                             style="@style/Text.Label"
@@ -373,8 +376,7 @@
                             android:id="@+id/status"
                             style="@style/Widget.Lookout.Chip"
                             android:layout_marginTop="20dp" />
-                    </LinearLayout>
-                </ScrollView>
+                </LinearLayout>
 
                 <FrameLayout
                     android:id="@+id/deliveries_panel"
@@ -431,7 +433,8 @@
                         <androidx.recyclerview.widget.RecyclerView
                             android:id="@+id/deliveries"
                             android:layout_width="match_parent"
-                            android:layout_height="match_parent"
+                            android:layout_height="wrap_content"
+                            android:nestedScrollingEnabled="false"
                             android:layout_marginTop="4dp"
                             android:clipChildren="false"
                             android:clipToPadding="false"
@@ -560,6 +563,22 @@
                         style="@style/Widget.Lookout.Chip"
                         android:layout_marginTop="20dp" />
 
+                    <com.google.android.material.checkbox.MaterialCheckBox
+                        android:id="@+id/include_pre_releases"
+                        style="@style/Text.Body"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="20dp"
+                        android:text="@string/label_include_pre_releases" />
+
+                    <TextView
+                        style="@style/Text.Secondary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:layout_marginBottom="20dp"
+                        android:text="@string/helper_include_pre_releases" />
+
                     <Space
                         android:layout_width="match_parent"
                         android:layout_height="0dp"
@@ -582,6 +601,7 @@
                 </LinearLayout>
             </FrameLayout>
         </LinearLayout>
+        </ScrollView>
     </LinearLayout>
 
     <!-- Delivery details: scrim over the screen and a sheet on the right -->
@@ -699,23 +719,30 @@
                 android:layout_marginTop="18dp"
                 android:text="@string/detail_payload" />
 
-            <TextView
-                android:id="@+id/detail_payload"
-                style="@style/Text.Mono"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="@drawable/bg_code"
-                android:paddingStart="20dp"
-                android:paddingTop="16dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="16dp"
-                android:textSize="16sp" />
-
-            <Space
+            <!-- Takes the height left over, so a long payload scrolls here and never reaches the button.
+                 Focusable so the remote can scroll it; the code box is the child so it ends with the text. -->
+            <ScrollView
+                android:id="@+id/detail_payload_scroll"
                 android:layout_width="match_parent"
                 android:layout_height="0dp"
-                android:layout_weight="1" />
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="20dp"
+                android:layout_weight="1"
+                android:focusable="true"
+                android:scrollbars="none">
+
+                <TextView
+                    android:id="@+id/detail_payload"
+                    style="@style/Text.Mono"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_code"
+                    android:paddingStart="20dp"
+                    android:paddingTop="16dp"
+                    android:paddingEnd="20dp"
+                    android:paddingBottom="16dp"
+                    android:textSize="16sp" />
+            </ScrollView>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -730,7 +757,12 @@
                     style="@style/Widget.Lookout.Button.Secondary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/detail_close" />
+                    android:minWidth="0dp"
+                    android:minHeight="40dp"
+                    android:paddingStart="18dp"
+                    android:paddingEnd="18dp"
+                    android:text="@string/detail_close"
+                    android:textSize="16sp" />
 
                 <TextView
                     style="@style/Text.Secondary"

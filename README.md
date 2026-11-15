@@ -59,7 +59,7 @@ adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
 ## Using the app
 
 - **Deliveries** shows the last 10 attempts until Lookout restarts. Press OK on one to see the exact payload.
-- **Updates** installs the latest stable release from this repository after checking its SHA-256. Android only accepts it if it is signed with the same key as the installed app. Lookout contacts GitHub only while this screen is open.
+- **Updates** installs the latest stable release from this repository (tick **Include pre-releases** to be offered release candidates too) after checking its SHA-256. Android only accepts it if it is signed with the same key as the installed app. Lookout contacts GitHub only while this screen is open.
 
 ## Home Assistant example
 
@@ -106,7 +106,7 @@ Logic lives in plain-Java packages with JVM unit tests; Android classes stay thi
 
 To send events somewhere other than a webhook, implement `EventSink`.
 
-**Releases.** Pushing a tag like `v1.2.3` builds, signs and publishes the APK with its SHA-256 (`v1.2.3-rc.1` makes a pre-release, which the app never offers). The release notes come from the matching `CHANGELOG.md` section, and the release fails without one. The version code is `major*10000 + minor*100 + patch`. Gradle builds without the signing key; a separate job signs with `apksigner` using the `release` environment's secrets.
+**Releases.** Pushing a tag like `v1.2.3` builds, signs and publishes the APK with its SHA-256 (`v1.2.3-rc.1` makes a pre-release, which the app only offers when **Include pre-releases** is ticked). The release notes come from the matching `CHANGELOG.md` section, and the release fails without one. The version code is `major*10000 + minor*100 + patch`. Gradle builds without the signing key; a separate job signs with `apksigner` using the `release` environment's secrets.
 
 **Pins.** Actions, the Gradle distribution and every dependency are pinned (by SHA, `app/gradle.lockfile` and `gradle/verification-metadata.xml`). After changing a dependency:
 

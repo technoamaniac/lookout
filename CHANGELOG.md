@@ -6,7 +6,13 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ### Added
 
+- **Include pre-releases** on the Updates tab: tick it to be offered release candidates as well as stable releases. It is off by default.
 - Optional playback messages: `playback_changed` with `package`, `state` (`playing`, `paused` or `stopped`) and, when the app gives them, `title` and `artist`. They stay off until you allow Lookout's notification access with adb, as described in the README. Automations that track the foreground app should check `trigger.json.event == 'app_changed'`.
+
+### Fixed
+
+- The whole page now scrolls together, so the title and description no longer end up behind the content when a tab is taller than the screen.
+- The delivery details sheet has a smaller Close button, and a long payload scrolls instead of running behind it.
 
 ## [0.2.0] - 2026-11-14
 

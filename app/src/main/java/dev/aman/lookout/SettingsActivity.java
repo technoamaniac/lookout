@@ -14,6 +14,7 @@ import dev.aman.lookout.ui.ServiceStatusPanel;
 import dev.aman.lookout.ui.SettingsPanel;
 import dev.aman.lookout.ui.UpdateBadge;
 import dev.aman.lookout.ui.UpdatesPanel;
+import dev.aman.lookout.update.PrefsUpdateChannel;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -51,7 +52,7 @@ public class SettingsActivity extends AppCompatActivity {
             header.show(tab);
             badge.setSuppressed(tab == UPDATES_TAB);
         });
-        new UpdatesPanel(this, background, badge::show).check(true);
+        new UpdatesPanel(this, background, new PrefsUpdateChannel(this), badge::show).check(true);
     }
 
     @Override

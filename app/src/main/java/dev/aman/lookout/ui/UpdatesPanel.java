@@ -8,12 +8,14 @@ import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.provider.Settings;
 import android.view.View;
+import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import dev.aman.lookout.R;
 import dev.aman.lookout.update.ApkFetcher;
 import dev.aman.lookout.update.GitHubReleases;
 import dev.aman.lookout.update.Release;
+import dev.aman.lookout.update.UpdateChannel;
 import dev.aman.lookout.update.UpdateChecker;
 import dev.aman.lookout.update.UpdateInstaller;
 import dev.aman.lookout.update.Version;
@@ -33,6 +35,7 @@ public final class UpdatesPanel {
 
     private final Activity activity;
     private final Executor background;
+    private final UpdateChannel channel;
     private final Consumer<Optional<Release>> onAvailabilityChanged;
     private final StatusLine status;
     private final MaterialButton checkButton;
@@ -45,11 +48,14 @@ public final class UpdatesPanel {
 
     private Release available;
     private boolean busy;
+    private boolean recheckRequested;
 
     /** @param onAvailabilityChanged told after every check whether a newer release exists */
-    public UpdatesPanel(Activity activity, Executor background, Consumer<Optional<Release>> onAvailabilityChanged) {
+    public UpdatesPanel(Activity activity, Executor background, UpdateChannel channel,
+                        Consumer<Optional<Release>> onAvailabilityChanged) {
         this.activity = activity;
         this.background = background;
+        this.channel = channel;
         this.onAvailabilityChanged = onAvailabilityChanged;
         status = new StatusLine(activity.findViewById(R.id.update_status));
         checkButton = activity.findViewById(R.id.check_updates);
@@ -59,6 +65,15 @@ public final class UpdatesPanel {
         activity.<TextView>findViewById(R.id.version).setText(activity.getString(R.string.version, installed));
         checkButton.setOnClickListener(v -> check(false));
         installButton.setOnClickListener(v -> install());
+        CompoundButton preReleases = activity.findViewById(R.id.include_pre_releases);
+        preReleases.setChecked(channel.includesPreReleases());
+        // The offer depends on the choice, so look again as soon as it changes
+        preReleases.setOnCheckedChangeListener((button, checked) -> {
+            channel.setIncludesPreReleases(checked);
+            // A check or install already running used the old choice; look again once it ends
+            if (busy) recheckRequested = true;
+            else check(false);
+        });
     }
 
     /** @param quiet leave the status alone when nothing is found or the network is down */
@@ -68,7 +83,7 @@ public final class UpdatesPanel {
         if (!quiet) status.info(R.string.update_checking);
         background.execute(() -> {
             try {
-                Optional<Release> newer = checker.newerThan(installed);
+                Optional<Release> newer = checker.newerThan(installed, channel.includesPreReleases());
                 activity.runOnUiThread(() -> showCheckResult(newer, quiet));
             } catch (IOException | RuntimeException e) {
                 activity.runOnUiThread(() -> showCheckFailure(quiet));
@@ -113,23 +128,33 @@ public final class UpdatesPanel {
         } else if (!quiet) {
             status.success(R.string.update_current);
         }
+        recheckIfRequested();
     }
 
     private void showCheckFailure(boolean quiet) {
         setBusy(false);
         if (!quiet) status.error(R.string.update_check_failed);
+        recheckIfRequested();
     }
 
     private void showInstallStarted() {
         setBusy(false);
         progress.setVisibility(View.GONE);
         status.success(R.string.update_installing);
+        recheckIfRequested();
     }
 
     private void showInstallFailure() {
         setBusy(false);
         progress.setVisibility(View.GONE);
         status.error(R.string.update_download_failed);
+        recheckIfRequested();
+    }
+
+    private void recheckIfRequested() {
+        if (!recheckRequested) return;
+        recheckRequested = false;
+        check(false);
     }
 
     private void openInstallPermissionScreen() {

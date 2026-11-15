@@ -5,6 +5,9 @@ import java.util.Optional;
 
 /** Where the newest published release can be looked up. */
 public interface ReleaseSource {
-    /** @return the newest stable release, or empty if nothing has been published */
-    Optional<Release> latest() throws IOException;
+    /**
+     * @param includePreReleases whether release candidates count; when false only stable releases do
+     * @return the newest matching release, or empty if nothing has been published
+     */
+    Optional<Release> latest(boolean includePreReleases) throws IOException;
 }

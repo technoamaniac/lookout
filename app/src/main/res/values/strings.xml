@@ -52,10 +52,12 @@
     <string name="column_result">Result</string>
     <string name="column_time">Time</string>
     <string name="deliveries_empty_title">No deliveries yet</string>
+    <string name="label_include_pre_releases">Include pre-releases</string>
+    <string name="helper_include_pre_releases">Also offers release candidates. They are tested less and may be unfinished.</string>
     <string name="installed_version">Installed version</string>
     <string name="subtitle_settings">Applies right away, kept across reboots.</string>
     <string name="subtitle_deliveries">Last 10 attempts, until Lookout restarts. Press OK for the payload.</string>
-    <string name="subtitle_updates">Stable GitHub releases, checked only while this screen is open.</string>
+    <string name="subtitle_updates">GitHub releases, checked only while this screen is open.</string>
     <string name="detail_title">Delivery</string>
     <string name="detail_app">Event</string>
     <string name="detail_attempted">Attempted</string>

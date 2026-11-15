@@ -28,7 +28,7 @@ An Android TV accessibility service that reports the foreground app to an HTTPS 
 - `minSdk` is 28. Do not use newer APIs without a version check (for example `Optional.isEmpty` needs API 33; use `!isPresent()`).
 - Webhook URLs must be HTTPS. Redirects are never followed for deliveries, because a followed redirect turns the POST into a GET that looks delivered.
 - Retry only network errors, 408, 429 and 5xx; any other response is a permanent failure.
-- The updater reads the public GitHub releases of this repository, verifies the SHA-256, and relies on Android's signature check. It never offers pre-releases.
+- The updater reads the public GitHub releases of this repository, verifies the SHA-256, and relies on Android's signature check. It offers pre-releases only while the user ticks **Include pre-releases** on the Updates tab, which is off by default.
 
 ## Build and verify
 
@@ -40,6 +40,8 @@ export JAVA_HOME=$(/usr/libexec/java_home -v 17)   # JDK 17
 A Homebrew JDK is not registered with `java_home`, so there use `JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home`.
 
 Lint, tests and the release build (`assembleRelease`, which runs R8) should all pass before anything is committed. There is no emulator in CI, so say plainly when something was not tried on a real TV.
+
+- Always have every change reviewed before it is committed: run the `code-review` skill with `--fix` and let it fix what it finds without asking, then rebuild and re-run the tests. Say what the review found and fixed.
 
 ## Dependencies and pins
 
