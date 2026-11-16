@@ -1,12 +1,15 @@
 package dev.aman.lookout.ui;
 
-import android.app.Activity;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.EditText;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AppCompatActivity;
+
 import dev.aman.lookout.R;
+import dev.aman.lookout.apps.BuiltInApps;
+import dev.aman.lookout.apps.InstalledApps;
 import dev.aman.lookout.config.Config;
 import dev.aman.lookout.config.ConfigStore;
 import dev.aman.lookout.config.DeviceName;
@@ -19,12 +22,12 @@ import java.util.concurrent.Executor;
 
 /** The Settings tab: the webhook form, with Save and Test webhook. A new webhook URL must pass a test before Save. */
 public final class SettingsPanel {
-    private final Activity activity;
+    private final AppCompatActivity activity;
     private final ConfigStore store;
     private final WebhookTester tester;
     private final Executor background;
     private final EditText urlField;
-    private final EditText ignoredField;
+    private final IgnoredAppsPicker ignored;
     private final CompoundButton deviceNameSwitch;
     private final HeartbeatChoice heartbeat;
     private final StatusLine status;
@@ -38,15 +41,16 @@ public final class SettingsPanel {
     private boolean sending;
 
     /** @param prefill optional values that override the saved ones until the user saves */
-    public SettingsPanel(Activity activity, ConfigStore store, WebhookTester tester, Executor background,
+    public SettingsPanel(AppCompatActivity activity, ConfigStore store, WebhookTester tester, Executor background,
                          Prefill prefill) {
         this.activity = activity;
         this.store = store;
         this.tester = tester;
         this.background = background;
         urlField = activity.findViewById(R.id.url);
-        ignoredField = activity.findViewById(R.id.ignored);
         deviceNameSwitch = activity.findViewById(R.id.send_device_name);
+        ignored = new IgnoredAppsPicker(activity, new InstalledApps(activity.getPackageManager(), activity.getPackageName()),
+                new BuiltInApps(activity), background, this::onFieldsEdited);
         heartbeat = new HeartbeatChoice(activity);
         status = new StatusLine(activity.findViewById(R.id.status));
         saveButton = activity.findViewById(R.id.save);
@@ -58,9 +62,9 @@ public final class SettingsPanel {
         Config saved = store.load();
         gate = new SaveGate(saved);
         showUrl(prefill.url != null ? prefill.url.trim() : saved.webhookUrlText());
-        TextFields.show(ignoredField, prefill.ignored != null ? prefill.ignored : saved.ignoredPackagesText());
+        ignored.set(prefill.ignored != null ? Config.parsePackages(prefill.ignored) : saved.ignoredPackages(),
+                saved.reportedPackages());
         TextFields.onChanged(urlField, this::onFieldsEdited);
-        TextFields.onChanged(ignoredField, this::onFieldsEdited);
         deviceNameSwitch.setChecked(saved.sendDeviceName());
         deviceNameSwitch.setOnCheckedChangeListener((button, checked) -> onFieldsEdited());
         heartbeat.show(saved.heartbeatMinutes());
@@ -95,7 +99,7 @@ public final class SettingsPanel {
         gate.onSaved(config);
         // Show the normalised values (trimmed, de-duplicated) rather than what was typed
         showUrl(config.webhookUrlText());
-        TextFields.show(ignoredField, config.ignoredPackagesText());
+        ignored.set(config.ignoredPackages(), config.reportedPackages());
         status.success(R.string.saved);
         updateSaveButton();
         // The disabled Save button gave up focus; Test webhook is the one action left
@@ -156,7 +160,7 @@ public final class SettingsPanel {
     private void setSending(boolean sending) {
         this.sending = sending;
         urlField.setEnabled(!sending);
-        ignoredField.setEnabled(!sending);
+        ignored.setEnabled(!sending);
         deviceNameSwitch.setEnabled(!sending);
         heartbeat.setEnabled(!sending);
         updateSaveButton();
@@ -200,8 +204,8 @@ public final class SettingsPanel {
     }
 
     private Config readFields() {
-        return Config.parse(urlField.getText().toString(), ignoredField.getText().toString(),
-                deviceNameSwitch.isChecked()).withHeartbeatMinutes(heartbeat.minutes());
+        return Config.parse(urlField.getText().toString(), ignored.text(),
+                deviceNameSwitch.isChecked()).withHeartbeatMinutes(heartbeat.minutes()).withReportedPackages(ignored.reported());
     }
 
     private Config readFieldsOrNull() {

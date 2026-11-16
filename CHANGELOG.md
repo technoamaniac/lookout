@@ -6,7 +6,14 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ### Added
 
+- A short setup the first time you open Lookout: a welcome screen, then each permission with whether it is on and a button to turn it on. Permissions your TV has no screen for show the one command to run from a computer instead. Open it again from **Settings → Permissions**.
+- Choose the apps to ignore from a list of the TV's apps, with their names and icons, instead of typing package names.
+- Keyboards, system UI and Lookout itself are ignored by default. They now show ticked at the bottom of the list, and clearing one makes Lookout report it.
 - Each release APK comes with a signed build provenance attestation, so you can check it was built by this repository's release workflow from the tagged code: `gh attestation verify lookout-v<version>.apk --repo technoamaniac/lookout`.
+
+### Changed
+
+- **Ignored packages** is now **Ignored apps**. Apps with no icon, such as a screensaver, are not in the list; ignore one by sending it from a computer with `--es ignored`.
 
 ## [0.4.1] - 2026-11-15
 

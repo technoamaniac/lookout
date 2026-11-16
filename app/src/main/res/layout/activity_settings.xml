@@ -126,4 +126,7 @@
 
     <!-- Delivery filter: the same scrim and sheet -->
     <include layout="@layout/sheet_delivery_filter" />
+
+    <!-- Ignored apps: the same scrim and sheet -->
+    <include layout="@layout/sheet_ignored_apps" />
 </FrameLayout>

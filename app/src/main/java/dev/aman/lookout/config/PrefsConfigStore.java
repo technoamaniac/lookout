@@ -3,6 +3,8 @@ package dev.aman.lookout.config;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import java.util.List;
+
 /**
  * Stores config in app-private preferences. The reporting switch shares the file, so the service's change listener
  * picks it up like any other setting.
@@ -11,6 +13,7 @@ public final class PrefsConfigStore implements ConfigStore, ReportingSwitch {
     private static final String FILE = "lookout";
     private static final String KEY_URL = "webhook_url";
     private static final String KEY_IGNORED = "ignored_packages";
+    private static final String KEY_REPORTED = "reported_packages";
     private static final String KEY_SEND_DEVICE_NAME = "send_device_name";
     private static final String KEY_REPORTING = "reporting";
     private static final String KEY_HEARTBEAT_MINUTES = "heartbeat_minutes";
@@ -26,16 +29,18 @@ public final class PrefsConfigStore implements ConfigStore, ReportingSwitch {
     @Override
     public Config load() {
         String ignored = prefs.getString(KEY_IGNORED, "");
+        List<String> reported = Config.parsePackages(prefs.getString(KEY_REPORTED, ""));
         // Off until the user opts in: the name can be personal
         boolean sendDeviceName = prefs.getBoolean(KEY_SEND_DEVICE_NAME, false);
         // Off until the user picks an interval
         int heartbeatMinutes = Math.max(0, prefs.getInt(KEY_HEARTBEAT_MINUTES, 0));
         try {
             return Config.parse(prefs.getString(KEY_URL, ""), ignored, sendDeviceName)
-                    .withHeartbeatMinutes(heartbeatMinutes);
+                    .withHeartbeatMinutes(heartbeatMinutes).withReportedPackages(reported);
         } catch (IllegalArgumentException e) {
             // A URL saved before validation tightened no longer parses; keep the other settings
-            return Config.parse("", ignored, sendDeviceName).withHeartbeatMinutes(heartbeatMinutes);
+            return Config.parse("", ignored, sendDeviceName).withHeartbeatMinutes(heartbeatMinutes)
+                    .withReportedPackages(reported);
         }
     }
 
@@ -44,6 +49,7 @@ public final class PrefsConfigStore implements ConfigStore, ReportingSwitch {
         prefs.edit()
                 .putString(KEY_URL, config.webhookUrlText())
                 .putString(KEY_IGNORED, config.ignoredPackagesText())
+                .putString(KEY_REPORTED, config.reportedPackagesText())
                 .putBoolean(KEY_SEND_DEVICE_NAME, config.sendDeviceName())
                 .putInt(KEY_HEARTBEAT_MINUTES, config.heartbeatMinutes())
                 .apply();

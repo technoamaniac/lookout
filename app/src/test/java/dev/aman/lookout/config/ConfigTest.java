@@ -83,4 +83,33 @@ public class ConfigTest {
     public void rejectsANegativeHeartbeat() {
         Config.parse("", "", false).withHeartbeatMinutes(-1);
     }
+
+    @Test
+    public void reportsNoDefaultPackagesUnlessTheUserChoseTo() {
+        assertTrue(Config.parse("", "", false).reportedPackages().isEmpty());
+    }
+
+    @Test
+    public void tidiesTheReportedPackagesLikeTheIgnoredOnes() {
+        Config config = Config.parse("", "", false)
+                .withReportedPackages(List.of(" com.example.keyboard ", "", "com.example.keyboard"));
+
+        assertEquals(List.of("com.example.keyboard"), config.reportedPackages());
+        assertEquals("com.example.keyboard", config.reportedPackagesText());
+    }
+
+    @Test
+    public void keepsTheReportedPackagesWhenTheHeartbeatChanges() {
+        Config config = Config.parse("", "", false).withReportedPackages(List.of("com.example.keyboard"))
+                .withHeartbeatMinutes(5);
+
+        assertEquals(List.of("com.example.keyboard"), config.reportedPackages());
+    }
+
+    @Test
+    public void configsThatReportDifferentPackagesAreNotEqual() {
+        Config plain = Config.parse("", "", false);
+
+        assertNotEquals(plain, plain.withReportedPackages(List.of("com.example.keyboard")));
+    }
 }

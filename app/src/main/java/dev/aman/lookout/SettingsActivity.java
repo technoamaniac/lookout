@@ -10,6 +10,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import dev.aman.lookout.config.PrefsConfigStore;
 import dev.aman.lookout.delivery.DeliveryLog;
 import dev.aman.lookout.delivery.WebhookTester;
+import dev.aman.lookout.setup.PrefsSetupStore;
+import dev.aman.lookout.setup.SystemPermissions;
 import dev.aman.lookout.ui.DeliveriesPanel;
 import dev.aman.lookout.ui.PanelHeader;
 import dev.aman.lookout.ui.PanelTabs;
@@ -52,11 +54,14 @@ public class SettingsActivity extends AppCompatActivity {
                 if (navigator.leaveOnBack()) finish();
             }
         });
+        SetupLauncher setup = new SetupLauncher(this, new PrefsSetupStore(this));
+        setup.openFrom(findViewById(R.id.open_permissions));
         PanelHeader header = new PanelHeader(this);
         DeliveryLog log = ((LookoutApplication) getApplication()).deliveryLog();
 
         PrefsConfigStore store = new PrefsConfigStore(this);
-        serviceStatus = new ServiceStatusPanel(this, new ComponentName(this, LookoutService.class), store);
+        SystemPermissions permissions = new SystemPermissions(this, new ComponentName(this, LookoutService.class));
+        serviceStatus = new ServiceStatusPanel(this, permissions, store);
         new SettingsPanel(this, store, new WebhookTester(log, System::currentTimeMillis), webhookTests,
                 new SettingsPanel.Prefill(getIntent().getStringExtra(EXTRA_URL), getIntent().getStringExtra(EXTRA_IGNORED)));
         deliveries = new DeliveriesPanel(this, log);
@@ -67,10 +72,14 @@ public class SettingsActivity extends AppCompatActivity {
             badge.setSuppressed(tab == Tab.UPDATES);
             deliveries.setSelected(tab == Tab.DELIVERIES);
         });
-        new UpdatesPanel(this, background, new PrefsUpdateChannel(this), badge::show).check(true);
+        new UpdatesPanel(this, background, new PrefsUpdateChannel(this), permissions, badge::show).check(true);
         // Only when first opened: a recreated screen keeps the tab the user moved to
         if (savedInstanceState == null && getIntent().getBooleanExtra(EXTRA_SHOW_UPDATES, false)) {
             tabs.focus(Tab.UPDATES);
+        }
+        // A URL sent from a computer means the user is already setting Lookout up that way
+        if (savedInstanceState == null) {
+            setup.openIfFirstRun(store.load().webhookUrl().isPresent() || getIntent().hasExtra(EXTRA_URL));
         }
     }
 

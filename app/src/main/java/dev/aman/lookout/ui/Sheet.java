@@ -30,15 +30,16 @@ final class Sheet {
         firstFocus.requestFocus();
     }
 
-    /** Closes the sheet; does nothing when it is not open. */
-    void hide() {
-        if (!isShowing()) return;
+    /** Closes the sheet; does nothing when it is not open. Returns whether it was. */
+    boolean hide() {
+        if (!isShowing()) return false;
         overlay.setVisibility(View.GONE);
         mainContent.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
         onClosed.run();
+        return true;
     }
 
-    private boolean isShowing() {
+    boolean isShowing() {
         return overlay.getVisibility() == View.VISIBLE;
     }
 }

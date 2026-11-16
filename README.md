@@ -47,9 +47,27 @@ You need:
 
 That is all. It is safe to run again, for example after a factory reset.
 
-### 2. Tell Lookout where to send things
+### 2. Allow what Lookout needs
 
-Open **Lookout** on the TV, then:
+The first time you open **Lookout**, it shows a short setup.
+
+1. Press **Get started**.
+
+   ![The welcome screen](docs/screenshots/1-welcome.png)
+
+2. Press **Allow** next to **Accessibility**, turn Lookout on in the screen that opens, then press Back. If you used `install.sh`, it already says **On**.
+3. The other two are optional. **Media access** lets Lookout report what is playing. **Install updates** lets it update itself. Press **Allow** on each one you want.
+4. Press **Done**.
+
+![The permissions screen](docs/screenshots/2-permissions.png)
+
+Some TVs have no screen for a permission. Fire TV has none for media access. There the button says **Show command**: it shows one line to run from your computer instead.
+
+You can open this screen again from **Settings → Permissions**.
+
+### 3. Tell Lookout where to send things
+
+![The Settings tab](docs/screenshots/3-settings.png)
 
 1. Type your webhook address.
 2. Press **Test webhook**. Wait until it says "Test event delivered". If it says something else, check the address.
@@ -67,9 +85,19 @@ adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
 ### Things you can do on the TV
 
 - **Enabled** (under the status on the left) turns all reports off and on. Your settings stay.
-- **Ignored packages** is a list of apps never to report, such as a launcher, separated by commas. For example: `com.spocky.projengmenu,com.google.android.apps.tv.dreamx`. You can also send it from your computer with `--es ignored "..."` in the command above.
+- **Ignored apps** are never reported, such as your launcher. Press **Choose** and tick them.
+
+  ![Choosing the apps to ignore](docs/screenshots/4-ignored-apps.png)
+
+  Keyboards, system UI and Lookout itself are ticked at the bottom, because they are ignored by default. Clear one to report it. Apps with no icon, such as a screensaver, are not listed. To ignore one, send it from your computer with `--es ignored "com.example.one,com.example.two"` in the command above.
+
 - **Deliveries** shows the last 10 messages and whether they arrived. Press OK on one to see exactly what was sent. **Filter** at the top also shows heartbeats.
+
+  ![The Deliveries tab](docs/screenshots/5-deliveries.png)
+
 - **Updates** installs the newest version. Tick **Include pre-releases** to get test versions too. Lookout only talks to GitHub while this tab is open.
+
+  ![The Updates tab](docs/screenshots/6-updates.png)
 
 ## Home Assistant example
 
@@ -93,7 +121,7 @@ The condition matters: screen and playback messages arrive on the same webhook.
 
 ## What it sends
 
-An accessibility service listens for window changes only. It never reads window content, so it sees which app is in front, not what is on screen. System UI, keyboards and Lookout itself are ignored. Each app change is sent as:
+An accessibility service listens for window changes only. It never reads window content, so it sees which app is in front, not what is on screen. System UI, keyboards and Lookout itself are ignored unless you choose to report them. Each app change is sent as:
 
 ```json
 POST <webhook url>
@@ -145,7 +173,7 @@ Lookout can also report what an app is playing:
 - `artwork` is a web address. Text is cut at 200 characters.
 - `device` works as above.
 
-It is off until you allow it once from your computer:
+It is off until you allow **Media access** in setup (**Settings → Permissions**). If your TV has no screen for it, run this once from your computer instead:
 
 ```sh
 adb shell cmd notification allow_listener dev.aman.lookout/dev.aman.lookout.playback.MediaAccessService
@@ -193,9 +221,9 @@ Pick an interval under **Heartbeat** on the Settings tab and Lookout also sends 
 
 ## Limitations
 
-- Playback is only reported for apps with an active media session, and only after the one-time grant above. Jellyfin's default video player has none yet, so its episodes and movies are not reported.
+- Playback is only reported for apps with an active media session, and only after **Media access** is allowed. Jellyfin's default video player has none yet, so its episodes and movies are not reported.
 - After a restart, Lookout reports the next app change. Android only names the app in front when the service may read window content, which Lookout deliberately does not.
-- In-app updates need the "install unknown apps" permission; some TVs have no screen to grant it, so use `scripts/install.sh` there.
+- In-app updates need **Install updates** allowed; some TVs have no screen for it, so use `scripts/install.sh` there.
 
 ## Development
 
@@ -207,19 +235,21 @@ Needs JDK 17 and the Android SDK (platform 37).
 
 Logic lives in plain-Java packages with JVM unit tests; Android classes stay thin.
 
-| Package      | Contents                                                                                      |
-| ------------ | --------------------------------------------------------------------------------------------- |
-| `event`      | `Event` and the JSON builder                                                                  |
-| `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`                          |
-| `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes                       |
-| `playback`   | `PlaybackTracker` and `PlaybackEvent`; `MediaSessionWatcher` reads the sessions               |
-| `delivery`   | `Outbox`, `OutboxSender` and `WebhookSink`; `DeliveryLog`                                     |
-| `heartbeat`  | `Heartbeat` sends `HeartbeatEvent` at the chosen interval                                     |
-| `navigation` | `RailFocus` decides where the D-pad goes between a page and the side rail; `ExitConfirmation` |
-| `config`     | `Config`, validated settings; `SaveGate`; `PrefsConfigStore` persists them                    |
-| `update`     | `GitHubReleases`, `UpdateChecker`, `ApkFetcher`, `UpdateInstaller`, `RelaunchAfterUpdate`     |
-| `ui`         | One panel class per tab                                                                       |
-| (root)       | `LookoutService` and `SettingsActivity`; their names are stored on the TV                     |
+| Package      | Contents                                                                                           |
+| ------------ | -------------------------------------------------------------------------------------------------- |
+| `event`      | `Event` and the JSON builder                                                                       |
+| `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`                               |
+| `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes                            |
+| `playback`   | `PlaybackTracker` and `PlaybackEvent`; `MediaSessionWatcher` reads the sessions                    |
+| `delivery`   | `Outbox`, `OutboxSender` and `WebhookSink`; `DeliveryLog`                                          |
+| `heartbeat`  | `Heartbeat` sends `HeartbeatEvent` at the chosen interval                                          |
+| `navigation` | `RailFocus` decides where the D-pad goes between a page and the side rail; `ExitConfirmation`      |
+| `config`     | `Config`, validated settings; `SaveGate`; `PrefsConfigStore` persists them                         |
+| `setup`      | `Checklist` of permissions, `AdbCommand`, `FirstRun`; `SystemPermissions` reads the system         |
+| `apps`       | `IgnoredChoice` is the ignored-apps list; `InstalledApps` and `BuiltInApps` list the TV's apps     |
+| `update`     | `GitHubReleases`, `UpdateChecker`, `ApkFetcher`, `UpdateInstaller`, `RelaunchAfterUpdate`          |
+| `ui`         | One panel class per tab                                                                            |
+| (root)       | `LookoutService`, `SettingsActivity` and `SetupActivity`; the first two names are stored on the TV |
 
 To send events somewhere other than a webhook, implement `EventSink`.
 

@@ -2,7 +2,7 @@
 <resources>
     <string name="app_name">Lookout</string>
     <string name="service_description">Reports the app in front, the screen state and, if you allow it, playback to your webhook. It never reads what is on screen.</string>
-    <string name="helper_ignored">Comma-separated. Keyboards and system UI are always ignored.</string>
+    <string name="helper_ignored">Never reported. Keyboards, system UI and Lookout are ignored by default; clear them in the list to report them.</string>
     <string name="label_url">Webhook URL</string>
     <string name="hint_url">https://example.com/hooks/lookout</string>
     <string name="label_send_device_name">Send this TV\'s name</string>
@@ -13,8 +13,7 @@
     <string name="heartbeat_5">5 minutes</string>
     <string name="heartbeat_15">15 minutes</string>
     <string name="helper_heartbeat">Regularly sends a short message, so your smart home can tell Lookout is running and the TV is reachable. A missed one is not resent.</string>
-    <string name="label_ignored">Ignored packages (optional)</string>
-    <string name="hint_ignored">com.example.launcher</string>
+    <string name="label_ignored">Ignored apps (optional)</string>
     <string name="save">Save</string>
     <string name="test_webhook">Test webhook</string>
     <string name="saved">Saved. Changes apply right away.</string>
@@ -86,4 +85,48 @@
     <string name="response_rejected">Refused by the webhook; it will not be retried</string>
     <string name="response_failed">Not delivered; Lookout retries it</string>
     <string name="response_not_resent">Not delivered; Lookout does not resend it</string>
+    <string name="ignored_none">None</string>
+    <string name="ignored_choose">Choose</string>
+    <string name="ignored_title">Ignored apps</string>
+    <plurals name="ignored_count">
+        <item quantity="one">%1$d ignored</item>
+        <item quantity="other">%1$d ignored</item>
+    </plurals>
+    <string name="ignored_helper">Ticked apps are never reported. Kept when you press Save.</string>
+    <string name="ignored_section_home">Home screens</string>
+    <string name="ignored_section_apps">Apps</string>
+    <string name="ignored_section_other">Other packages</string>
+    <string name="ignored_section_default">Ignored by default</string>
+    <string name="builtin_system_ui">System UI</string>
+    <string name="open_permissions">Permissions</string>
+    <string name="setup_step">Step %1$d of 2</string>
+    <string name="welcome_title">Let your smart home know what this TV is doing</string>
+    <string name="welcome_body">Lookout sends a short message to your webhook when the app in front changes, the screen turns on or off, or playback changes.</string>
+    <string name="welcome_point_private">Sees which app is in front, never what is on screen</string>
+    <string name="welcome_point_https">Sends only to the HTTPS address you give it</string>
+    <string name="welcome_point_playback">Playback reporting stays off until you allow it</string>
+    <string name="get_started">Get started</string>
+    <string name="skip_setup">Skip setup</string>
+    <string name="permissions_title">Permissions</string>
+    <string name="permissions_subtitle">Lookout needs the first one. The other two add features. You can open this screen again from Settings.</string>
+    <string name="perm_accessibility">Accessibility</string>
+    <string name="perm_media_access">Media access</string>
+    <string name="perm_install_updates">Install updates</string>
+    <string name="perm_accessibility_desc">Lets Lookout see which app is in front. Without it, nothing is reported.</string>
+    <string name="perm_media_access_desc">Reports what is playing. Without it, no playback messages.</string>
+    <string name="perm_install_updates_desc">Lets Lookout update itself. Without it, update from a computer.</string>
+    <string name="perm_no_screen">%1$s This TV has no screen for it.</string>
+    <string name="perm_needed">Needed</string>
+    <string name="perm_optional">Optional</string>
+    <string name="perm_on">On</string>
+    <string name="perm_off">Off</string>
+    <string name="perm_allow">Allow</string>
+    <string name="perm_show_command">Show command</string>
+    <string name="perm_done">Done</string>
+    <string name="perm_back">Back</string>
+    <string name="perm_rows_update">Rows update when you come back from system settings.</string>
+    <string name="command_title">Allow from a computer</string>
+    <string name="command_body">This TV has no screen for %1$s. On a computer connected to the TV with adb, run:</string>
+    <string name="command_note">Nothing to type on the TV. When you come back here, the row updates by itself.</string>
+    <string name="command_close">Close</string>
 </resources>

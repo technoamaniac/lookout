@@ -2,15 +2,15 @@ package dev.aman.lookout.ui;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
-import android.content.Context;
 import android.content.Intent;
-import android.net.Uri;
-import android.provider.Settings;
+import android.content.Context;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.TextView;
 
 import dev.aman.lookout.R;
+import dev.aman.lookout.setup.Permission;
+import dev.aman.lookout.setup.SystemPermissions;
 import dev.aman.lookout.update.ApkFetcher;
 import dev.aman.lookout.update.GitHubReleases;
 import dev.aman.lookout.update.InstalledVersion;
@@ -33,6 +33,7 @@ public final class UpdatesPanel {
     private final Activity activity;
     private final Executor background;
     private final UpdateChannel channel;
+    private final SystemPermissions permissions;
     private final Consumer<Optional<Release>> onAvailabilityChanged;
     private final StatusLine status;
     private final MaterialButton checkButton;
@@ -48,9 +49,10 @@ public final class UpdatesPanel {
     private boolean recheckRequested;
 
     /** @param onAvailabilityChanged told after every check whether a newer release exists */
-    public UpdatesPanel(Activity activity, Executor background, UpdateChannel channel,
+    public UpdatesPanel(Activity activity, Executor background, UpdateChannel channel, SystemPermissions permissions,
                         Consumer<Optional<Release>> onAvailabilityChanged) {
         this.activity = activity;
+        this.permissions = permissions;
         this.background = background;
         this.channel = channel;
         this.onAvailabilityChanged = onAvailabilityChanged;
@@ -90,7 +92,7 @@ public final class UpdatesPanel {
 
     private void install() {
         if (busy || available == null) return;
-        if (!activity.getPackageManager().canRequestPackageInstalls()) {
+        if (!permissions.isGranted(Permission.INSTALL_UPDATES)) {
             openInstallPermissionScreen();
             return;
         }
@@ -166,13 +168,17 @@ public final class UpdatesPanel {
 
     private void openInstallPermissionScreen() {
         try {
-            activity.startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
-                    Uri.parse("package:" + activity.getPackageName())));
-            status.warning(R.string.update_allow_installs);
+            Optional<Intent> screen = permissions.screenFor(Permission.INSTALL_UPDATES);
+            if (screen.isPresent()) {
+                activity.startActivity(screen.get());
+                status.warning(R.string.update_allow_installs);
+                return;
+            }
         } catch (ActivityNotFoundException e) {
-            // Some TV builds ship without this screen
-            status.error(R.string.update_no_permission_screen);
+            // Treated like a missing screen below
         }
+        // Some TV builds ship without this screen
+        status.error(R.string.update_no_permission_screen);
     }
 
     private static void useSecondaryStyle(MaterialButton button, boolean secondary) {

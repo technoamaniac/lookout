@@ -2,9 +2,7 @@ package dev.aman.lookout.ui;
 
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
-import android.content.ComponentName;
 import android.content.Intent;
-import android.provider.Settings;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
@@ -12,6 +10,10 @@ import android.widget.TextView;
 
 import dev.aman.lookout.R;
 import dev.aman.lookout.config.ReportingSwitch;
+import dev.aman.lookout.setup.Permission;
+import dev.aman.lookout.setup.SystemPermissions;
+
+import java.util.Optional;
 
 /**
  * Shows whether the accessibility service is switched on, with a shortcut to switch it on, and the switch that
@@ -19,7 +21,7 @@ import dev.aman.lookout.config.ReportingSwitch;
  */
 public final class ServiceStatusPanel {
     private final Activity activity;
-    private final ComponentName service;
+    private final SystemPermissions permissions;
     private final View runningCard;
     private final View notEnabledCard;
     private final View openSettingsButton;
@@ -29,9 +31,9 @@ public final class ServiceStatusPanel {
     private final ImageView dot;
     private final TextView detail;
 
-    public ServiceStatusPanel(Activity activity, ComponentName service, ReportingSwitch reporting) {
+    public ServiceStatusPanel(Activity activity, SystemPermissions permissions, ReportingSwitch reporting) {
         this.activity = activity;
-        this.service = service;
+        this.permissions = permissions;
         this.reporting = reporting;
         runningCard = activity.findViewById(R.id.service_on_card);
         notEnabledCard = activity.findViewById(R.id.service_off_card);
@@ -49,7 +51,7 @@ public final class ServiceStatusPanel {
 
     /** Re-reads the system setting; call whenever the screen comes back into view. */
     public void refresh() {
-        boolean enabled = isEnabled();
+        boolean enabled = permissions.isGranted(Permission.ACCESSIBILITY);
         runningCard.setVisibility(enabled ? View.VISIBLE : View.GONE);
         notEnabledCard.setVisibility(enabled ? View.GONE : View.VISIBLE);
         // Down from the last tab goes to whichever card shows, not into the page beside it
@@ -64,24 +66,17 @@ public final class ServiceStatusPanel {
         detail.setText(on ? R.string.service_enabled_detail : R.string.service_paused_detail);
     }
 
-    private boolean isEnabled() {
-        String enabled = Settings.Secure.getString(activity.getContentResolver(),
-                Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES);
-        if (enabled == null) return false;
-        // Compare whole entries: a substring match would accept e.g. ".LookoutServiceX", and
-        // entries may use the short "pkg/.Class" form
-        for (String entry : enabled.split(":")) {
-            if (service.equals(ComponentName.unflattenFromString(entry))) return true;
-        }
-        return false;
-    }
-
     private void openAccessibilitySettings() {
+        Optional<Intent> screen = permissions.screenFor(Permission.ACCESSIBILITY);
         try {
-            activity.startActivity(new Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS));
+            if (screen.isPresent()) {
+                activity.startActivity(screen.get());
+                return;
+            }
         } catch (ActivityNotFoundException e) {
-            // Some TV builds ship without this screen; the status text already points to the install script
-            openSettingsButton.setVisibility(View.GONE);
+            // Treated like a missing screen below
         }
+        // Some TV builds ship without this screen; the status text already points to the install script
+        openSettingsButton.setVisibility(View.GONE);
     }
 }

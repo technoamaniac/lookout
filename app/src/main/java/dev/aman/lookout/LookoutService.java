@@ -8,9 +8,8 @@ import android.os.Handler;
 import android.os.Looper;
 import android.provider.Settings;
 import android.view.accessibility.AccessibilityEvent;
-import android.view.inputmethod.InputMethodInfo;
-import android.view.inputmethod.InputMethodManager;
 
+import dev.aman.lookout.apps.BuiltInApps;
 import dev.aman.lookout.config.Config;
 import dev.aman.lookout.config.DeviceName;
 import dev.aman.lookout.config.PrefsConfigStore;
@@ -37,8 +36,6 @@ import java.util.concurrent.ScheduledExecutorService;
 
 /** Android adapter: wires window, device and playback events through the trackers to the outbox. */
 public class LookoutService extends AccessibilityService {
-    private static final String SYSTEM_UI = "com.android.systemui";
-
     // Lives as long as the service: settings changes reconfigure it, so the app in front is not forgotten
     private final ForegroundTracker tracker = new ForegroundTracker(new PackageFilter(List.of()));
     private final PlaybackTracker playback = new PlaybackTracker();
@@ -141,7 +138,7 @@ public class LookoutService extends AccessibilityService {
     private void configure() {
         Config config = store.load();
         sendDeviceName = config.sendDeviceName();
-        tracker.setFilter(new PackageFilter(ignoredPackages(config)));
+        tracker.setFilter(filterFor(config));
         boolean reporting = store.isReportingOn();
         outbox.update(config.webhookUrl().orElse(null), reporting);
         // Nothing to beat for while reports are paused or there is no webhook; resuming beats at once
@@ -164,15 +161,8 @@ public class LookoutService extends AccessibilityService {
         outbox.sendNow(heartbeat);
     }
 
-    // Keyboards and system chrome raise window events over the real foreground app
-    private List<String> ignoredPackages(Config config) {
-        List<String> ignored = new ArrayList<>(config.ignoredPackages());
-        ignored.add(SYSTEM_UI);
-        ignored.add(getPackageName());
-        InputMethodManager imm = getSystemService(InputMethodManager.class);
-        if (imm != null) {
-            for (InputMethodInfo ime : imm.getEnabledInputMethodList()) ignored.add(ime.getPackageName());
-        }
-        return ignored;
+    private PackageFilter filterFor(Config config) {
+        return PackageFilter.of(config.ignoredPackages(), new BuiltInApps(this).packageNames(),
+                config.reportedPackages());
     }
 }

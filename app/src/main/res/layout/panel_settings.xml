@@ -53,14 +53,36 @@
             android:layout_marginTop="20dp"
             android:text="@string/label_ignored" />
 
-        <EditText
-            android:id="@+id/ignored"
-            style="@style/Widget.Lookout.Field"
+        <LinearLayout
+            android:id="@+id/ignored_row"
+            android:layout_width="match_parent"
+            android:layout_height="56dp"
             android:layout_marginTop="6dp"
-            android:autofillHints="none"
-            android:hint="@string/hint_ignored"
-            android:imeOptions="actionDone"
-            android:inputType="text" />
+            android:background="@drawable/bg_field"
+            android:clickable="true"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp">
+
+            <TextView
+                android:id="@+id/ignored_summary"
+                style="@style/Text.Body"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:singleLine="true" />
+
+            <TextView
+                style="@style/Text.Label"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:text="@string/ignored_choose"
+                android:textColor="@color/accent" />
+        </LinearLayout>
 
         <TextView
             style="@style/Text.Secondary"
@@ -176,4 +198,13 @@ android:orientation="horizontal">
             android:id="@+id/status"
             style="@style/Widget.Lookout.Chip"
             android:layout_marginTop="20dp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/open_permissions"
+            style="@style/Widget.Lookout.Button.Secondary"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="@string/open_permissions"
+            app:icon="@drawable/ic_info" />
 </LinearLayout>
