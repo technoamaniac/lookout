@@ -24,11 +24,13 @@ public class OutboxSenderTest {
     /** Records what each webhook was sent, and answers with queued results, then the default. */
     private static final class FakeWebhooks {
         final List<String> sent = new ArrayList<>();
+        final List<String> payloads = new ArrayList<>();
         final Deque<DeliveryResult> results = new ArrayDeque<>();
         DeliveryResult otherwise = DeliveryResult.DELIVERED;
 
         EventSink sinkFor(URL webhook) {
             return message -> {
+                payloads.add(message.toJson());
                 sent.add(webhook.getHost() + " " + message.summary() + (message.toJson().contains("\"delayed\":true")
                         ? " delayed" : ""));
                 return results.isEmpty() ? otherwise : results.poll();
@@ -57,6 +59,7 @@ public class OutboxSenderTest {
     private final FakeWebhooks webhooks = new FakeWebhooks();
     private final MemoryStore store = new MemoryStore();
     private long wallMillis = 1_000_000;
+    private String deviceName;
     private OutboxSender sender = newSender();
 
     private static URL url(String text) {
@@ -69,17 +72,42 @@ public class OutboxSenderTest {
 
     private OutboxSender newSender() {
         OutboxSender created = new OutboxSender(new Outbox(new Backoff(new long[] {FIRST_WAIT, 10_000}, () -> 0.5)),
-                store, webhooks::sinkFor, scheduler, scheduler::now, () -> wallMillis);
+                store, webhooks::sinkFor, scheduler, () -> deviceName, scheduler::now, () -> wallMillis);
         created.start();
         return created;
     }
 
     private void report(String pkg) {
-        sender.report(new AppEvent(pkg, 1));
+        sender.report(new AppEvent(pkg));
     }
 
     private void reportScreenOn() {
-        sender.report(new DeviceEvent(DeviceEvent.Kind.SCREEN_ON, 1));
+        sender.report(new DeviceEvent(DeviceEvent.Kind.SCREEN_ON));
+    }
+
+    @Test
+    public void stampsEachMessageWithTheTvsNameAndTheTimeItWasReported() {
+        sender.update(WEBHOOK, true);
+        deviceName = "Den";
+        report("a");
+        scheduler.runQueued();
+        assertTrue(webhooks.payloads.get(0).contains("\"device\":\"Den\",\"timestamp\":1000,"));
+    }
+
+    @Test
+    public void readsTheTvsNameForEachMessageSoARenameOrOptOutAppliesAtOnce() {
+        sender.update(WEBHOOK, true);
+        deviceName = "Den";
+        report("a");
+        scheduler.runQueued();
+        deviceName = "Bedroom";
+        report("b");
+        scheduler.runQueued();
+        deviceName = null;
+        report("c");
+        scheduler.runQueued();
+        assertTrue(webhooks.payloads.get(1).contains("\"device\":\"Bedroom\""));
+        assertFalse(webhooks.payloads.get(2).contains("\"device\""));
     }
 
     @Test
@@ -307,16 +335,26 @@ public class OutboxSenderTest {
         scheduler.runQueued();
         int saves = store.saves;
         webhooks.otherwise = DeliveryResult.TEMPORARY_FAILURE;
-        sender.sendNow(new AppEvent("beat", 1));
+        sender.sendNow(new AppEvent("beat"));
         scheduler.advance(60 * 60_000L);
         assertEquals(List.of("ha.example beat"), webhooks.sent);
         assertEquals(saves, store.saves);
     }
 
     @Test
+    public void stampsAHeartbeatWithTheTvsNameAndTheTimeItWasSent() {
+        sender.update(WEBHOOK, true);
+        scheduler.runQueued();
+        deviceName = "Den";
+        sender.sendNow(new AppEvent("beat"));
+        scheduler.runQueued();
+        assertTrue(webhooks.payloads.get(0).contains("\"device\":\"Den\",\"timestamp\":1000,"));
+    }
+
+    @Test
     public void sendsNoHeartbeatWhilePaused() {
         sender.update(WEBHOOK, false);
-        sender.sendNow(new AppEvent("beat", 1));
+        sender.sendNow(new AppEvent("beat"));
         scheduler.runQueued();
         assertTrue(webhooks.sent.isEmpty());
     }
@@ -328,7 +366,7 @@ public class OutboxSenderTest {
         report("a");
         scheduler.runQueued();
 
-        sender.sendNow(new AppEvent("beat", 1));
+        sender.sendNow(new AppEvent("beat"));
         scheduler.runQueued();
 
         assertEquals(List.of("ha.example a", "ha.example beat", "ha.example a"), webhooks.sent);

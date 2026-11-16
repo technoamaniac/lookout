@@ -22,9 +22,13 @@ public final class WebhookTester {
         this.clockMillis = clockMillis;
     }
 
-    /** Blocks on the network, so call it off the main thread. */
-    public DeliveryResult test(URL url, Event event) {
-        Message message = Message.of(event, clockMillis.getAsLong());
+    /**
+     * Blocks on the network, so call it off the main thread.
+     *
+     * @param device the TV's name to send, or null to leave it out
+     */
+    public DeliveryResult test(URL url, Event event, String device) {
+        Message message = Message.of(event, device, clockMillis.getAsLong());
         return new RecordingSink(sinkFor.apply(url), log, clockMillis).send(message);
     }
 }

@@ -13,7 +13,7 @@ import org.junit.Test;
 
 public class WebhookTesterTest {
     private final DeliveryLog log = new DeliveryLog(10);
-    private final AppEvent event = new AppEvent("com.example.test", 5);
+    private final AppEvent event = new AppEvent("com.example.test");
 
     @Test
     public void sendsToTheGivenUrlAndReturnsTheResult() throws Exception {
@@ -24,7 +24,7 @@ public class WebhookTesterTest {
         }, log, () -> 0);
         URL url = new URL("https://example.com/h");
 
-        assertEquals(DeliveryResult.PERMANENT_FAILURE, tester.test(url, event));
+        assertEquals(DeliveryResult.PERMANENT_FAILURE, tester.test(url, event, null));
         assertEquals(List.of(url), urls);
     }
 
@@ -32,11 +32,11 @@ public class WebhookTesterTest {
     public void recordsTheAttemptForTheDeliveriesTab() throws Exception {
         WebhookTester tester = new WebhookTester(url -> e -> DeliveryResult.DELIVERED, log, () -> 7_000);
 
-        tester.test(new URL("https://example.com/h"), event);
+        tester.test(new URL("https://example.com/h"), event, "Den");
 
         DeliveryRecord record = log.recent().get(0);
         assertEquals(event.summary(), record.message().summary());
-        assertTrue(record.message().toJson().contains("\"id\":"));
+        assertTrue(record.message().toJson().contains("\"device\":\"Den\",\"timestamp\":7,\"id\":"));
         assertEquals(DeliveryResult.DELIVERED, record.result());
         assertEquals(7_000, record.attemptedAtMillis());
     }

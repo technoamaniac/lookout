@@ -32,7 +32,7 @@ public class HeartbeatTest {
     private final List<Long> beats = new ArrayList<>();
     private final Heartbeat heartbeat = new Heartbeat(tasks, interval -> {
         beats.add(interval);
-        return new AppEvent("beat", 0);
+        return new AppEvent("beat");
     }, (Event event) -> {});
 
     @Test
@@ -65,7 +65,7 @@ public class HeartbeatTest {
 
     @Test
     public void aFailedBeatDoesNotEndTheBeats() {
-        Heartbeat failing = new Heartbeat(tasks, interval -> new AppEvent("beat", 0), event -> {
+        Heartbeat failing = new Heartbeat(tasks, interval -> new AppEvent("beat"), event -> {
             throw new IllegalStateException();
         });
         try {

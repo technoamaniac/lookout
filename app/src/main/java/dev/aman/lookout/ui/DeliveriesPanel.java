@@ -10,7 +10,6 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.util.List;
 
 import dev.aman.lookout.R;
-import dev.aman.lookout.delivery.DeliveryFilter;
 import dev.aman.lookout.delivery.DeliveryLog;
 import dev.aman.lookout.delivery.DeliveryRecord;
 

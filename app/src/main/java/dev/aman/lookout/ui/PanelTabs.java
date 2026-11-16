@@ -3,7 +3,9 @@ package dev.aman.lookout.ui;
 import android.app.Activity;
 import android.view.View;
 
-import java.util.function.IntConsumer;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.function.Consumer;
 
 /**
  * The rail's tabs. Selecting a tab (by click, or by moving the D-pad focus onto it) shows its
@@ -12,37 +14,31 @@ import java.util.function.IntConsumer;
 public final class PanelTabs {
     private static final long FADE_IN_MS = 180;
 
-    private final Activity activity;
-    private final View[] tabs;
-    private final int[] panelIds;
-    private IntConsumer onSelected = index -> {};
-    private int selected = -1;
+    private final Map<Tab, View> tabs = new EnumMap<>(Tab.class);
+    private final Map<Tab, View> panels = new EnumMap<>(Tab.class);
+    private Consumer<Tab> onSelected = tab -> {};
+    private Tab selected;
 
-    /** @param tabIds   one view id per tab
-     *  @param panelIds the panel that belongs to each tab, in the same order */
-    public PanelTabs(Activity activity, int[] tabIds, int[] panelIds) {
-        this.activity = activity;
-        this.panelIds = panelIds;
-        tabs = new View[tabIds.length];
-        for (int i = 0; i < tabIds.length; i++) {
-            int index = i;
-            tabs[i] = activity.findViewById(tabIds[i]);
-            tabs[i].setOnClickListener(v -> select(index));
+    public PanelTabs(Activity activity) {
+        for (Tab tab : Tab.values()) {
+            View view = activity.findViewById(tab.tabId);
+            view.setOnClickListener(v -> select(tab));
             // On a TV the panel follows the D-pad, like the system settings: no OK press needed
-            tabs[i].setOnFocusChangeListener((v, hasFocus) -> {
-                if (hasFocus) select(index);
+            view.setOnFocusChangeListener((v, hasFocus) -> {
+                if (hasFocus) select(tab);
             });
+            tabs.put(tab, view);
+            panels.put(tab, activity.findViewById(tab.panelId));
         }
-        select(0);
+        select(Tab.values()[0]);
     }
 
-    /** The selected tab, in the order of the rail. */
-    public int selected() {
+    public Tab selected() {
         return selected;
     }
 
     /** Runs now with the current tab, and again whenever the selection changes. */
-    public void onSelected(IntConsumer listener) {
+    public void onSelected(Consumer<Tab> listener) {
         onSelected = listener;
         listener.accept(selected);
     }
@@ -52,17 +48,17 @@ public final class PanelTabs {
      * {@link #select} from a view that hides when the tab changes: a focused view that hides
      * hands focus to the first tab, which would switch the panel straight back.
      */
-    public void focus(int index) {
-        if (!tabs[index].requestFocus()) select(index);
+    public void focus(Tab tab) {
+        if (!tabs.get(tab).requestFocus()) select(tab);
     }
 
-    public void select(int index) {
-        if (index == selected) return;
-        selected = index;
-        for (int i = 0; i < tabs.length; i++) {
-            tabs[i].setSelected(i == index);
-            View panel = activity.findViewById(panelIds[i]);
-            if (i != index) {
+    public void select(Tab tab) {
+        if (tab == selected) return;
+        selected = tab;
+        for (Tab each : Tab.values()) {
+            tabs.get(each).setSelected(each == tab);
+            View panel = panels.get(each);
+            if (each != tab) {
                 panel.setVisibility(View.GONE);
             } else if (panel.getVisibility() != View.VISIBLE) {
                 panel.setAlpha(0f);
@@ -70,6 +66,6 @@ public final class PanelTabs {
                 panel.animate().alpha(1f).setDuration(FADE_IN_MS).start();
             }
         }
-        onSelected.accept(index);
+        onSelected.accept(tab);
     }
 }

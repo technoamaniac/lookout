@@ -8,6 +8,7 @@ import java.util.Optional;
 import java.util.OptionalLong;
 import java.util.function.Function;
 import java.util.function.LongSupplier;
+import java.util.function.Supplier;
 
 /**
  * Works through the {@link Outbox}: every event goes into it and is saved first, then delivered newest first, one at a
@@ -35,6 +36,7 @@ public final class OutboxSender {
     private final OutboxStore store;
     private final Function<URL, EventSink> sinks;
     private final Scheduler scheduler;
+    private final Supplier<String> deviceName;
     private final LongSupplier elapsedMillis;
     private final LongSupplier wallMillis;
     // Only touched on the scheduler's thread
@@ -46,15 +48,18 @@ public final class OutboxSender {
 
     /**
      * @param sinks         builds the sink that delivers to a webhook
+     * @param deviceName    the TV's name to put in each message, or null to leave it out; asked per message, on the
+     *                      scheduler's thread, so renaming the TV or changing the setting applies at once
      * @param elapsedMillis a clock that never jumps, for retry waits
      * @param wallMillis    the wall clock, for when events happened
      */
     public OutboxSender(Outbox outbox, OutboxStore store, Function<URL, EventSink> sinks, Scheduler scheduler,
-                        LongSupplier elapsedMillis, LongSupplier wallMillis) {
+                        Supplier<String> deviceName, LongSupplier elapsedMillis, LongSupplier wallMillis) {
         this.outbox = outbox;
         this.store = store;
         this.sinks = sinks;
         this.scheduler = scheduler;
+        this.deviceName = deviceName;
         this.elapsedMillis = elapsedMillis;
         this.wallMillis = wallMillis;
     }
@@ -64,11 +69,12 @@ public final class OutboxSender {
         scheduler.execute(() -> outbox.restore(store.load()));
     }
 
-    // Timed here, when it happened; the id is made on the worker, since the first random UUID can be slow to make
+    // Timed here, when it happened; the message is made on the worker, since the first random UUID can be slow to
+    // make and the TV's name is read from system settings
     public void report(Event event) {
         long occurredAtMillis = wallMillis.getAsLong();
         scheduler.execute(() -> {
-            outbox.add(Message.of(event, occurredAtMillis));
+            outbox.add(Message.of(event, deviceName.get(), occurredAtMillis));
             store.save(outbox.snapshot());
             queueDelivery();
         });
@@ -105,7 +111,7 @@ public final class OutboxSender {
         scheduler.execute(() -> {
             if (!on || sink == null) return;
             // It just reached the webhook, so anything waiting out a retry would too
-            if (sink.send(Message.of(event, occurredAtMillis)) == DeliveryResult.DELIVERED) {
+            if (sink.send(Message.of(event, deviceName.get(), occurredAtMillis)) == DeliveryResult.DELIVERED) {
                 outbox.retryNow();
                 queueDelivery();
             }

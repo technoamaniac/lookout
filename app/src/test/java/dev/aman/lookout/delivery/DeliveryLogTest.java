@@ -15,11 +15,11 @@ import org.junit.Test;
 
 public class DeliveryLogTest {
     private static DeliveryRecord record(String pkg) {
-        return new DeliveryRecord(Message.of(new AppEvent(pkg, 1), 1000), DeliveryResult.DELIVERED, 1000);
+        return new DeliveryRecord(Message.of(new AppEvent(pkg), null, 1000), DeliveryResult.DELIVERED, 1000);
     }
 
     private static DeliveryRecord beat(long epochSeconds) {
-        return new DeliveryRecord(Message.of(new HeartbeatEvent(60, epochSeconds), epochSeconds * 1000),
+        return new DeliveryRecord(Message.of(new HeartbeatEvent(60), null, epochSeconds * 1000),
                 DeliveryResult.DELIVERED, 1000);
     }
 
@@ -124,7 +124,7 @@ public class DeliveryLogTest {
     }
 
     private static DeliveryRecord failedBeat(long epochSeconds) {
-        return new DeliveryRecord(Message.of(new HeartbeatEvent(60, epochSeconds), epochSeconds * 1000),
+        return new DeliveryRecord(Message.of(new HeartbeatEvent(60), null, epochSeconds * 1000),
                 DeliveryResult.TEMPORARY_FAILURE, 1000);
     }
 

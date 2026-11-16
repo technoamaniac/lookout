@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import dev.aman.lookout.support.FakeWebhookServer;
 
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Optional;
 
 import org.junit.After;
@@ -46,6 +47,15 @@ public class GitHubReleasesTest {
     public void reportsNothingWhenTheRepoHasNoReleases() throws IOException {
         server.route(LATEST, 302, "/owner/repo/releases", new byte[0]);
         assertTrue(releases.latest(false).isEmpty());
+    }
+
+    @Test(expected = IOException.class)
+    public void refusesAFeedTooLargeToBeOurs() throws IOException {
+        byte[] huge = new byte[2 * 1024 * 1024];
+        Arrays.fill(huge, (byte) ' ');
+        server.route(FEED, 200, null, huge);
+        server.route(LATEST, 302, server.baseUrl() + "/owner/repo/releases/tag/v1.0.0", new byte[0]);
+        releases.latest(true);
     }
 
     @Test

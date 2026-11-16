@@ -23,22 +23,9 @@ public final class DeviceEvent implements Event {
     }
 
     private final Kind kind;
-    private final String device;
-    private final long epochSeconds;
 
-    public DeviceEvent(Kind kind, long epochSeconds) {
-        this(kind, null, epochSeconds);
-    }
-
-    private DeviceEvent(Kind kind, String device, long epochSeconds) {
+    public DeviceEvent(Kind kind) {
         this.kind = Objects.requireNonNull(kind);
-        this.device = device;
-        this.epochSeconds = epochSeconds;
-    }
-
-    /** A copy naming this TV so one webhook can serve several; null or blank for none. */
-    public DeviceEvent withDevice(String device) {
-        return new DeviceEvent(kind, device, epochSeconds);
     }
 
     public Kind kind() {
@@ -59,9 +46,6 @@ public final class DeviceEvent implements Event {
 
     @Override
     public JsonFields fields() {
-        return new JsonFields()
-                .string("event", kind.type)
-                .optionalString("device", device)
-                .number("timestamp", epochSeconds);
+        return new JsonFields().string("event", kind.type);
     }
 }

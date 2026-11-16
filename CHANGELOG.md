@@ -4,6 +4,10 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Fixed
+
+- Lookout no longer crashes when you close it while the Updates tab is still checking after you changed **Include pre-releases**.
+
 ## [0.4.0] - 2026-11-15
 
 ### Added

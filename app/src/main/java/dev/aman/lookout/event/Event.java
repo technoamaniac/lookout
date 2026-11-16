@@ -11,7 +11,10 @@ public interface Event {
      */
     String supersessionKey();
 
-    /** The payload's fields; a new builder on each call, so callers may add to it. */
+    /**
+     * What this event says, without the fields every message shares (the TV's name, the time and an id), which are
+     * added when it is sent. A new builder on each call, so callers may add to it.
+     */
     JsonFields fields();
 
     /** What sort of event this is; a change unless it says otherwise. */

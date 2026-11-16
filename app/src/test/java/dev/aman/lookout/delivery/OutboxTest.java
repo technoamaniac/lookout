@@ -16,11 +16,11 @@ public class OutboxTest {
     private final Outbox outbox = new Outbox(new Backoff(new long[] {1_000, 5_000}, () -> 0.5));
 
     private static Message app(String pkg) {
-        return Message.of(new AppEvent(pkg, 1), 1_000);
+        return Message.of(new AppEvent(pkg), null, 1_000);
     }
 
     private static Message screenOn() {
-        return Message.of(new DeviceEvent(DeviceEvent.Kind.SCREEN_ON, 1), 1_000);
+        return Message.of(new DeviceEvent(DeviceEvent.Kind.SCREEN_ON), null, 1_000);
     }
 
     @Test

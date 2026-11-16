@@ -28,11 +28,12 @@ public class StoreFilesTest {
     @Rule
     public final TemporaryFolder folder = new TemporaryFolder();
 
-    private final Message app = Message.of(new AppEvent("com.example.a", 1).withActivity("Main"), 1_000);
+    private final Message app = Message.of(new AppEvent("com.example.a", "Main"), null, 1_000);
     // Quotes and a newline in the title must survive the round trip
     private final Message playback = Message.of(
-            new PlaybackEvent("com.example.p", PlayState.PLAYING, MediaDetails.builder().title("Say \"hi\"\nnow").build(),
-                    PlaybackSnapshot.NO_POSITION, 2), 2_000).markedDelayed();
+            new PlaybackEvent(new PlaybackSnapshot("com.example.p", PlayState.PLAYING,
+                    MediaDetails.builder().title("Say \"hi\"\nnow").build(), PlaybackSnapshot.NO_POSITION)),
+            "Den", 2_000).markedDelayed();
 
     private File file(String name) {
         return new File(folder.getRoot(), name);
@@ -123,7 +124,7 @@ public class StoreFilesTest {
     @Test
     public void aSavedHeartbeatKeepsItsKind() {
         DeliveryLogFile store = new DeliveryLogFile(file("deliveries.json"));
-        store.save(List.of(new DeliveryRecord(Message.of(new HeartbeatEvent(60, 3), 3_000), DeliveryResult.DELIVERED, 3_000)));
+        store.save(List.of(new DeliveryRecord(Message.of(new HeartbeatEvent(60), null, 3_000), DeliveryResult.DELIVERED, 3_000)));
         assertEquals(EventCategory.HEARTBEAT, new DeliveryLogFile(file("deliveries.json")).load().get(0).message().category());
     }
 

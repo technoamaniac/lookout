@@ -4,34 +4,27 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /** Turns the media sessions seen now into events for what changed since last time. Not thread-safe. */
 public final class PlaybackTracker {
-    private final Supplier<String> device;
     // In the order the sessions were last reported, most important first
     private final Map<String, PlaybackSnapshot> known = new LinkedHashMap<>();
 
-    /** @param device supplies the name stamped on each event, or null for none */
-    public PlaybackTracker(Supplier<String> device) {
-        this.device = device;
-    }
-
     /** @param sessions every active media session, most important first */
-    public List<PlaybackEvent> onSessionsChanged(List<PlaybackSnapshot> sessions, long epochSeconds) {
+    public List<PlaybackEvent> onSessionsChanged(List<PlaybackSnapshot> sessions) {
         Map<String, PlaybackSnapshot> current = settled(onePerApp(sessions));
         List<PlaybackEvent> events = new ArrayList<>();
         for (PlaybackSnapshot snapshot : current.values()) {
             PlaybackSnapshot before = known.get(snapshot.packageName());
             if (!snapshot.equals(before) && !isStillIdle(before, snapshot)) {
-                events.add(event(snapshot, epochSeconds));
+                events.add(new PlaybackEvent(snapshot));
             }
         }
         // A session that disappears while playing has stopped, even though it never said so
         for (PlaybackSnapshot before : known.values()) {
             if (!current.containsKey(before.packageName()) && before.state() != PlayState.STOPPED) {
-                events.add(event(new PlaybackSnapshot(before.packageName(), PlayState.STOPPED, MediaDetails.NONE,
-                        PlaybackSnapshot.NO_POSITION), epochSeconds));
+                events.add(new PlaybackEvent(new PlaybackSnapshot(before.packageName(), PlayState.STOPPED,
+                        MediaDetails.NONE, PlaybackSnapshot.NO_POSITION)));
             }
         }
         known.clear();
@@ -84,10 +77,5 @@ public final class PlaybackTracker {
             default:
                 return 0;
         }
-    }
-
-    private PlaybackEvent event(PlaybackSnapshot snapshot, long epochSeconds) {
-        return new PlaybackEvent(snapshot.packageName(), snapshot.state(), snapshot.details(),
-                snapshot.positionSeconds(), epochSeconds).withDevice(device.get());
     }
 }

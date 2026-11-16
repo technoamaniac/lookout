@@ -12,22 +12,9 @@ public final class HeartbeatEvent implements Event {
     private static final String TYPE = "heartbeat";
 
     private final long intervalSeconds;
-    private final String device;
-    private final long epochSeconds;
 
-    public HeartbeatEvent(long intervalSeconds, long epochSeconds) {
-        this(intervalSeconds, null, epochSeconds);
-    }
-
-    private HeartbeatEvent(long intervalSeconds, String device, long epochSeconds) {
+    public HeartbeatEvent(long intervalSeconds) {
         this.intervalSeconds = intervalSeconds;
-        this.device = device;
-        this.epochSeconds = epochSeconds;
-    }
-
-    /** A copy naming this TV so one webhook can serve several; null or blank for none. */
-    public HeartbeatEvent withDevice(String device) {
-        return new HeartbeatEvent(intervalSeconds, device, epochSeconds);
     }
 
     @Override
@@ -47,10 +34,6 @@ public final class HeartbeatEvent implements Event {
 
     @Override
     public JsonFields fields() {
-        return new JsonFields()
-                .string("event", TYPE)
-                .optionalString("device", device)
-                .number("interval", intervalSeconds)
-                .number("timestamp", epochSeconds);
+        return new JsonFields().string("event", TYPE).number("interval", intervalSeconds);
     }
 }

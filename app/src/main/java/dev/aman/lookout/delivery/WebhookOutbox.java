@@ -6,6 +6,7 @@ import android.os.SystemClock;
 import java.io.File;
 import java.util.Random;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.function.Supplier;
 
 /** Android adapter: builds the outbox that delivers to the webhook, saved in the app's private files. */
 public final class WebhookOutbox {
@@ -15,14 +16,16 @@ public final class WebhookOutbox {
     private WebhookOutbox() {}
 
     /**
-     * @param log records every attempt for the Deliveries tab
-     * @param io  the single thread everything runs on; it must not run anything else that blocks
+     * @param log        records every attempt for the Deliveries tab
+     * @param io         the single thread everything runs on; it must not run anything else that blocks
+     * @param deviceName the TV's name to put in each message, or null to leave it out
      */
-    public static OutboxSender create(Context context, DeliveryLog log, ScheduledExecutorService io) {
+    public static OutboxSender create(Context context, DeliveryLog log, ScheduledExecutorService io,
+                                      Supplier<String> deviceName) {
         Random random = new Random();
         return new OutboxSender(new Outbox(new Backoff(RETRY_WAITS_MS, random::nextDouble)),
                 new OutboxFile(new File(context.getFilesDir(), "outbox.json")),
                 url -> new RecordingSink(new WebhookSink(url), log, System::currentTimeMillis),
-                new ExecutorScheduler(io), SystemClock::elapsedRealtime, System::currentTimeMillis);
+                new ExecutorScheduler(io), deviceName, SystemClock::elapsedRealtime, System::currentTimeMillis);
     }
 }

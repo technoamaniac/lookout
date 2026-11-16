@@ -30,11 +30,19 @@ public final class Message {
         this.category = Objects.requireNonNull(category);
     }
 
-    /** A new message for {@code event}, with a fresh id. */
-    public static Message of(Event event, long occurredAtMillis) {
+    /**
+     * A new message for {@code event}, with a fresh id. Every message ends with the same fields, so a receiver reads
+     * them alike whatever the event: the TV's name, when it happened in Unix seconds, and the id.
+     *
+     * @param device the TV's name, so one webhook can serve several; null or blank to leave it out
+     */
+    public static Message of(Event event, String device, long occurredAtMillis) {
         String id = UUID.randomUUID().toString();
-        return new Message(id, event.supersessionKey(), event.summary(), event.category(), event.fields().string("id", id),
-                occurredAtMillis);
+        JsonFields fields = event.fields()
+                .optionalString("device", device)
+                .number("timestamp", occurredAtMillis / 1_000)
+                .string("id", id);
+        return new Message(id, event.supersessionKey(), event.summary(), event.category(), fields, occurredAtMillis);
     }
 
     /** The same message flagged as sent well after it happened, so automations can skip it. Keeps the id. */

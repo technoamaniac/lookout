@@ -18,7 +18,6 @@ import java.util.List;
 
 import dev.aman.lookout.R;
 import dev.aman.lookout.delivery.DeliveryRecord;
-import dev.aman.lookout.delivery.DeliveryResult;
 
 /** Renders delivery records as rows in the Deliveries tab. */
 final class DeliveriesAdapter extends ListAdapter<DeliveryRecord, DeliveriesAdapter.Row> {

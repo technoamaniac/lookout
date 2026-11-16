@@ -7,10 +7,8 @@ import android.content.IntentFilter;
 import android.os.Build;
 import android.os.PowerManager;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Turns the system's screen and screensaver broadcasts into {@link DeviceEvent}s. These are
@@ -18,28 +16,24 @@ import java.util.function.Supplier;
  * the manifest; the accessibility service keeps the process alive instead.
  */
 public final class DeviceStateReceiver extends BroadcastReceiver {
-    private static final Map<String, DeviceEvent.Kind> KINDS = new HashMap<>();
-
-    static {
-        KINDS.put(Intent.ACTION_SCREEN_ON, DeviceEvent.Kind.SCREEN_ON);
-        KINDS.put(Intent.ACTION_SCREEN_OFF, DeviceEvent.Kind.SCREEN_OFF);
-        KINDS.put(Intent.ACTION_DREAMING_STARTED, DeviceEvent.Kind.SCREENSAVER_STARTED);
-        KINDS.put(Intent.ACTION_DREAMING_STOPPED, DeviceEvent.Kind.SCREENSAVER_STOPPED);
-    }
+    private static final Map<String, DeviceEvent.Kind> KINDS = Map.of(
+            Intent.ACTION_SCREEN_ON, DeviceEvent.Kind.SCREEN_ON,
+            Intent.ACTION_SCREEN_OFF, DeviceEvent.Kind.SCREEN_OFF,
+            Intent.ACTION_DREAMING_STARTED, DeviceEvent.Kind.SCREENSAVER_STARTED,
+            Intent.ACTION_DREAMING_STOPPED, DeviceEvent.Kind.SCREENSAVER_STOPPED);
 
     private final Context context;
     private final Consumer<DeviceEvent> listener;
-    private final Supplier<String> device;
+    private boolean registered;
 
-    /** @param device supplies the name stamped on each event, or null for none */
-    public DeviceStateReceiver(Context context, Consumer<DeviceEvent> listener, Supplier<String> device) {
+    public DeviceStateReceiver(Context context, Consumer<DeviceEvent> listener) {
         this.context = context;
         this.listener = listener;
-        this.device = device;
     }
 
     /** Starts listening, and reports the current screen state so a receiver does not start blind. */
     public void start() {
+        stop();
         IntentFilter filter = new IntentFilter();
         for (String action : KINDS.keySet()) filter.addAction(action);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -47,21 +41,22 @@ public final class DeviceStateReceiver extends BroadcastReceiver {
         } else {
             context.registerReceiver(this, filter);
         }
+        registered = true;
         PowerManager power = context.getSystemService(PowerManager.class);
-        emit(power != null && !power.isInteractive() ? DeviceEvent.Kind.SCREEN_OFF : DeviceEvent.Kind.SCREEN_ON);
+        listener.accept(new DeviceEvent(power != null && !power.isInteractive()
+                ? DeviceEvent.Kind.SCREEN_OFF : DeviceEvent.Kind.SCREEN_ON));
     }
 
+    /** Stops listening; does nothing when not started. */
     public void stop() {
+        if (!registered) return;
         context.unregisterReceiver(this);
+        registered = false;
     }
 
     @Override
     public void onReceive(Context context, Intent intent) {
         DeviceEvent.Kind kind = KINDS.get(intent.getAction());
-        if (kind != null) emit(kind);
-    }
-
-    private void emit(DeviceEvent.Kind kind) {
-        listener.accept(new DeviceEvent(kind, System.currentTimeMillis() / 1000).withDevice(device.get()));
+        if (kind != null) listener.accept(new DeviceEvent(kind));
     }
 }

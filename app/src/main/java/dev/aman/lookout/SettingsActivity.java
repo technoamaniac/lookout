@@ -16,6 +16,7 @@ import dev.aman.lookout.ui.PanelTabs;
 import dev.aman.lookout.ui.RailNavigator;
 import dev.aman.lookout.ui.ServiceStatusPanel;
 import dev.aman.lookout.ui.SettingsPanel;
+import dev.aman.lookout.ui.Tab;
 import dev.aman.lookout.ui.UpdateBadge;
 import dev.aman.lookout.ui.UpdatesPanel;
 import dev.aman.lookout.update.PrefsUpdateChannel;
@@ -31,9 +32,6 @@ public class SettingsActivity extends AppCompatActivity {
     /** Opens on the Updates tab, which shows the version just installed. */
     public static final String EXTRA_SHOW_UPDATES = "show_updates";
 
-    private static final int DELIVERIES_TAB = 1;
-    private static final int UPDATES_TAB = 2;
-
     private final ExecutorService background = Executors.newSingleThreadExecutor();
     // Its own thread, so a test before saving never waits behind an update check or download
     private final ExecutorService webhookTests = Executors.newSingleThreadExecutor();
@@ -45,10 +43,7 @@ public class SettingsActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_settings);
-        // Tab order matches the rail in the layout
-        PanelTabs tabs = new PanelTabs(this,
-                new int[] {R.id.tab_settings, R.id.tab_deliveries, R.id.tab_updates},
-                new int[] {R.id.settings_panel, R.id.deliveries_panel, R.id.updates_panel});
+        PanelTabs tabs = new PanelTabs(this);
         navigator = new RailNavigator(this, tabs);
         // Added before the panels, so a sheet that is open closes first on Back
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
@@ -66,16 +61,16 @@ public class SettingsActivity extends AppCompatActivity {
                 new SettingsPanel.Prefill(getIntent().getStringExtra(EXTRA_URL), getIntent().getStringExtra(EXTRA_IGNORED)));
         deliveries = new DeliveriesPanel(this, log);
         // The badge hides on the Updates tab, so focus must move off it before it goes
-        UpdateBadge badge = new UpdateBadge(this, () -> tabs.focus(UPDATES_TAB));
+        UpdateBadge badge = new UpdateBadge(this, () -> tabs.focus(Tab.UPDATES));
         tabs.onSelected(tab -> {
             header.show(tab);
-            badge.setSuppressed(tab == UPDATES_TAB);
-            deliveries.setSelected(tab == DELIVERIES_TAB);
+            badge.setSuppressed(tab == Tab.UPDATES);
+            deliveries.setSelected(tab == Tab.DELIVERIES);
         });
         new UpdatesPanel(this, background, new PrefsUpdateChannel(this), badge::show).check(true);
         // Only when first opened: a recreated screen keeps the tab the user moved to
         if (savedInstanceState == null && getIntent().getBooleanExtra(EXTRA_SHOW_UPDATES, false)) {
-            tabs.focus(UPDATES_TAB);
+            tabs.focus(Tab.UPDATES);
         }
     }
 

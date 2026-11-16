@@ -13,8 +13,8 @@ import java.util.List;
 import org.junit.Test;
 
 public class DeliveryFilterTest {
-    private final DeliveryRecord change = record(Message.of(new AppEvent("com.example.a", 1), 1_000));
-    private final DeliveryRecord beat = record(Message.of(new HeartbeatEvent(60, 2), 2_000));
+    private final DeliveryRecord change = record(Message.of(new AppEvent("com.example.a"), null, 1_000));
+    private final DeliveryRecord beat = record(Message.of(new HeartbeatEvent(60), null, 2_000));
 
     private static DeliveryRecord record(Message message) {
         return new DeliveryRecord(message, DeliveryResult.DELIVERED, 0);

@@ -4,7 +4,6 @@ import dev.aman.lookout.event.Event;
 import dev.aman.lookout.event.JsonFields;
 
 import java.util.Objects;
-import java.util.Optional;
 
 /** An app coming to the foreground. */
 public final class AppEvent implements Event {
@@ -12,41 +11,19 @@ public final class AppEvent implements Event {
 
     private final String packageName;
     private final String activity;
-    private final String device;
-    private final long epochSeconds;
 
-    public AppEvent(String packageName, long epochSeconds) {
-        this(packageName, null, null, epochSeconds);
+    public AppEvent(String packageName) {
+        this(packageName, null);
     }
 
-    // Private so the two optional strings are always set by name, never swapped by position
-    private AppEvent(String packageName, String activity, String device, long epochSeconds) {
+    /** @param activity the window class that appeared; null or blank when the system gave none */
+    public AppEvent(String packageName, String activity) {
         this.packageName = Objects.requireNonNull(packageName);
-        this.activity = blankToNull(activity);
-        this.device = blankToNull(device);
-        this.epochSeconds = epochSeconds;
-    }
-
-    /** A copy naming the window class that appeared; null or blank when the system gave none. */
-    public AppEvent withActivity(String activity) {
-        return new AppEvent(packageName, activity, device, epochSeconds);
-    }
-
-    /** A copy naming this TV so one webhook can serve several; null or blank for none. */
-    public AppEvent withDevice(String device) {
-        return new AppEvent(packageName, activity, device, epochSeconds);
+        this.activity = activity;
     }
 
     public String packageName() {
         return packageName;
-    }
-
-    public Optional<String> activity() {
-        return Optional.ofNullable(activity);
-    }
-
-    public long epochSeconds() {
-        return epochSeconds;
     }
 
     @Override
@@ -65,12 +42,6 @@ public final class AppEvent implements Event {
         return new JsonFields()
                 .string("event", TYPE)
                 .string("package", packageName)
-                .optionalString("activity", activity)
-                .optionalString("device", device)
-                .number("timestamp", epochSeconds);
-    }
-
-    private static String blankToNull(String s) {
-        return s == null || s.trim().isEmpty() ? null : s;
+                .optionalString("activity", activity);
     }
 }

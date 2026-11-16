@@ -4,7 +4,6 @@ import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.provider.Settings;
 import android.view.View;
@@ -31,9 +30,6 @@ import java.util.function.Consumer;
 
 /** The Updates tab: looks for a newer release and installs it. */
 public final class UpdatesPanel {
-    private static final String GITHUB = "https://github.com";
-    private static final String REPO = "technoamaniac/lookout";
-
     private final Activity activity;
     private final Executor background;
     private final UpdateChannel channel;
@@ -43,7 +39,7 @@ public final class UpdatesPanel {
     private final View progress;
     private final TextView installButton;
     private final Version installed;
-    private final UpdateChecker checker = new UpdateChecker(new GitHubReleases(GITHUB, REPO));
+    private final UpdateChecker checker = new UpdateChecker(GitHubReleases.ofLookout());
     private final ApkFetcher fetcher = new ApkFetcher();
     private final UpdateInstaller installer = new UpdateInstaller();
 
@@ -85,9 +81,9 @@ public final class UpdatesPanel {
         background.execute(() -> {
             try {
                 Optional<Release> newer = checker.newerThan(installed, channel.includesPreReleases());
-                activity.runOnUiThread(() -> showCheckResult(newer, quiet));
+                onUiThread(() -> showCheckResult(newer, quiet));
             } catch (IOException | RuntimeException e) {
-                activity.runOnUiThread(() -> showCheckFailure(quiet));
+                onUiThread(() -> showCheckFailure(quiet));
             }
         });
     }
@@ -99,20 +95,30 @@ public final class UpdatesPanel {
             return;
         }
         Release release = available;
+        // The download may outlive the screen, so it holds the application rather than the activity
+        Context app = activity.getApplicationContext();
         setBusy(true);
         status.clear();
         progress.setVisibility(View.VISIBLE);
         background.execute(() -> {
             File apk = null;
             try {
-                apk = fetcher.fetch(release, new File(activity.getCacheDir(), "updates"));
-                installer.install(activity, apk);
-                activity.runOnUiThread(this::showInstallStarted);
+                apk = fetcher.fetch(release, new File(app.getCacheDir(), "updates"));
+                installer.install(app, apk);
+                onUiThread(this::showInstallStarted);
             } catch (IOException | RuntimeException e) {
-                activity.runOnUiThread(this::showInstallFailure);
+                onUiThread(this::showInstallFailure);
             } finally {
                 if (apk != null) apk.delete(); // The installer session holds its own copy
             }
+        });
+    }
+
+    // A result that arrives after the screen closed is dropped: its views are gone, and a requested recheck would
+    // reach an executor that has been shut down
+    private void onUiThread(Runnable task) {
+        activity.runOnUiThread(() -> {
+            if (!activity.isDestroyed()) task.run();
         });
     }
 

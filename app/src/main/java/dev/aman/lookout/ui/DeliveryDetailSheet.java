@@ -5,7 +5,6 @@ import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -23,8 +22,7 @@ final class DeliveryDetailSheet {
     private static final Pattern JSON_NUMBER = Pattern.compile("(?<=: )\\d+");
 
     private final Activity activity;
-    private final View overlay;
-    private final ViewGroup mainContent;
+    private final Sheet sheet;
     private final StatusLine result;
     private final TextView app;
     private final TextView time;
@@ -33,12 +31,10 @@ final class DeliveryDetailSheet {
     private final TextView payload;
     private final View closeButton;
     private final DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
-    private Runnable onClosed = () -> {};
 
     DeliveryDetailSheet(Activity activity) {
         this.activity = activity;
-        overlay = activity.findViewById(R.id.detail_overlay);
-        mainContent = activity.findViewById(R.id.main_content);
+        sheet = new Sheet(activity, R.id.detail_overlay);
         result = new StatusLine(activity.findViewById(R.id.detail_result));
         app = activity.findViewById(R.id.detail_app);
         time = activity.findViewById(R.id.detail_time);
@@ -49,13 +45,8 @@ final class DeliveryDetailSheet {
         closeButton.setOnClickListener(v -> hide());
     }
 
-    boolean isShowing() {
-        return overlay.getVisibility() == View.VISIBLE;
-    }
-
     /** @param onClosed runs after the sheet closes, to hand focus back to where it came from */
     void show(DeliveryRecord record, Runnable onClosed) {
-        this.onClosed = onClosed;
         result.show(activity.getString(DeliveryAppearance.labelFor(record)),
                 DeliveryAppearance.kindFor(record.result()));
         app.setText(record.message().summary());
@@ -64,17 +55,11 @@ final class DeliveryDetailSheet {
         payload.setText(highlight(record.message().toPrettyJson()));
         // The sheet is reused, so start each payload at its top rather than where the last one was left
         payloadScroll.scrollTo(0, 0);
-        // The screen behind must not take D-pad focus while the sheet is open
-        mainContent.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
-        overlay.setVisibility(View.VISIBLE);
-        closeButton.requestFocus();
+        sheet.show(closeButton, onClosed);
     }
 
     void hide() {
-        if (!isShowing()) return;
-        overlay.setVisibility(View.GONE);
-        mainContent.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
-        onClosed.run();
+        sheet.hide();
     }
 
     // Keys in the accent colour and numbers in the warm one, matching the design tokens

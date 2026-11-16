@@ -18,6 +18,8 @@ import java.util.regex.Pattern;
  */
 public final class GitHubReleases implements ReleaseSource {
     private static final int TIMEOUT_MS = 10_000;
+    // The feed lists ten entries in tens of kilobytes; a cap keeps a broken or hostile reply from filling the memory
+    private static final int MAX_FEED_BYTES = 1024 * 1024;
     private static final String TAG_MARKER = "/releases/tag/";
     private static final Pattern STABLE_TAG = Pattern.compile("v(\\d+\\.\\d+\\.\\d+)");
     private static final Pattern ANY_TAG = Pattern.compile("v(\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?)");
@@ -30,6 +32,11 @@ public final class GitHubReleases implements ReleaseSource {
     public GitHubReleases(String baseUrl, String repo) {
         this.baseUrl = baseUrl;
         this.repo = repo;
+    }
+
+    /** Lookout's own public releases, which the release workflow publishes. */
+    public static GitHubReleases ofLookout() {
+        return new GitHubReleases("https://github.com", "technoamaniac/lookout");
     }
 
     @Override
@@ -73,18 +80,18 @@ public final class GitHubReleases implements ReleaseSource {
     }
 
     private String readFeed() throws IOException {
-        HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + "/" + repo + "/releases.atom").openConnection();
+        HttpURLConnection conn = open("/releases.atom");
         try {
-            conn.setConnectTimeout(TIMEOUT_MS);
-            conn.setReadTimeout(TIMEOUT_MS);
-            conn.setInstanceFollowRedirects(false);
             int status = conn.getResponseCode();
             if (status == HttpURLConnection.HTTP_NOT_FOUND) return "";
             if (status != HttpURLConnection.HTTP_OK) throw new IOException("Unexpected response: " + status);
             try (InputStream in = conn.getInputStream()) {
                 ByteArrayOutputStream body = new ByteArrayOutputStream();
                 byte[] chunk = new byte[8192];
-                for (int n; (n = in.read(chunk)) != -1; ) body.write(chunk, 0, n);
+                for (int n; (n = in.read(chunk)) != -1; ) {
+                    if (body.size() + n > MAX_FEED_BYTES) throw new IOException("Release feed is too large");
+                    body.write(chunk, 0, n);
+                }
                 return body.toString("UTF-8");
             }
         } finally {
@@ -93,11 +100,8 @@ public final class GitHubReleases implements ReleaseSource {
     }
 
     private String latestTag() throws IOException {
-        HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + "/" + repo + "/releases/latest").openConnection();
+        HttpURLConnection conn = open("/releases/latest");
         try {
-            conn.setConnectTimeout(TIMEOUT_MS);
-            conn.setReadTimeout(TIMEOUT_MS);
-            conn.setInstanceFollowRedirects(false);
             int status = conn.getResponseCode();
             if (status == HttpURLConnection.HTTP_NOT_FOUND) return null;
             String location = conn.getHeaderField("Location");
@@ -108,5 +112,14 @@ public final class GitHubReleases implements ReleaseSource {
         } finally {
             conn.disconnect();
         }
+    }
+
+    // Redirects are read, not followed: the one from /releases/latest is what names the tag
+    private HttpURLConnection open(String path) throws IOException {
+        HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + "/" + repo + path).openConnection();
+        conn.setConnectTimeout(TIMEOUT_MS);
+        conn.setReadTimeout(TIMEOUT_MS);
+        conn.setInstanceFollowRedirects(false);
+        return conn;
     }
 }

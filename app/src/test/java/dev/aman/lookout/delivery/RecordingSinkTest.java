@@ -10,7 +10,7 @@ import org.junit.Test;
 
 public class RecordingSinkTest {
     private final DeliveryLog log = new DeliveryLog(10);
-    private final Message message = Message.of(new AppEvent("com.example.a", 5), 5_000);
+    private final Message message = Message.of(new AppEvent("com.example.a"), null, 5_000);
 
     @Test
     public void recordsEachAttemptWithItsResultAndTime() {
@@ -32,7 +32,7 @@ public class RecordingSinkTest {
 
     @Test
     public void recordsDeliveredHeartbeatsToo() {
-        Message beat = Message.of(new HeartbeatEvent(60, 1), 1_000);
+        Message beat = Message.of(new HeartbeatEvent(60), null, 1_000);
         new RecordingSink(m -> DeliveryResult.DELIVERED, log, () -> 0).send(beat);
         assertSame(beat, log.recent().get(0).message());
     }

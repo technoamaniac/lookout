@@ -117,11 +117,11 @@ public final class SettingsPanel {
         // Status first, so the lock's hint update sees it showing and hides "No unsaved changes" beside it
         status.info(R.string.sending);
         setSending(true);
-        AppEvent testEvent = new AppEvent(activity.getPackageName() + ".test", System.currentTimeMillis() / 1000)
-                .withActivity(activity.getClass().getName())
-                .withDevice(config.sendDeviceName() ? DeviceName.read(activity.getContentResolver()) : null);
+        AppEvent testEvent = new AppEvent(activity.getPackageName() + ".test", activity.getClass().getName());
         background.execute(() -> {
-            DeliveryResult result = tester.test(config.webhookUrl().get(), testEvent);
+            // Read here, off the main thread, since it asks the system settings
+            String device = config.sendDeviceName() ? DeviceName.read(activity.getContentResolver()) : null;
+            DeliveryResult result = tester.test(config.webhookUrl().get(), testEvent, device);
             activity.runOnUiThread(() -> {
                 if (activity.isDestroyed()) return;
                 gate.onTested(config, result == DeliveryResult.DELIVERED);
