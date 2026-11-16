@@ -5,6 +5,7 @@ An Android TV accessibility service that reports the foreground app to an HTTPS 
 ## Code principles
 
 - Write every change to the standard of a principal Java engineer: nitpick every detail (names, comments, structure, edge cases, tests) and do not stop until it looks perfect.
+- Before building anything non-trivial, think through the realistic implementation approaches, pick the best one and say why in the reply. Never take the first idea or a quick hack, and never patch a symptom: find the root cause and put the logic where it belongs.
 - Follow good object-oriented design: small classes with one responsibility, dependencies passed in (constructor injection), behaviour behind small interfaces such as `EventSink` and `ReleaseSource`, immutable value objects. Do not hack things together.
 - The code must be maintainable and very readable. Prefer clear names and small methods over clever ones. Match the surrounding comment density: comment the _why_ of non-obvious decisions, not what the code says.
 - Keep logic in the plain-Java packages (`event`, `foreground`, `device`, `playback`, `delivery`, `heartbeat`, `navigation`, `config`, `update`) with unit tests. Android classes stay thin: `ui` panels, the service, the activity and the few adapters (`LookoutApplication`, `PrefsConfigStore`, `PrefsUpdateChannel`, `DeviceStateReceiver`, `MediaSessionWatcher`, `MediaAccessService`, `NetworkWatcher`, `WebhookOutbox`, `RailNavigator`, `InstalledVersion`, `UpdateInstaller`, `InstallResultReceiver`).

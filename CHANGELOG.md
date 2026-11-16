@@ -4,6 +4,8 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-11-15
+
 ### Added
 
 - An **Enabled** switch under the status in the side rail pauses all reports at once, without changing your settings. While it is off, failed deliveries stop retrying too. Turning it back on sends the latest app, screen and playback state that changed while it was off, plus anything that had not been delivered yet, so your smart home catches up straight away.
