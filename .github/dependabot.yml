@@ -4,10 +4,15 @@ updates:
     directory: /
     schedule:
       interval: weekly
+    # Fresh releases wait a week, here and below: a hijacked release is usually caught and pulled within days
+    cooldown:
+      default-days: 7
   - package-ecosystem: gradle
     directory: /
     schedule:
       interval: weekly
+    cooldown:
+      default-days: 7
     ignore:
       # A new AGP major needs a matching Gradle major and a build-script migration, so it is
       # upgraded by hand together with gradle-wrapper.properties and the verification metadata

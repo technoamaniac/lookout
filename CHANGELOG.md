@@ -4,6 +4,10 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ## [Unreleased]
 
+### Added
+
+- Each release APK comes with a signed build provenance attestation, so you can check it was built by this repository's release workflow from the tagged code: `gh attestation verify lookout-v<version>.apk --repo technoamaniac/lookout`.
+
 ## [0.4.1] - 2026-11-15
 
 ### Fixed

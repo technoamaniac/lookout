@@ -223,7 +223,7 @@ Logic lives in plain-Java packages with JVM unit tests; Android classes stay thi
 
 To send events somewhere other than a webhook, implement `EventSink`.
 
-**Releases.** Pushing a tag like `v1.2.3` builds, signs and publishes the APK with its SHA-256 (`v1.2.3-rc.1` makes a pre-release, which the app only offers when **Include pre-releases** is ticked). The release notes come from the matching `CHANGELOG.md` section, and the release fails without one. The version code is `major*10000 + minor*100 + patch`. Gradle builds without the signing key; a separate job signs with `apksigner` using the `release` environment's secrets.
+**Releases.** Pushing a tag like `v1.2.3` builds, signs and publishes the APK with its SHA-256 (`v1.2.3-rc.1` makes a pre-release, which the app only offers when **Include pre-releases** is ticked). The release notes come from the matching `CHANGELOG.md` section, and the release fails without one. The version code is `major*10000 + minor*100 + patch`. Gradle builds without the signing key; a separate job signs with `apksigner` using the `release` environment's secrets. Each APK also gets a build provenance attestation; check a download with `gh attestation verify lookout-v1.2.3.apk --repo technoamaniac/lookout`.
 
 **Pins.** Actions, the Gradle distribution and every dependency are pinned (by SHA, `app/gradle.lockfile` and `gradle/verification-metadata.xml`). After changing a dependency:
 

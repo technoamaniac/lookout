@@ -49,7 +49,7 @@ Lint, tests and the release build (`assembleRelease`, which runs R8) should all 
 
 ## Dependencies and pins
 
-Everything is pinned: actions by commit SHA, the Gradle distribution by checksum, `app/gradle.lockfile` and `gradle/verification-metadata.xml`. After changing a dependency, refresh the pins as described in the README, including the Linux and Windows `aapt2` hashes that Gradle does not download on macOS. A new AGP major is upgraded by hand together with Gradle; Dependabot is configured to skip it.
+Everything is pinned: actions by commit SHA, the Gradle distribution by checksum, `app/gradle.lockfile` and `gradle/verification-metadata.xml`. After changing a dependency, refresh the pins as described in the README, including the Linux and Windows `aapt2` hashes that Gradle does not download on macOS. A new AGP major is upgraded by hand together with Gradle; Dependabot is configured to skip it. Dependabot waits seven days before proposing a new version, so a hijacked release is likely caught first; do not shorten that to land an update sooner, except for a security fix.
 
 ## Git workflow
 
@@ -61,4 +61,4 @@ Everything is pinned: actions by commit SHA, the Gradle distribution by checksum
 
 Pushing a tag like `v1.2.3` builds a signed APK and publishes it with its `.sha256`. The tag sets the version name; the version code is `major*10000 + minor*100 + patch`, so minor and patch stay below 100.
 
-The `build` job runs Gradle with a read-only token and no secrets. Only the `publish` job, which checks out no code and runs no Gradle, gets the signing key (the `release` environment's secrets, usable only from `v*` tags) and a token that can write. Keep it that way: never give Gradle the keystore. Signing must keep using the same key, or installed copies cannot update.
+The `build` job runs Gradle with a read-only token and no secrets. Only the `publish` job, which checks out no code and runs no Gradle, gets the signing key (the `release` environment's secrets, usable only from `v*` tags), a token that can write and the OIDC token that signs the provenance attestation. Keep it that way: never give Gradle the keystore. Signing must keep using the same key, or installed copies cannot update.
