@@ -11,6 +11,11 @@ An Android TV accessibility service that reports the foreground app to an HTTPS 
 - Keep logic in the plain-Java packages (`event`, `foreground`, `device`, `playback`, `delivery`, `heartbeat`, `navigation`, `config`, `setup`, `apps`, `update`) with unit tests. Android classes stay thin: `ui` panels, the service, the activity and the few adapters (`LookoutApplication`, `PrefsConfigStore`, `PrefsUpdateChannel`, `PrefsSetupStore`, `SystemPermissions`, `InstalledApps`, `BuiltInApps`, `DeviceStateReceiver`, `MediaSessionWatcher`, `MediaAccessService`, `NetworkWatcher`, `WebhookOutbox`, `RailNavigator`, `InstalledVersion`, `UpdateInstaller`, `InstallResultReceiver`).
 - Dependencies point one way: the root classes and `ui` use the feature packages, never the reverse. One class per tab in `ui`; `SettingsActivity` only builds the panels and tabs.
 - Keep changes local: each behaviour or rule is decided in exactly one place, so changing it means editing one class (and its test) or one layout. Split a class or layout as soon as it does more than one job or grows hard to scan; as a guide, a class past about 200 lines or a layout holding more than one screen or tab. Remove dead code and comments that no longer hold in the same change that makes them so.
+- Before writing a helper or copying a few lines from another class, search for an existing one. When the same pattern would appear a second time, move it into the shared class it belongs to (for example, behaviour every sheet needs goes in `Sheet`).
+- A `switch` over an enum names every constant and throws in `default`, so a new constant fails loudly instead of quietly taking the last case.
+- Say which thread owns mutable state; mark a field `volatile` only when another thread really reads it. Never return an internal mutable collection.
+- Do not turn data into text only to parse it back; give the parser a method that takes the data itself.
+- Keep lines within 120 characters.
 - Keep `LookoutService` and `SettingsActivity` in the root package under their current names: the TV stores the service's name and `scripts/install.sh` uses it.
 - Fix root causes and add a regression test with each bug fix. Prove a new test fails on the old code when practical.
 
