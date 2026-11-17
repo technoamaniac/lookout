@@ -47,6 +47,10 @@
     <string name="check_updates">Check for updates</string>
     <string name="install_version">Install %1$s</string>
     <string name="updates_note">Updates are downloaded from this app\'s GitHub releases. Android only installs them if they are signed with the same key as the version you have.</string>
+    <string name="release_notes_button">Release notes</string>
+    <string name="release_notes_title">What\'s new in %1$s</string>
+    <string name="release_notes_loading">Loading…</string>
+    <string name="release_notes_none">No notes were published for this version.</string>
     <string name="update_checking">Checking…</string>
     <string name="update_check_failed">Could not reach GitHub. Check the TV\'s connection.</string>
     <string name="update_current">You are on the latest version.</string>
@@ -85,7 +89,10 @@
     <string name="response_rejected">Refused by the webhook; it will not be retried</string>
     <string name="response_failed">Not delivered; Lookout retries it</string>
     <string name="response_not_resent">Not delivered; Lookout does not resend it</string>
-    <string name="ignored_none">None</string>
+    <plurals name="ignored_summary">
+        <item quantity="one">%1$d app ignored</item>
+        <item quantity="other">%1$d apps ignored</item>
+    </plurals>
     <string name="ignored_choose">Choose</string>
     <string name="ignored_title">Ignored apps</string>
     <plurals name="ignored_count">

@@ -77,6 +77,18 @@
                             android:singleLine="true" />
                     </LinearLayout>
 
+                    <!-- Opens the permissions screen; shown only on the Settings tab, beside the title -->
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/open_permissions"
+                        style="@style/Widget.Lookout.Button.Secondary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="4dp"
+                        android:minHeight="40dp"
+                        android:text="@string/open_permissions"
+                        android:textSize="16sp"
+                        app:icon="@drawable/ic_info" />
+
                     <!-- Opens the delivery filter; shown only on the Deliveries tab, beside the title -->
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/filter_button"
@@ -129,4 +141,7 @@
 
     <!-- Ignored apps: the same scrim and sheet -->
     <include layout="@layout/sheet_ignored_apps" />
+
+    <!-- Release notes: the same scrim and sheet -->
+    <include layout="@layout/sheet_release_notes" />
 </FrameLayout>

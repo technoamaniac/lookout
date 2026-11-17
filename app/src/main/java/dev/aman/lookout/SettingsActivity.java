@@ -3,6 +3,7 @@ package dev.aman.lookout;
 import android.content.ComponentName;
 import android.os.Bundle;
 import android.view.KeyEvent;
+import android.view.View;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
@@ -55,7 +56,8 @@ public class SettingsActivity extends AppCompatActivity {
             }
         });
         SetupLauncher setup = new SetupLauncher(this, new PrefsSetupStore(this));
-        setup.openFrom(findViewById(R.id.open_permissions));
+        View permissionsButton = findViewById(R.id.open_permissions);
+        setup.openFrom(permissionsButton);
         PanelHeader header = new PanelHeader(this);
         DeliveryLog log = ((LookoutApplication) getApplication()).deliveryLog();
 
@@ -69,6 +71,7 @@ public class SettingsActivity extends AppCompatActivity {
         UpdateBadge badge = new UpdateBadge(this, () -> tabs.focus(Tab.UPDATES));
         tabs.onSelected(tab -> {
             header.show(tab);
+            permissionsButton.setVisibility(tab == Tab.SETTINGS ? View.VISIBLE : View.GONE);
             badge.setSuppressed(tab == Tab.UPDATES);
             deliveries.setSelected(tab == Tab.DELIVERIES);
         });

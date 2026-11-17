@@ -27,11 +27,14 @@ public final class InstalledApps implements AppCatalog {
 
     @Override
     public List<InstalledApp> apps() {
-        Set<String> homeScreens = packagesHandling(Intent.CATEGORY_HOME);
+        Set<String> homeScreens = new HashSet<>();
+        for (ResolveInfo info : homeActivities()) homeScreens.add(info.activityInfo.packageName);
         Map<String, InstalledApp> byPackage = new LinkedHashMap<>();
         for (String category : new String[] {Intent.CATEGORY_LAUNCHER, Intent.CATEGORY_LEANBACK_LAUNCHER,
                 Intent.CATEGORY_HOME}) {
-            for (ResolveInfo info : packages.queryIntentActivities(mainIntent(category), 0)) {
+            List<ResolveInfo> found = category.equals(Intent.CATEGORY_HOME)
+                    ? homeActivities() : packages.queryIntentActivities(mainIntent(category), 0);
+            for (ResolveInfo info : found) {
                 String pkg = info.activityInfo.packageName;
                 if (pkg.equals(ownPackage) || byPackage.containsKey(pkg)) continue;
                 String label = info.activityInfo.applicationInfo.loadLabel(packages).toString();
@@ -41,12 +44,14 @@ public final class InstalledApps implements AppCatalog {
         return new ArrayList<>(byPackage.values());
     }
 
-    private Set<String> packagesHandling(String category) {
-        Set<String> found = new HashSet<>();
-        for (ResolveInfo info : packages.queryIntentActivities(mainIntent(category), 0)) {
-            found.add(info.activityInfo.packageName);
+    // Settings apps declare a home activity at a priority below zero only to cover the moments during boot when no
+    // launcher is ready; that is not a home screen the user could choose
+    private List<ResolveInfo> homeActivities() {
+        List<ResolveInfo> homes = new ArrayList<>();
+        for (ResolveInfo info : packages.queryIntentActivities(mainIntent(Intent.CATEGORY_HOME), 0)) {
+            if (info.priority >= 0) homes.add(info);
         }
-        return found;
+        return homes;
     }
 
     private static Intent mainIntent(String category) {

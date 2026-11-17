@@ -16,8 +16,8 @@ import dev.aman.lookout.apps.IgnoredChoice;
 import dev.aman.lookout.apps.InstalledApp;
 
 /**
- * The Ignored apps row on the Settings tab. It holds the packages the form will save, shows them by name once the
- * TV's apps are listed, and opens the sheet to change them. Nothing is kept until Save, like the URL.
+ * The Ignored apps row on the Settings tab. It holds the packages the form will save, says how many apps are ignored
+ * once the TV's apps are listed, and opens the sheet to change them. Nothing is kept until Save, like the URL.
  */
 final class IgnoredAppsPicker {
     private final View row;
@@ -98,9 +98,9 @@ final class IgnoredAppsPicker {
     }
 
     private void showSummary() {
-        // Names once the apps are listed, packages until then
-        List<String> shown = apps == null ? ignored : new IgnoredChoice(apps, builtIns, ignored, reported).ignoredLabels();
-        if (shown.isEmpty()) summary.setText(R.string.ignored_none);
-        else summary.setText(String.join(", ", shown));
+        // The count includes the ignored-by-default apps, so it waits for the listing that names them
+        if (apps == null) return;
+        int ticked = new IgnoredChoice(apps, builtIns, ignored, reported).tickedCount();
+        summary.setText(summary.getResources().getQuantityString(R.plurals.ignored_summary, ticked, ticked));
     }
 }

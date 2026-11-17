@@ -64,9 +64,10 @@ final class IgnoredAppsSheet {
     }
 
     private void focusFirstRow() {
+        // The list is reused, so it would open wherever it was last left; it always starts at the top
+        list.scrollToPosition(0);
         int position = adapter.firstFocusPosition();
         if (position < 0) return;
-        list.scrollToPosition(adapter.scrollPositionFor(position));
         // The row exists only once the list has laid out after the scroll
         list.post(() -> {
             RecyclerView.ViewHolder holder = list.findViewHolderForAdapterPosition(position);

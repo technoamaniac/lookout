@@ -10,6 +10,7 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 - Choose the apps to ignore from a list of the TV's apps, with their names and icons, instead of typing package names.
 - Keyboards, system UI and Lookout itself are ignored by default. They now show ticked at the bottom of the list, and clearing one makes Lookout report it.
 - Each release APK comes with a signed build provenance attestation, so you can check it was built by this repository's release workflow from the tagged code: `gh attestation verify lookout-v<version>.apk --repo technoamaniac/lookout`.
+- A **Release notes** button on the Updates tab shows what the new version changes before you install it. Scroll the notes with the remote.
 
 ### Changed
 

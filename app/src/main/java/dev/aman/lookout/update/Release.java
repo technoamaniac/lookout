@@ -18,6 +18,11 @@ public final class Release {
         return version;
     }
 
+    /** The git tag the release was published under. */
+    public String tag() {
+        return "v" + version;
+    }
+
     public URL apkUrl() {
         return apkUrl;
     }

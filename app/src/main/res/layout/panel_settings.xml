@@ -198,13 +198,4 @@ android:orientation="horizontal">
             android:id="@+id/status"
             style="@style/Widget.Lookout.Chip"
             android:layout_marginTop="20dp" />
-
-        <com.google.android.material.button.MaterialButton
-            android:id="@+id/open_permissions"
-            style="@style/Widget.Lookout.Button.Secondary"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/open_permissions"
-            app:icon="@drawable/ic_info" />
 </LinearLayout>

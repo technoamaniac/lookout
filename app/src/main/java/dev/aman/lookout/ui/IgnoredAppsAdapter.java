@@ -74,21 +74,12 @@ final class IgnoredAppsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
         changes.dispatchUpdatesTo(this);
     }
 
-    /** The position of the first ticked app, or of the first app when none is ticked; -1 for an empty list. */
+    /** The position of the first app, which takes the focus when the list opens; -1 for an empty list. */
     int firstFocusPosition() {
-        int firstApp = -1;
         for (int i = 0; i < entries.size(); i++) {
-            IgnoredChoice.Entry entry = entries.get(i);
-            if (entry.isHeader()) continue;
-            if (entry.isTicked()) return i;
-            if (firstApp < 0) firstApp = i;
+            if (!entries.get(i).isHeader()) return i;
         }
-        return firstApp;
-    }
-
-    /** Where to scroll so that the row at {@code position} shows with its section heading above it. */
-    int scrollPositionFor(int position) {
-        return position > 0 && entries.get(position - 1).isHeader() ? position - 1 : position;
+        return -1;
     }
 
     @Override

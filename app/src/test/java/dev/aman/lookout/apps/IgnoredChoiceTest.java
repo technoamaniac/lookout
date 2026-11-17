@@ -74,14 +74,6 @@ public class IgnoredChoiceTest {
     }
 
     @Test
-    public void namesIgnoredAppsByLabelAndFallsBackToThePackage() {
-        IgnoredChoice choice = choiceOf(Collections.singletonList(LAUNCHER),
-                Arrays.asList(LAUNCHER.packageName(), "com.gone"));
-
-        assertEquals(Arrays.asList("Projectivy Launcher", "com.gone"), choice.ignoredLabels());
-    }
-
-    @Test
     public void showsNoHeadingForAnEmptySection() {
         IgnoredChoice choice = choiceOf(Collections.singletonList(SMARTTUBE), Collections.emptyList());
 

@@ -1,12 +1,13 @@
 package dev.aman.lookout.ui;
 
-import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Intent;
 import android.content.Context;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import dev.aman.lookout.R;
 import dev.aman.lookout.setup.Permission;
@@ -28,9 +29,9 @@ import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
-/** The Updates tab: looks for a newer release and installs it. */
+/** The Updates tab: looks for a newer release, shows what it changes and installs it. */
 public final class UpdatesPanel {
-    private final Activity activity;
+    private final AppCompatActivity activity;
     private final Executor background;
     private final UpdateChannel channel;
     private final SystemPermissions permissions;
@@ -39,8 +40,12 @@ public final class UpdatesPanel {
     private final MaterialButton checkButton;
     private final View progress;
     private final TextView installButton;
+    private final View updateActions;
+    private final View notesButton;
+    private final ReleaseNotesSheet notes;
     private final Version installed;
-    private final UpdateChecker checker = new UpdateChecker(GitHubReleases.ofLookout());
+    private final GitHubReleases releases = GitHubReleases.ofLookout();
+    private final UpdateChecker checker = new UpdateChecker(releases);
     private final ApkFetcher fetcher = new ApkFetcher();
     private final UpdateInstaller installer = new UpdateInstaller();
 
@@ -49,7 +54,7 @@ public final class UpdatesPanel {
     private boolean recheckRequested;
 
     /** @param onAvailabilityChanged told after every check whether a newer release exists */
-    public UpdatesPanel(Activity activity, Executor background, UpdateChannel channel, SystemPermissions permissions,
+    public UpdatesPanel(AppCompatActivity activity, Executor background, UpdateChannel channel, SystemPermissions permissions,
                         Consumer<Optional<Release>> onAvailabilityChanged) {
         this.activity = activity;
         this.permissions = permissions;
@@ -60,10 +65,14 @@ public final class UpdatesPanel {
         checkButton = activity.findViewById(R.id.check_updates);
         progress = activity.findViewById(R.id.update_progress);
         installButton = activity.findViewById(R.id.install_update);
+        updateActions = activity.findViewById(R.id.update_actions);
+        notesButton = activity.findViewById(R.id.release_notes);
+        notes = new ReleaseNotesSheet(activity, background, releases);
         installed = Version.parse(InstalledVersion.name(activity));
         activity.<TextView>findViewById(R.id.version).setText(activity.getString(R.string.version, installed));
         checkButton.setOnClickListener(v -> check(false));
         installButton.setOnClickListener(v -> install());
+        notesButton.setOnClickListener(v -> showNotes());
         CompoundButton preReleases = activity.findViewById(R.id.include_pre_releases);
         preReleases.setChecked(channel.includesPreReleases());
         // The offer depends on the choice, so look again as soon as it changes
@@ -88,6 +97,11 @@ public final class UpdatesPanel {
                 onUiThread(() -> showCheckFailure(quiet));
             }
         });
+    }
+
+    private void showNotes() {
+        if (busy || available == null) return;
+        notes.show(available, notesButton::requestFocus);
     }
 
     private void install() {
@@ -127,7 +141,7 @@ public final class UpdatesPanel {
     private void showCheckResult(Optional<Release> newer, boolean quiet) {
         setBusy(false);
         available = newer.orElse(null);
-        installButton.setVisibility(newer.isPresent() ? View.VISIBLE : View.GONE);
+        updateActions.setVisibility(newer.isPresent() ? View.VISIBLE : View.GONE);
         // Install is the primary action once there is something to install
         useSecondaryStyle(checkButton, newer.isPresent());
         onAvailabilityChanged.accept(newer);
@@ -193,10 +207,11 @@ public final class UpdatesPanel {
         this.busy = busy;
         // A disabled view cannot keep focus, and focus would fall back to the first tab (Settings)
         // and switch panels; park it on the Updates tab instead
-        if (busy && (checkButton.hasFocus() || installButton.hasFocus())) {
+        if (busy && (checkButton.hasFocus() || installButton.hasFocus() || notesButton.hasFocus())) {
             activity.findViewById(R.id.tab_updates).requestFocus();
         }
         checkButton.setEnabled(!busy);
         installButton.setEnabled(!busy);
+        notesButton.setEnabled(!busy);
     }
 }

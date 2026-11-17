@@ -14,15 +14,18 @@ import java.util.regex.Pattern;
  * parsing or its anonymous rate limit. The release workflow names its assets predictably, so a
  * tag is all that is needed. Stable releases come from /releases/latest, which redirects to the
  * tag's page and never points at a pre-release. Pre-releases are only listed in the releases
- * feed, so that is read when they are wanted.
+ * feed, so that is read when they are wanted. The feed also carries each release's notes.
  */
-public final class GitHubReleases implements ReleaseSource {
+public final class GitHubReleases implements ReleaseSource, ReleaseNotesSource {
     private static final int TIMEOUT_MS = 10_000;
     // The feed lists ten entries in tens of kilobytes; a cap keeps a broken or hostile reply from filling the memory
     private static final int MAX_FEED_BYTES = 1024 * 1024;
     private static final String TAG_MARKER = "/releases/tag/";
     private static final Pattern STABLE_TAG = Pattern.compile("v(\\d+\\.\\d+\\.\\d+)");
     private static final Pattern ANY_TAG = Pattern.compile("v(\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?)");
+    private static final Pattern FEED_ENTRY = Pattern.compile("<entry>(.*?)</entry>", Pattern.DOTALL);
+    private static final Pattern ENTRY_NOTES = Pattern.compile("<content type=\"html\">(.*?)</content>", Pattern.DOTALL);
+    private static final Pattern ENTRY_LINK = Pattern.compile("<link[^>]*href=\"([^\"]*)\"");
     private static final Pattern FEED_TAG = Pattern.compile(Pattern.quote(TAG_MARKER) + "([^\"<>\\s]+)\"");
 
     private final String baseUrl;
@@ -47,6 +50,23 @@ public final class GitHubReleases implements ReleaseSource {
             if (fromFeed.isPresent()) return fromFeed;
         }
         return releaseFor(latestTag(), STABLE_TAG);
+    }
+
+    @Override
+    public Optional<String> notesFor(Release release) throws IOException {
+        String tagLink = TAG_MARKER + release.tag();
+        Matcher entries = FEED_ENTRY.matcher(readFeed());
+        while (entries.find()) {
+            // Only the entry's own link names its release; notes may link to other releases, and the closing
+            // quote keeps v1.0.0 from matching the entry of v1.0.0-rc.1
+            Matcher own = ENTRY_LINK.matcher(entries.group(1));
+            if (!own.find() || !own.group(1).endsWith(tagLink)) continue;
+            Matcher notes = ENTRY_NOTES.matcher(entries.group(1));
+            if (!notes.find()) return Optional.empty();
+            String text = ReleaseNotes.fromFeedContent(notes.group(1));
+            return text.isEmpty() ? Optional.empty() : Optional.of(text);
+        }
+        return Optional.empty();
     }
 
     // The feed is newest first, but the order of tags is not the order of versions: 1.0.0 beats 1.0.0-rc.2

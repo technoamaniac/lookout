@@ -136,4 +136,52 @@ public class GitHubReleasesTest {
         server.route(FEED, 200, null, feedOf("v0.3.0-rc.1", "v0.2.0"));
         assertEquals("0.2.0", releases.latest(false).orElseThrow().version().toString());
     }
+
+    private static byte[] feedWithNotes(String tag, String escapedHtml) {
+        return ("<feed><entry><id>tag:github.com,2008:Repository/1/" + tag + "</id>"
+                + "<link rel=\"alternate\" type=\"text/html\" href=\"https://github.com/owner/repo/releases/tag/" + tag + "\"/>"
+                + "<content type=\"html\">" + escapedHtml + "</content></entry></feed>")
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+    }
+
+    private static Release release(String version) throws IOException {
+        java.net.URL url = new java.net.URL("https://example.com/lookout.apk");
+        return new Release(Version.parse(version), url, url);
+    }
+
+    @Test
+    public void readsTheNotesOfAReleaseFromTheFeed() throws IOException {
+        server.route(FEED, 200, null, feedWithNotes("v0.5.0", "&lt;ul&gt;\n&lt;li&gt;Setup&lt;/li&gt;\n&lt;/ul&gt;"));
+        assertEquals("• Setup", releases.notesFor(release("0.5.0")).orElseThrow());
+    }
+
+    @Test
+    public void aReleaseDoesNotTakeTheNotesOfItsCandidate() throws IOException {
+        server.route(FEED, 200, null, feedWithNotes("v0.5.0-rc.1", "&lt;p&gt;Candidate&lt;/p&gt;"));
+        assertTrue(releases.notesFor(release("0.5.0")).isEmpty());
+    }
+
+    @Test
+    public void aReleaseDoesNotTakeTheNotesOfAnEntryThatOnlyLinksToIt() throws IOException {
+        byte[] feed = ("<feed><entry><link rel=\"alternate\" href=\"https://github.com/owner/repo/releases/tag/v0.5.0\"/>"
+                + "<content type=\"html\">&lt;p&gt;See https://github.com/owner/repo/releases/tag/v0.4.0\"&lt;/p&gt;</content></entry></feed>")
+                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        server.route(FEED, 200, null, feed);
+        assertTrue(releases.notesFor(release("0.4.0")).isEmpty());
+    }
+
+    @Test
+    public void reportsNoNotesForAReleaseOutsideTheFeedOrWithoutText() throws IOException {
+        server.route(FEED, 200, null, feedWithNotes("v0.5.0", ""));
+        assertTrue(releases.notesFor(release("0.5.0")).isEmpty());
+        assertTrue(releases.notesFor(release("0.4.0")).isEmpty());
+        server.route(FEED, 404, null, new byte[0]);
+        assertTrue(releases.notesFor(release("0.5.0")).isEmpty());
+    }
+
+    @Test(expected = IOException.class)
+    public void failsToReadNotesWhenTheFeedErrors() throws IOException {
+        server.route(FEED, 503, null, new byte[0]);
+        releases.notesFor(release("0.5.0"));
+    }
 }

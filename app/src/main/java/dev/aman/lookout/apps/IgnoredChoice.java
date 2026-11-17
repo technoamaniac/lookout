@@ -4,11 +4,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -25,7 +23,6 @@ public final class IgnoredChoice {
     private final Set<String> ignored;
     private final Set<String> reported;
     private final Set<String> builtInPackages = new LinkedHashSet<>();
-    private final Map<String, String> labels = new HashMap<>();
     private final List<Entry> layout = new ArrayList<>();
 
     /**
@@ -51,7 +48,6 @@ public final class IgnoredChoice {
         for (InstalledApp app : apps) {
             if (builtInPackages.contains(app.packageName())) continue;
             installed.add(app.packageName());
-            labels.put(app.packageName(), app.label());
             (app.isHomeScreen() ? homes : others).add(app);
         }
         Collections.sort(homes, BY_LABEL);
@@ -65,7 +61,6 @@ public final class IgnoredChoice {
         addSection(Section.OTHER, unlisted);
         List<InstalledApp> defaults = new ArrayList<>(builtIns);
         Collections.sort(defaults, BY_LABEL);
-        for (InstalledApp builtIn : defaults) labels.put(builtIn.packageName(), builtIn.label());
         addSection(Section.BUILT_IN, defaults);
     }
 
@@ -112,13 +107,6 @@ public final class IgnoredChoice {
     /** What to save as ignored, built-ins left out: earlier choices first, then new ones in the order they were ticked. */
     public List<String> ignoredPackages() {
         return new ArrayList<>(ignored);
-    }
-
-    /** The ignored apps' names for a summary, falling back to the package for one the TV does not list. */
-    public List<String> ignoredLabels() {
-        List<String> names = new ArrayList<>();
-        for (String pkg : ignored) names.add(labels.getOrDefault(pkg, pkg));
-        return names;
     }
 
     /** One row: a section heading, or an app. */
