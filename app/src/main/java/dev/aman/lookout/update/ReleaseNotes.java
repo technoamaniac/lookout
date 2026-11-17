@@ -3,43 +3,33 @@ package dev.aman.lookout.update;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-/** Turns the HTML GitHub renders for a release's notes into plain text a TV screen can show. */
+/**
+ * Tidies the HTML GitHub renders for a release's notes so a TV can show it: the formatting stays, and what a remote
+ * cannot use (links, the diff link GitHub appends) goes. Android's own HTML renderer does the drawing.
+ */
 public final class ReleaseNotes {
     private static final Pattern ENTITY = Pattern.compile("&(#x[0-9a-fA-F]+|#\\d+|[a-z]+);");
-    private static final Pattern HEADING_START = Pattern.compile("<h[1-6][^>]*>");
-    private static final Pattern HEADING_END = Pattern.compile("</h[1-6]>");
-    private static final Pattern BLOCK_END = Pattern.compile("</(?:p|ul|ol)>");
-    private static final Pattern LINE_BREAK = Pattern.compile("<br\\s*/?>");
-    private static final Pattern LIST_ITEM = Pattern.compile("<li[^>]*>");
-    private static final Pattern ANY_TAG = Pattern.compile("<[^>]*>");
     // The link to the full diff that GitHub appends to every release: a bare version range means nothing on a TV
-    private static final Pattern DIFF_LINK = Pattern.compile("(?m)^Full Changelog.*$");
-    private static final Pattern SPACE_AROUND_BREAKS = Pattern.compile(" *\n *");
-    private static final Pattern BLANK_RUNS = Pattern.compile("\n{3,}");
+    private static final Pattern DIFF_LINK = Pattern.compile("<p><strong>Full Changelog</strong>.*?</p>", Pattern.DOTALL);
+    // Nothing on a TV can follow a link, so only its text is kept
+    private static final Pattern LINK = Pattern.compile("<a\\b[^>]*>(.*?)</a>", Pattern.DOTALL);
+    private static final Pattern CODE_START = Pattern.compile("<code\\b[^>]*>");
+    private static final Pattern ANY_TAG = Pattern.compile("<[^>]*>");
 
     private ReleaseNotes() {
     }
 
-    /** @param feedContent the {@code content} of a release's entry in the releases feed, which is escaped HTML */
+    /**
+     * @param feedContent the {@code content} of a release's entry in the releases feed, which is escaped HTML
+     * @return the notes as HTML, or an empty string when there is no text in them
+     */
     static String fromFeedContent(String feedContent) {
-        return fromHtml(decode(feedContent));
-    }
-
-    /** Headings become their own lines, list items get a bullet, and every other tag and the link list is dropped. */
-    static String fromHtml(String html) {
-        // Line breaks in the source are layout only; the tags below decide where lines break
-        String text = html.replace('\n', ' ');
-        text = HEADING_START.matcher(text).replaceAll("\n\n");
-        text = HEADING_END.matcher(text).replaceAll("\n");
-        text = LIST_ITEM.matcher(text).replaceAll("• ");
-        text = text.replace("</li>", "\n");
-        text = BLOCK_END.matcher(text).replaceAll("\n\n");
-        text = LINE_BREAK.matcher(text).replaceAll("\n");
-        text = ANY_TAG.matcher(text).replaceAll("");
-        // The spaces that stood for the source's line breaks would otherwise indent every line
-        text = SPACE_AROUND_BREAKS.matcher(decode(text)).replaceAll("\n");
-        text = DIFF_LINK.matcher(text).replaceAll("");
-        return BLANK_RUNS.matcher(text).replaceAll("\n\n").trim();
+        String html = decode(feedContent);
+        html = DIFF_LINK.matcher(html).replaceAll("");
+        html = LINK.matcher(html).replaceAll("$1");
+        // Android's renderer draws tt in a monospace face and has no rule for code
+        html = CODE_START.matcher(html).replaceAll("<tt>").replace("</code>", "</tt>");
+        return ANY_TAG.matcher(html).replaceAll("").trim().isEmpty() ? "" : html.trim();
     }
 
     // One pass, so "&amp;lt;" becomes "&lt;" and not "<"

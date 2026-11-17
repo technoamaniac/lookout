@@ -152,7 +152,7 @@ public class GitHubReleasesTest {
     @Test
     public void readsTheNotesOfAReleaseFromTheFeed() throws IOException {
         server.route(FEED, 200, null, feedWithNotes("v0.5.0", "&lt;ul&gt;\n&lt;li&gt;Setup&lt;/li&gt;\n&lt;/ul&gt;"));
-        assertEquals("• Setup", releases.notesFor(release("0.5.0")).orElseThrow());
+        assertEquals("<ul>\n<li>Setup</li>\n</ul>", releases.notesFor(release("0.5.0")).orElseThrow());
     }
 
     @Test

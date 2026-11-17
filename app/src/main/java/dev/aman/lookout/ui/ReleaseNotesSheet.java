@@ -1,5 +1,6 @@
 package dev.aman.lookout.ui;
 
+import android.text.Html;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
@@ -72,7 +73,7 @@ final class ReleaseNotesSheet {
             int fallback = message;
             activity.runOnUiThread(() -> {
                 if (activity.isDestroyed() || thisOpening != opening) return;
-                if (shown != null) text.setText(shown);
+                if (shown != null) text.setText(Html.fromHtml(shown, Html.FROM_HTML_MODE_LEGACY));
                 else text.setText(fallback);
             });
         });
