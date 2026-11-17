@@ -41,7 +41,10 @@ public final class BuiltInApps implements AppCatalog {
         return new ArrayList<>(byPackage.values());
     }
 
-    /** Just the packages, for deciding what to ignore: it skips the label lookups that only the list needs. */
+    /**
+     * Just the packages, for deciding what to ignore: the service asks on every config change, so this skips the
+     * label lookups that only the list needs.
+     */
     public List<String> packageNames() {
         Set<String> names = new LinkedHashSet<>();
         names.add(SYSTEM_UI);
@@ -56,6 +59,6 @@ public final class BuiltInApps implements AppCatalog {
     }
 
     private static void add(Map<String, InstalledApp> byPackage, String packageName, String label) {
-        if (!byPackage.containsKey(packageName)) byPackage.put(packageName, new InstalledApp(label, packageName, false));
+        byPackage.putIfAbsent(packageName, new InstalledApp(label, packageName, false));
     }
 }

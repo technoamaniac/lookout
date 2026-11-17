@@ -99,6 +99,14 @@ public class ConfigTest {
     }
 
     @Test
+    public void tidiesIgnoredPackagesGivenAsAListLikeParsedOnes() {
+        Config config = Config.parse("", "old.app", false)
+                .withIgnoredPackages(List.of(" com.example.app ", "", "com.example.app"));
+
+        assertEquals(List.of("com.example.app"), config.ignoredPackages());
+    }
+
+    @Test
     public void keepsTheReportedPackagesWhenTheHeartbeatChanges() {
         Config config = Config.parse("", "", false).withReportedPackages(List.of("com.example.keyboard"))
                 .withHeartbeatMinutes(5);

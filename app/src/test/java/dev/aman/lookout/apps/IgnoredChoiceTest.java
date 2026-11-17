@@ -13,11 +13,16 @@ import java.util.List;
 import org.junit.Test;
 
 public class IgnoredChoiceTest {
-    private static final InstalledApp LAUNCHER = new InstalledApp("Projectivy Launcher", "com.spocky.projengmenu", true);
-    private static final InstalledApp TV_HOME = new InstalledApp("Google TV Home", "com.google.android.apps.tv.launcherx", true);
+    private static final InstalledApp LAUNCHER =
+            new InstalledApp("Projectivy Launcher", "com.spocky.projengmenu", true);
+    private static final InstalledApp TV_HOME =
+            new InstalledApp("Google TV Home", "com.google.android.apps.tv.launcherx", true);
     private static final InstalledApp SMARTTUBE = new InstalledApp("SmartTube", "org.smarttube.stable", false);
     private static final InstalledApp JELLYFIN = new InstalledApp("Jellyfin", "org.jellyfin.androidtv", false);
     private static final InstalledApp LOWER = new InstalledApp("apple tv", "com.apple.atve", false);
+    private static final InstalledApp SYSTEM_UI = new InstalledApp("System UI", "com.android.systemui", false);
+    private static final InstalledApp KEYBOARD =
+            new InstalledApp("Gboard", "com.google.android.inputmethod.latin", false);
 
     @Test
     public void listsHomeScreensThenAppsAlphabeticallyIgnoringCase() {
@@ -79,9 +84,6 @@ public class IgnoredChoiceTest {
 
         assertEquals(Arrays.asList("APPS", "SmartTube"), describe(choice.entries()));
     }
-
-    private static final InstalledApp SYSTEM_UI = new InstalledApp("System UI", "com.android.systemui", false);
-    private static final InstalledApp KEYBOARD = new InstalledApp("Gboard", "com.google.android.inputmethod.latin", false);
 
     @Test
     public void listsBuiltInsLastAndTicksThem() {

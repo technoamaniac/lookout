@@ -144,10 +144,12 @@ final class IgnoredAppsAdapter extends RecyclerView.Adapter<RecyclerView.ViewHol
                 return R.string.ignored_section_home;
             case APPS:
                 return R.string.ignored_section_apps;
+            case OTHER:
+                return R.string.ignored_section_other;
             case BUILT_IN:
                 return R.string.ignored_section_default;
             default:
-                return R.string.ignored_section_other;
+                throw new IllegalArgumentException("No heading for " + section);
         }
     }
 

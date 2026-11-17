@@ -1,7 +1,8 @@
 package dev.aman.lookout.ui;
 
-import android.app.Activity;
 import android.widget.LinearLayout;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import com.google.android.material.checkbox.MaterialCheckBox;
 
@@ -17,10 +18,10 @@ final class DeliveryFilterSheet {
     private DeliveryFilter filter = DeliveryFilter.DEFAULT;
 
     /** @param onChanged runs each time a box is ticked or cleared; read the new filter with {@link #filter()} */
-    DeliveryFilterSheet(Activity activity, Runnable onChanged) {
+    DeliveryFilterSheet(AppCompatActivity activity, Runnable onChanged) {
         this.onChanged = onChanged;
         sheet = new Sheet(activity, R.id.filter_overlay);
-        activity.findViewById(R.id.filter_done).setOnClickListener(v -> hide());
+        activity.findViewById(R.id.filter_done).setOnClickListener(v -> sheet.hide());
         options = activity.findViewById(R.id.filter_options);
         for (EventCategory category : EventCategory.values()) options.addView(optionFor(activity, category));
     }
@@ -35,11 +36,7 @@ final class DeliveryFilterSheet {
         sheet.show(options.getChildAt(0), onClosed);
     }
 
-    void hide() {
-        sheet.hide();
-    }
-
-    private MaterialCheckBox optionFor(Activity activity, EventCategory category) {
+    private MaterialCheckBox optionFor(AppCompatActivity activity, EventCategory category) {
         MaterialCheckBox box = new MaterialCheckBox(activity);
         box.setText(DeliveryAppearance.labelFor(category));
         box.setTextAppearance(R.style.Text_Body);

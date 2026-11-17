@@ -52,8 +52,9 @@ public final class SettingsPanel {
         this.background = background;
         urlField = activity.findViewById(R.id.url);
         deviceNameSwitch = activity.findViewById(R.id.send_device_name);
-        ignored = new IgnoredAppsPicker(activity, new InstalledApps(activity.getPackageManager(), activity.getPackageName()),
-                new BuiltInApps(activity), background, this::onFieldsEdited);
+        ignored = new IgnoredAppsPicker(activity,
+                new InstalledApps(activity.getPackageManager(), activity.getPackageName()), new BuiltInApps(activity),
+                background, this::onFieldsEdited);
         heartbeat = new HeartbeatChoice(activity);
         status = new StatusLine(activity.findViewById(R.id.status));
         saveButton = activity.findViewById(R.id.save);
@@ -66,7 +67,7 @@ public final class SettingsPanel {
         gate = new SaveGate(saved);
         showUrl(prefill.url != null ? prefill.url.trim() : saved.webhookUrlText());
         prefilledIgnored = prefill.ignored != null ? Config.parsePackages(prefill.ignored) : null;
-        ignored.set(prefilledIgnored != null ? prefilledIgnored : saved.ignoredPackages(), saved.reportedPackages());
+        showIgnoredApps(saved);
         TextFields.onChanged(urlField, this::onFieldsEdited);
         deviceNameSwitch.setChecked(saved.sendDeviceName());
         deviceNameSwitch.setOnCheckedChangeListener((button, checked) -> onFieldsEdited());
@@ -96,9 +97,13 @@ public final class SettingsPanel {
 
     /** Drops ignored-app choices that were never saved, for when the user leaves the tab. */
     public void discardUnsavedIgnoredApps() {
-        Config saved = store.load();
-        ignored.set(prefilledIgnored != null ? prefilledIgnored : saved.ignoredPackages(), saved.reportedPackages());
+        showIgnoredApps(store.load());
         updateSaveButton();
+    }
+
+    // An unsaved prefill stands in for the saved list, like a typed URL does for the saved one
+    private void showIgnoredApps(Config saved) {
+        ignored.set(prefilledIgnored != null ? prefilledIgnored : saved.ignoredPackages(), saved.reportedPackages());
     }
 
     private void save() {
@@ -215,8 +220,10 @@ public final class SettingsPanel {
     }
 
     private Config readFields() {
-        return Config.parse(urlField.getText().toString(), ignored.text(),
-                deviceNameSwitch.isChecked()).withHeartbeatMinutes(heartbeat.minutes()).withReportedPackages(ignored.reported());
+        return Config.parse(urlField.getText().toString(), "", deviceNameSwitch.isChecked())
+                .withIgnoredPackages(ignored.ignored())
+                .withHeartbeatMinutes(heartbeat.minutes())
+                .withReportedPackages(ignored.reported());
     }
 
     private Config readFieldsOrNull() {

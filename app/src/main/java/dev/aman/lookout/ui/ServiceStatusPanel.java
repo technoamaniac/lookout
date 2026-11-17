@@ -1,8 +1,6 @@
 package dev.aman.lookout.ui;
 
 import android.app.Activity;
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
 import android.view.View;
 import android.widget.CompoundButton;
 import android.widget.ImageView;
@@ -12,8 +10,6 @@ import dev.aman.lookout.R;
 import dev.aman.lookout.config.ReportingSwitch;
 import dev.aman.lookout.setup.Permission;
 import dev.aman.lookout.setup.SystemPermissions;
-
-import java.util.Optional;
 
 /**
  * Shows whether the accessibility service is switched on, with a shortcut to switch it on, and the switch that
@@ -67,16 +63,9 @@ public final class ServiceStatusPanel {
     }
 
     private void openAccessibilitySettings() {
-        Optional<Intent> screen = permissions.screenFor(Permission.ACCESSIBILITY);
-        try {
-            if (screen.isPresent()) {
-                activity.startActivity(screen.get());
-                return;
-            }
-        } catch (ActivityNotFoundException e) {
-            // Treated like a missing screen below
-        }
         // Some TV builds ship without this screen; the status text already points to the install script
-        openSettingsButton.setVisibility(View.GONE);
+        if (!PermissionScreens.open(activity, permissions, Permission.ACCESSIBILITY)) {
+            openSettingsButton.setVisibility(View.GONE);
+        }
     }
 }

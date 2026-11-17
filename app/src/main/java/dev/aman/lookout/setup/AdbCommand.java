@@ -7,7 +7,10 @@ public final class AdbCommand {
     private final String packageName;
     private final String mediaServiceComponent;
 
-    /** @param mediaServiceComponent the notification listener as {@code package/Class}, which Android needs spelled out */
+    /**
+     * @param mediaServiceComponent the notification listener as {@code package/Class}, which Android needs spelled
+     *                              out
+     */
     public AdbCommand(String packageName, String mediaServiceComponent) {
         this.packageName = Objects.requireNonNull(packageName);
         this.mediaServiceComponent = Objects.requireNonNull(mediaServiceComponent);

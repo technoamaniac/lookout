@@ -1,9 +1,9 @@
 package dev.aman.lookout.ui;
 
-import android.app.Activity;
 import android.view.View;
 import android.widget.TextView;
 
+import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -20,7 +20,7 @@ final class IgnoredAppsSheet {
     private IgnoredChoice choice;
     private Runnable onChanged = () -> {};
 
-    IgnoredAppsSheet(Activity activity) {
+    IgnoredAppsSheet(AppCompatActivity activity) {
         sheet = new Sheet(activity, R.id.ignored_overlay);
         list = activity.findViewById(R.id.ignored_list);
         count = activity.findViewById(R.id.ignored_count);
@@ -30,7 +30,7 @@ final class IgnoredAppsSheet {
         // Items are redrawn in place, so the default fade would flash a row on every press
         list.setItemAnimator(null);
         done = activity.findViewById(R.id.ignored_done);
-        done.setOnClickListener(v -> hide());
+        done.setOnClickListener(v -> sheet.hide());
     }
 
     /**
@@ -45,10 +45,6 @@ final class IgnoredAppsSheet {
         // Done holds the focus until the rows are laid out and the first one can take it
         sheet.show(done, onClosed);
         focusFirstRow();
-    }
-
-    boolean hide() {
-        return sheet.hide();
     }
 
     private void toggle(String packageName) {

@@ -3,7 +3,6 @@ package dev.aman.lookout.ui;
 import android.view.View;
 import android.widget.Button;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -24,7 +23,6 @@ public final class DeliveriesPanel {
     private final Runnable onLogged;
     private final DeliveryFilterSheet filterSheet;
     private final Button filterButton;
-    private final OnBackPressedCallback closeSheetOnBack;
 
     public DeliveriesPanel(AppCompatActivity activity, DeliveryLog log) {
         this.activity = activity;
@@ -38,15 +36,6 @@ public final class DeliveriesPanel {
         filterButton.setOnClickListener(v -> showFilter());
         list = activity.findViewById(R.id.deliveries);
         list.setAdapter(adapter);
-        // Back closes the open sheet; otherwise the callback is off and Back behaves as usual
-        closeSheetOnBack = new OnBackPressedCallback(false) {
-            @Override
-            public void handleOnBackPressed() {
-                detail.hide();
-                filterSheet.hide();
-            }
-        };
-        activity.getOnBackPressedDispatcher().addCallback(activity, closeSheetOnBack);
     }
 
     /** Starts following the log; pair with {@link #stop()}. */
@@ -60,9 +49,7 @@ public final class DeliveriesPanel {
     }
 
     private void showDetail(DeliveryRecord record, View row) {
-        closeSheetOnBack.setEnabled(true);
         detail.show(record, () -> {
-            closeSheetOnBack.setEnabled(false);
             // The row may have been recycled while the sheet was open
             if (!row.isAttachedToWindow() || !row.requestFocus()) list.requestFocus();
         });
@@ -74,11 +61,7 @@ public final class DeliveriesPanel {
     }
 
     private void showFilter() {
-        closeSheetOnBack.setEnabled(true);
-        filterSheet.show(() -> {
-            closeSheetOnBack.setEnabled(false);
-            filterButton.requestFocus();
-        });
+        filterSheet.show(filterButton::requestFocus);
     }
 
     private void refresh() {

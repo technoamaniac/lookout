@@ -1,7 +1,5 @@
 package dev.aman.lookout.ui;
 
-import android.content.ActivityNotFoundException;
-import android.content.Intent;
 import android.content.Context;
 import android.view.View;
 import android.widget.CompoundButton;
@@ -54,12 +52,12 @@ public final class UpdatesPanel {
     private boolean recheckRequested;
 
     /** @param onAvailabilityChanged told after every check whether a newer release exists */
-    public UpdatesPanel(AppCompatActivity activity, Executor background, UpdateChannel channel, SystemPermissions permissions,
-                        Consumer<Optional<Release>> onAvailabilityChanged) {
+    public UpdatesPanel(AppCompatActivity activity, Executor background, UpdateChannel channel,
+                        SystemPermissions permissions, Consumer<Optional<Release>> onAvailabilityChanged) {
         this.activity = activity;
-        this.permissions = permissions;
         this.background = background;
         this.channel = channel;
+        this.permissions = permissions;
         this.onAvailabilityChanged = onAvailabilityChanged;
         status = new StatusLine(activity.findViewById(R.id.update_status));
         checkButton = activity.findViewById(R.id.check_updates);
@@ -143,11 +141,12 @@ public final class UpdatesPanel {
         available = newer.orElse(null);
         updateActions.setVisibility(newer.isPresent() ? View.VISIBLE : View.GONE);
         // Install is the primary action once there is something to install
-        useSecondaryStyle(checkButton, newer.isPresent());
+        ButtonStyle.setPrimary(checkButton, !newer.isPresent());
         onAvailabilityChanged.accept(newer);
         if (newer.isPresent()) {
             installButton.setText(activity.getString(R.string.install_version, newer.get().version()));
-            status.info(activity.getString(R.string.update_available, newer.get().version()), R.drawable.ic_tab_updates);
+            status.info(activity.getString(R.string.update_available, newer.get().version()),
+                    R.drawable.ic_tab_updates);
         } else if (!quiet) {
             status.success(R.string.update_current);
         }
@@ -181,26 +180,12 @@ public final class UpdatesPanel {
     }
 
     private void openInstallPermissionScreen() {
-        try {
-            Optional<Intent> screen = permissions.screenFor(Permission.INSTALL_UPDATES);
-            if (screen.isPresent()) {
-                activity.startActivity(screen.get());
-                status.warning(R.string.update_allow_installs);
-                return;
-            }
-        } catch (ActivityNotFoundException e) {
-            // Treated like a missing screen below
+        if (PermissionScreens.open(activity, permissions, Permission.INSTALL_UPDATES)) {
+            status.warning(R.string.update_allow_installs);
+        } else {
+            // Some TV builds ship without this screen
+            status.error(R.string.update_no_permission_screen);
         }
-        // Some TV builds ship without this screen
-        status.error(R.string.update_no_permission_screen);
-    }
-
-    private static void useSecondaryStyle(MaterialButton button, boolean secondary) {
-        Context context = button.getContext();
-        button.setBackgroundTintList(context.getColorStateList(secondary ? R.color.secondary_bg : R.color.primary_bg));
-        button.setStrokeColor(context.getColorStateList(secondary ? R.color.secondary_stroke_state : R.color.primary_stroke));
-        button.setTextColor(context.getColorStateList(secondary ? R.color.secondary_text : R.color.primary_text));
-        button.setIconTint(context.getColorStateList(secondary ? R.color.secondary_text : R.color.primary_text));
     }
 
     private void setBusy(boolean busy) {

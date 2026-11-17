@@ -4,7 +4,6 @@ import android.text.Html;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 import dev.aman.lookout.R;
@@ -21,7 +20,6 @@ final class ReleaseNotesSheet {
     private final Executor background;
     private final ReleaseNotesSource source;
     private final Sheet sheet;
-    private final OnBackPressedCallback closeSheetOnBack;
     private final TextView title;
     private final ScrollView scroll;
     private final TextView text;
@@ -38,14 +36,6 @@ final class ReleaseNotesSheet {
         scroll = activity.findViewById(R.id.notes_scroll);
         text = activity.findViewById(R.id.notes_text);
         activity.findViewById(R.id.notes_close).setOnClickListener(v -> sheet.hide());
-        // Back closes the open sheet; otherwise the callback is off and Back behaves as usual
-        closeSheetOnBack = new OnBackPressedCallback(false) {
-            @Override
-            public void handleOnBackPressed() {
-                sheet.hide();
-            }
-        };
-        activity.getOnBackPressedDispatcher().addCallback(activity, closeSheetOnBack);
     }
 
     /** @param onClosed runs after the sheet closes, to hand focus back to where it came from */
@@ -55,27 +45,24 @@ final class ReleaseNotesSheet {
         text.setText(R.string.release_notes_loading);
         // The sheet is reused, so start each release's notes at their top
         scroll.scrollTo(0, 0);
-        closeSheetOnBack.setEnabled(true);
-        sheet.show(scroll, () -> {
-            closeSheetOnBack.setEnabled(false);
-            onClosed.run();
-        });
+        sheet.show(scroll, onClosed);
         background.execute(() -> {
-            int message = R.string.release_notes_none;
-            String notes = null;
-            try {
-                Optional<String> found = source.notesFor(release);
-                if (found.isPresent()) notes = found.get();
-            } catch (IOException | RuntimeException e) {
-                message = R.string.update_check_failed;
-            }
-            String shown = notes;
-            int fallback = message;
+            CharSequence notes = load(release);
             activity.runOnUiThread(() -> {
-                if (activity.isDestroyed() || thisOpening != opening) return;
-                if (shown != null) text.setText(Html.fromHtml(shown, Html.FROM_HTML_MODE_LEGACY));
-                else text.setText(fallback);
+                if (!activity.isDestroyed() && thisOpening == opening) text.setText(notes);
             });
         });
+    }
+
+    // Runs in the background: reading the notes goes to the network
+    private CharSequence load(Release release) {
+        try {
+            Optional<String> html = source.notesFor(release);
+            return html.isPresent()
+                    ? Html.fromHtml(html.get(), Html.FROM_HTML_MODE_LEGACY)
+                    : activity.getText(R.string.release_notes_none);
+        } catch (IOException | RuntimeException e) {
+            return activity.getText(R.string.update_check_failed);
+        }
     }
 }

@@ -27,21 +27,25 @@ public final class InstalledApps implements AppCatalog {
 
     @Override
     public List<InstalledApp> apps() {
+        List<ResolveInfo> homes = homeActivities();
         Set<String> homeScreens = new HashSet<>();
-        for (ResolveInfo info : homeActivities()) homeScreens.add(info.activityInfo.packageName);
+        for (ResolveInfo info : homes) homeScreens.add(info.activityInfo.packageName);
+        // A home screen may have no launcher entry of its own, so the home activities are listed too
+        List<ResolveInfo> entries = new ArrayList<>(launcherActivities(Intent.CATEGORY_LAUNCHER));
+        entries.addAll(launcherActivities(Intent.CATEGORY_LEANBACK_LAUNCHER));
+        entries.addAll(homes);
         Map<String, InstalledApp> byPackage = new LinkedHashMap<>();
-        for (String category : new String[] {Intent.CATEGORY_LAUNCHER, Intent.CATEGORY_LEANBACK_LAUNCHER,
-                Intent.CATEGORY_HOME}) {
-            List<ResolveInfo> found = category.equals(Intent.CATEGORY_HOME)
-                    ? homeActivities() : packages.queryIntentActivities(mainIntent(category), 0);
-            for (ResolveInfo info : found) {
-                String pkg = info.activityInfo.packageName;
-                if (pkg.equals(ownPackage) || byPackage.containsKey(pkg)) continue;
-                String label = info.activityInfo.applicationInfo.loadLabel(packages).toString();
-                byPackage.put(pkg, new InstalledApp(label, pkg, homeScreens.contains(pkg)));
-            }
+        for (ResolveInfo info : entries) {
+            String pkg = info.activityInfo.packageName;
+            if (pkg.equals(ownPackage) || byPackage.containsKey(pkg)) continue;
+            String label = info.activityInfo.applicationInfo.loadLabel(packages).toString();
+            byPackage.put(pkg, new InstalledApp(label, pkg, homeScreens.contains(pkg)));
         }
         return new ArrayList<>(byPackage.values());
+    }
+
+    private List<ResolveInfo> launcherActivities(String category) {
+        return packages.queryIntentActivities(mainIntent(category), 0);
     }
 
     // Settings apps declare a home activity at a priority below zero only to cover the moments during boot when no

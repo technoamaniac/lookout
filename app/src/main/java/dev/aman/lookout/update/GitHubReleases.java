@@ -24,7 +24,8 @@ public final class GitHubReleases implements ReleaseSource, ReleaseNotesSource {
     private static final Pattern STABLE_TAG = Pattern.compile("v(\\d+\\.\\d+\\.\\d+)");
     private static final Pattern ANY_TAG = Pattern.compile("v(\\d+\\.\\d+\\.\\d+(?:-[0-9A-Za-z.-]+)?)");
     private static final Pattern FEED_ENTRY = Pattern.compile("<entry>(.*?)</entry>", Pattern.DOTALL);
-    private static final Pattern ENTRY_NOTES = Pattern.compile("<content type=\"html\">(.*?)</content>", Pattern.DOTALL);
+    private static final Pattern ENTRY_NOTES =
+            Pattern.compile("<content type=\"html\">(.*?)</content>", Pattern.DOTALL);
     private static final Pattern ENTRY_LINK = Pattern.compile("<link[^>]*href=\"([^\"]*)\"");
     private static final Pattern FEED_TAG = Pattern.compile(Pattern.quote(TAG_MARKER) + "([^\"<>\\s]+)\"");
 
@@ -57,8 +58,8 @@ public final class GitHubReleases implements ReleaseSource, ReleaseNotesSource {
         String tagLink = TAG_MARKER + release.tag();
         Matcher entries = FEED_ENTRY.matcher(readFeed());
         while (entries.find()) {
-            // Only the entry's own link names its release; notes may link to other releases, and the closing
-            // quote keeps v1.0.0 from matching the entry of v1.0.0-rc.1
+            // Only the entry's own link names its release, as notes may link to other releases; matching the end of
+            // the link keeps v1.0.0 from taking the entry of v1.0.0-rc.1
             Matcher own = ENTRY_LINK.matcher(entries.group(1));
             if (!own.find() || !own.group(1).endsWith(tagLink)) continue;
             Matcher notes = ENTRY_NOTES.matcher(entries.group(1));

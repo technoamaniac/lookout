@@ -25,6 +25,8 @@ final class SetupLauncher {
 
     /** @param webhookGiven whether a webhook is already saved or on its way, so the user is past setup */
     void openIfFirstRun(boolean webhookGiven) {
-        if (FirstRun.isDue(store.isSeen(), webhookGiven)) activity.startActivity(new Intent(activity, SetupActivity.class));
+        if (FirstRun.isDue(store.isSeen(), webhookGiven)) {
+            activity.startActivity(new Intent(activity, SetupActivity.class));
+        }
     }
 }

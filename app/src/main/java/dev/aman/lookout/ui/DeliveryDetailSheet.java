@@ -1,12 +1,13 @@
 package dev.aman.lookout.ui;
 
-import android.app.Activity;
 import android.text.Spannable;
 import android.text.SpannableString;
 import android.text.style.ForegroundColorSpan;
 import android.view.View;
 import android.widget.ScrollView;
 import android.widget.TextView;
+
+import androidx.appcompat.app.AppCompatActivity;
 
 import java.text.DateFormat;
 import java.util.Date;
@@ -21,7 +22,7 @@ final class DeliveryDetailSheet {
     private static final Pattern JSON_KEY = Pattern.compile("\"[^\"]+\"(?=:)");
     private static final Pattern JSON_NUMBER = Pattern.compile("(?<=: )\\d+");
 
-    private final Activity activity;
+    private final AppCompatActivity activity;
     private final Sheet sheet;
     private final StatusLine result;
     private final TextView app;
@@ -32,7 +33,7 @@ final class DeliveryDetailSheet {
     private final View closeButton;
     private final DateFormat dateTimeFormat = DateFormat.getDateTimeInstance(DateFormat.MEDIUM, DateFormat.MEDIUM);
 
-    DeliveryDetailSheet(Activity activity) {
+    DeliveryDetailSheet(AppCompatActivity activity) {
         this.activity = activity;
         sheet = new Sheet(activity, R.id.detail_overlay);
         result = new StatusLine(activity.findViewById(R.id.detail_result));
@@ -42,7 +43,7 @@ final class DeliveryDetailSheet {
         payloadScroll = activity.findViewById(R.id.detail_payload_scroll);
         payload = activity.findViewById(R.id.detail_payload);
         closeButton = activity.findViewById(R.id.detail_close);
-        closeButton.setOnClickListener(v -> hide());
+        closeButton.setOnClickListener(v -> sheet.hide());
     }
 
     /** @param onClosed runs after the sheet closes, to hand focus back to where it came from */
@@ -56,10 +57,6 @@ final class DeliveryDetailSheet {
         // The sheet is reused, so start each payload at its top rather than where the last one was left
         payloadScroll.scrollTo(0, 0);
         sheet.show(closeButton, onClosed);
-    }
-
-    void hide() {
-        sheet.hide();
     }
 
     // Keys in the accent colour and numbers in the warm one, matching the design tokens

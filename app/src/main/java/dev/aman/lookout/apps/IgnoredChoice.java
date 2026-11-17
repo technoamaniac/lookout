@@ -104,7 +104,9 @@ public final class IgnoredChoice {
         return new ArrayList<>(reported);
     }
 
-    /** What to save as ignored, built-ins left out: earlier choices first, then new ones in the order they were ticked. */
+    /**
+     * What to save as ignored, built-ins left out: earlier choices first, then new ones in the order they were ticked.
+     */
     public List<String> ignoredPackages() {
         return new ArrayList<>(ignored);
     }

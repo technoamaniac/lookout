@@ -1,21 +1,34 @@
 package dev.aman.lookout.ui;
 
-import android.app.Activity;
 import android.view.View;
 import android.view.ViewGroup;
 
+import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AppCompatActivity;
+
 import dev.aman.lookout.R;
 
-/** An overlay over the screen that holds the D-pad while open and hands focus back when it closes. */
+/**
+ * An overlay over the screen that holds the D-pad while open, closes on Back and hands focus back when it closes.
+ * Back reaches the sheet before any callback the activity added earlier, so add the activity's own first.
+ */
 final class Sheet {
     private final View overlay;
     private final ViewGroup mainContent;
+    // Off while the sheet is closed, so Back behaves as usual
+    private final OnBackPressedCallback closeOnBack = new OnBackPressedCallback(false) {
+        @Override
+        public void handleOnBackPressed() {
+            hide();
+        }
+    };
     private Runnable onClosed = () -> {};
 
     /** @param overlayId the overlay's root view, hidden until {@link #show} */
-    Sheet(Activity activity, int overlayId) {
+    Sheet(AppCompatActivity activity, int overlayId) {
         overlay = activity.findViewById(overlayId);
         mainContent = activity.findViewById(R.id.main_content);
+        activity.getOnBackPressedDispatcher().addCallback(activity, closeOnBack);
     }
 
     /**
@@ -27,16 +40,17 @@ final class Sheet {
         // The screen behind must not take D-pad focus while the sheet is open
         mainContent.setDescendantFocusability(ViewGroup.FOCUS_BLOCK_DESCENDANTS);
         overlay.setVisibility(View.VISIBLE);
+        closeOnBack.setEnabled(true);
         firstFocus.requestFocus();
     }
 
-    /** Closes the sheet; does nothing when it is not open. Returns whether it was. */
-    boolean hide() {
-        if (!isShowing()) return false;
+    /** Closes the sheet; does nothing when it is not open. */
+    void hide() {
+        if (!isShowing()) return;
+        closeOnBack.setEnabled(false);
         overlay.setVisibility(View.GONE);
         mainContent.setDescendantFocusability(ViewGroup.FOCUS_BEFORE_DESCENDANTS);
         onClosed.run();
-        return true;
     }
 
     boolean isShowing() {

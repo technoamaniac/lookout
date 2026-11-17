@@ -3,10 +3,10 @@ package dev.aman.lookout.ui;
 import android.view.View;
 import android.widget.TextView;
 
-import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Executor;
 
@@ -24,13 +24,13 @@ final class IgnoredAppsPicker {
     private final TextView summary;
     private final IgnoredAppsSheet sheet;
     private final Runnable onChanged;
-    private final OnBackPressedCallback closeSheetOnBack;
 
     private List<String> ignored = new ArrayList<>();
     private List<String> reported = new ArrayList<>();
-    // Listed once, in the background: asking Android for every launcher entry is slow enough to notice on a TV
-    private volatile List<InstalledApp> apps;
-    private volatile List<InstalledApp> builtIns;
+    // Listed once, in the background: asking Android for every launcher entry is slow enough to notice on a TV.
+    // Both are set together on the UI thread, and null until then
+    private List<InstalledApp> apps;
+    private List<InstalledApp> builtIns;
 
     IgnoredAppsPicker(AppCompatActivity activity, AppCatalog catalog, AppCatalog builtInCatalog, Executor background,
                       Runnable onChanged) {
@@ -39,14 +39,6 @@ final class IgnoredAppsPicker {
         summary = activity.findViewById(R.id.ignored_summary);
         sheet = new IgnoredAppsSheet(activity);
         row.setOnClickListener(v -> open());
-        // Back closes the open sheet; otherwise the callback is off and Back behaves as usual
-        closeSheetOnBack = new OnBackPressedCallback(false) {
-            @Override
-            public void handleOnBackPressed() {
-                sheet.hide();
-            }
-        };
-        activity.getOnBackPressedDispatcher().addCallback(activity, closeSheetOnBack);
         background.execute(() -> {
             List<InstalledApp> listed = catalog.apps();
             List<InstalledApp> defaults = builtInCatalog.apps();
@@ -60,14 +52,14 @@ final class IgnoredAppsPicker {
         showSummary();
     }
 
-    /** The packages to save, as the comma-separated text the config reads. */
-    String text() {
-        return String.join(", ", ignored);
+    /** The packages to save as ignored. */
+    List<String> ignored() {
+        return Collections.unmodifiableList(ignored);
     }
 
-    /** The ignored-by-default packages the user cleared, to save beside {@link #text()}. */
+    /** The ignored-by-default packages the user cleared, to save beside {@link #ignored()}. */
     List<String> reported() {
-        return reported;
+        return Collections.unmodifiableList(reported);
     }
 
     void set(List<String> ignoredPackages, List<String> reportedPackages) {
@@ -84,17 +76,13 @@ final class IgnoredAppsPicker {
         // Listing takes well under a second; a press before then is ignored rather than opening a sheet later,
         // over whatever the user has moved on to
         if (apps == null) return;
-        closeSheetOnBack.setEnabled(true);
         IgnoredChoice choice = new IgnoredChoice(apps, builtIns, ignored, reported);
         sheet.show(choice, () -> {
             ignored = choice.ignoredPackages();
             reported = choice.reportedPackages();
             showSummary();
             onChanged.run();
-        }, () -> {
-            closeSheetOnBack.setEnabled(false);
-            row.requestFocus();
-        });
+        }, row::requestFocus);
     }
 
     private void showSummary() {

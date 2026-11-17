@@ -5,6 +5,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
@@ -49,13 +50,17 @@ public final class Config {
         return new Config(webhookUrl, ignoredPackages, reportedPackages, sendDeviceName, minutes);
     }
 
+    /** A copy that never reports these packages, in place of the ones parsed. Blank entries and repeats are dropped. */
+    public Config withIgnoredPackages(Collection<String> packages) {
+        return new Config(webhookUrl, tidy(packages), reportedPackages, sendDeviceName, heartbeatMinutes);
+    }
+
     /**
      * A copy that reports these packages although they are ignored by default, such as a keyboard; none by default.
      * Blank entries and repeats are dropped.
      */
     public Config withReportedPackages(Collection<String> packages) {
-        return new Config(webhookUrl, ignoredPackages, parsePackages(String.join(",", packages)), sendDeviceName,
-                heartbeatMinutes);
+        return new Config(webhookUrl, ignoredPackages, tidy(packages), sendDeviceName, heartbeatMinutes);
     }
 
     public Optional<URL> webhookUrl() {
@@ -99,7 +104,8 @@ public final class Config {
         if (!(other instanceof Config)) return false;
         Config that = (Config) other;
         return webhookUrlText().equals(that.webhookUrlText()) && ignoredPackages.equals(that.ignoredPackages)
-                && reportedPackages.equals(that.reportedPackages) && sendDeviceName == that.sendDeviceName && heartbeatMinutes == that.heartbeatMinutes;
+                && reportedPackages.equals(that.reportedPackages) && sendDeviceName == that.sendDeviceName
+                && heartbeatMinutes == that.heartbeatMinutes;
     }
 
     @Override
@@ -128,12 +134,15 @@ public final class Config {
 
     /** Splits a comma-separated list of packages, dropping blanks and repeats and keeping the order. */
     public static List<String> parsePackages(String csv) {
+        return csv == null ? new ArrayList<>() : tidy(Arrays.asList(csv.split(",")));
+    }
+
+    // Trims each package and drops blanks and repeats, keeping the order
+    private static List<String> tidy(Collection<String> raw) {
         Set<String> packages = new LinkedHashSet<>();
-        if (csv != null) {
-            for (String part : csv.split(",")) {
-                String pkg = part.trim();
-                if (!pkg.isEmpty()) packages.add(pkg);
-            }
+        for (String part : raw) {
+            String pkg = part.trim();
+            if (!pkg.isEmpty()) packages.add(pkg);
         }
         return new ArrayList<>(packages);
     }

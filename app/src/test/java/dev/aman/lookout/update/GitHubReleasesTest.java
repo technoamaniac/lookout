@@ -6,6 +6,8 @@ import static org.junit.Assert.assertTrue;
 import dev.aman.lookout.support.FakeWebhookServer;
 
 import java.io.IOException;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
 
@@ -16,6 +18,7 @@ import org.junit.Test;
 public class GitHubReleasesTest {
     private static final String LATEST = "/owner/repo/releases/latest";
     private static final String FEED = "/owner/repo/releases.atom";
+    private static final String TAG_URL = "https://github.com/owner/repo/releases/tag/";
 
     private FakeWebhookServer server;
     private GitHubReleases releases;
@@ -79,10 +82,11 @@ public class GitHubReleasesTest {
     private static byte[] feedOf(String... tags) {
         StringBuilder feed = new StringBuilder("<feed>");
         for (String tag : tags) {
-            feed.append("<entry><link rel=\"alternate\" type=\"text/html\" href=\"https://github.com/owner/repo/releases/tag/")
+            feed.append("<entry><link rel=\"alternate\" type=\"text/html\" href=\"")
+                    .append(TAG_URL)
                     .append(tag).append("\"/><title>").append(tag).append("</title></entry>");
         }
-        return feed.append("</feed>").toString().getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        return feed.append("</feed>").toString().getBytes(StandardCharsets.UTF_8);
     }
 
     @Test
@@ -139,13 +143,13 @@ public class GitHubReleasesTest {
 
     private static byte[] feedWithNotes(String tag, String escapedHtml) {
         return ("<feed><entry><id>tag:github.com,2008:Repository/1/" + tag + "</id>"
-                + "<link rel=\"alternate\" type=\"text/html\" href=\"https://github.com/owner/repo/releases/tag/" + tag + "\"/>"
+                + "<link rel=\"alternate\" type=\"text/html\" href=\"" + TAG_URL + tag + "\"/>"
                 + "<content type=\"html\">" + escapedHtml + "</content></entry></feed>")
-                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                .getBytes(StandardCharsets.UTF_8);
     }
 
     private static Release release(String version) throws IOException {
-        java.net.URL url = new java.net.URL("https://example.com/lookout.apk");
+        URL url = new URL("https://example.com/lookout.apk");
         return new Release(Version.parse(version), url, url);
     }
 
@@ -163,9 +167,9 @@ public class GitHubReleasesTest {
 
     @Test
     public void aReleaseDoesNotTakeTheNotesOfAnEntryThatOnlyLinksToIt() throws IOException {
-        byte[] feed = ("<feed><entry><link rel=\"alternate\" href=\"https://github.com/owner/repo/releases/tag/v0.5.0\"/>"
-                + "<content type=\"html\">&lt;p&gt;See https://github.com/owner/repo/releases/tag/v0.4.0\"&lt;/p&gt;</content></entry></feed>")
-                .getBytes(java.nio.charset.StandardCharsets.UTF_8);
+        byte[] feed = ("<feed><entry><link rel=\"alternate\" href=\"" + TAG_URL + "v0.5.0\"/>"
+                + "<content type=\"html\">&lt;p&gt;See " + TAG_URL + "v0.4.0\"&lt;/p&gt;</content></entry></feed>")
+                .getBytes(StandardCharsets.UTF_8);
         server.route(FEED, 200, null, feed);
         assertTrue(releases.notesFor(release("0.4.0")).isEmpty());
     }

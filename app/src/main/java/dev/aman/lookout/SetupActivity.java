@@ -39,21 +39,20 @@ public class SetupActivity extends AppCompatActivity {
         permissionsOnly = getIntent().getBooleanExtra(EXTRA_PERMISSIONS_ONLY, false);
         step = findViewById(R.id.setup_step);
 
+        // Added before the panels, so a sheet that is open closes first on Back
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (welcome.isShowing() || permissionsOnly) finishSetup();
+                else showWelcome();
+            }
+        });
+
         ComponentName media = new ComponentName(this, MediaAccessService.class);
         SystemPermissions system = new SystemPermissions(this, new ComponentName(this, LookoutService.class));
         permissions = new PermissionsPanel(this, system, new AdbCommand(getPackageName(), media.flattenToString()),
                 this::finishSetup, permissionsOnly ? this::finishSetup : this::showWelcome);
         welcome = new WelcomePanel(this, this::showPermissions, this::finishSetup);
-
-        // Added after the panels, so an open command sheet closes first on Back
-        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
-            @Override
-            public void handleOnBackPressed() {
-                if (permissions.closeSheet()) return;
-                if (welcome.isShowing() || permissionsOnly) finishSetup();
-                else showWelcome();
-            }
-        });
 
         if (permissionsOnly || savedInstanceState != null && savedInstanceState.getBoolean(STATE_ON_PERMISSIONS)) {
             showPermissions();
