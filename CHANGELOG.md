@@ -14,6 +14,7 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 
 ### Changed
 
+- Apps ticked in the ignored list but not saved are dropped when you leave the Settings tab, so the list always matches what is saved.
 - **Ignored packages** is now **Ignored apps**. Apps with no icon, such as a screensaver, are not in the list; ignore one by sending it from a computer with `--es ignored`.
 
 ## [0.4.1] - 2026-11-15

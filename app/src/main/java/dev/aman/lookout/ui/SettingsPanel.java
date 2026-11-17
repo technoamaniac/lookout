@@ -18,6 +18,7 @@ import dev.aman.lookout.delivery.DeliveryResult;
 import dev.aman.lookout.delivery.WebhookTester;
 import dev.aman.lookout.foreground.AppEvent;
 
+import java.util.List;
 import java.util.concurrent.Executor;
 
 /** The Settings tab: the webhook form, with Save and Test webhook. A new webhook URL must pass a test before Save. */
@@ -38,6 +39,8 @@ public final class SettingsPanel {
     private final TextView urlError;
 
     private final SaveGate gate;
+    // Ignored apps an ADB prefill supplied, kept until saved so leaving the tab does not drop them; null once saved
+    private List<String> prefilledIgnored;
     private boolean sending;
 
     /** @param prefill optional values that override the saved ones until the user saves */
@@ -62,8 +65,8 @@ public final class SettingsPanel {
         Config saved = store.load();
         gate = new SaveGate(saved);
         showUrl(prefill.url != null ? prefill.url.trim() : saved.webhookUrlText());
-        ignored.set(prefill.ignored != null ? Config.parsePackages(prefill.ignored) : saved.ignoredPackages(),
-                saved.reportedPackages());
+        prefilledIgnored = prefill.ignored != null ? Config.parsePackages(prefill.ignored) : null;
+        ignored.set(prefilledIgnored != null ? prefilledIgnored : saved.ignoredPackages(), saved.reportedPackages());
         TextFields.onChanged(urlField, this::onFieldsEdited);
         deviceNameSwitch.setChecked(saved.sendDeviceName());
         deviceNameSwitch.setOnCheckedChangeListener((button, checked) -> onFieldsEdited());
@@ -91,12 +94,20 @@ public final class SettingsPanel {
         }
     }
 
+    /** Drops ignored-app choices that were never saved, for when the user leaves the tab. */
+    public void discardUnsavedIgnoredApps() {
+        Config saved = store.load();
+        ignored.set(prefilledIgnored != null ? prefilledIgnored : saved.ignoredPackages(), saved.reportedPackages());
+        updateSaveButton();
+    }
+
     private void save() {
         Config config = readFieldsOrNull();
         // Save is disabled otherwise, fields that do not parse included; this guards a press that raced the update
         if (gate.stateOf(config) != SaveGate.State.SAVEABLE) return;
         store.save(config);
         gate.onSaved(config);
+        prefilledIgnored = null;
         // Show the normalised values (trimmed, de-duplicated) rather than what was typed
         showUrl(config.webhookUrlText());
         ignored.set(config.ignoredPackages(), config.reportedPackages());

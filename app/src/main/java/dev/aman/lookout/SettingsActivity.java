@@ -64,8 +64,8 @@ public class SettingsActivity extends AppCompatActivity {
         PrefsConfigStore store = new PrefsConfigStore(this);
         SystemPermissions permissions = new SystemPermissions(this, new ComponentName(this, LookoutService.class));
         serviceStatus = new ServiceStatusPanel(this, permissions, store);
-        new SettingsPanel(this, store, new WebhookTester(log, System::currentTimeMillis), webhookTests,
-                new SettingsPanel.Prefill(getIntent().getStringExtra(EXTRA_URL), getIntent().getStringExtra(EXTRA_IGNORED)));
+        SettingsPanel settings = new SettingsPanel(this, store, new WebhookTester(log, System::currentTimeMillis),
+                webhookTests, new SettingsPanel.Prefill(getIntent().getStringExtra(EXTRA_URL), getIntent().getStringExtra(EXTRA_IGNORED)));
         deliveries = new DeliveriesPanel(this, log);
         // The badge hides on the Updates tab, so focus must move off it before it goes
         UpdateBadge badge = new UpdateBadge(this, () -> tabs.focus(Tab.UPDATES));
@@ -74,6 +74,7 @@ public class SettingsActivity extends AppCompatActivity {
             permissionsButton.setVisibility(tab == Tab.SETTINGS ? View.VISIBLE : View.GONE);
             badge.setSuppressed(tab == Tab.UPDATES);
             deliveries.setSelected(tab == Tab.DELIVERIES);
+            if (tab != Tab.SETTINGS) settings.discardUnsavedIgnoredApps();
         });
         new UpdatesPanel(this, background, new PrefsUpdateChannel(this), permissions, badge::show).check(true);
         // Only when first opened: a recreated screen keeps the tab the user moved to
