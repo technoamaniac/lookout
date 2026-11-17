@@ -2,6 +2,12 @@
 
 All notable changes to Lookout. The format follows [Keep a Changelog](https://keepachangelog.com/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- The welcome screen is shorter: it greets you with "Home, meet your TV", a one-line description and three short points. The notes about HTTPS-only delivery and opt-in playback reporting are no longer on it; both still apply.
+
 ## [0.5.0] - 2026-11-16
 
 ### Added

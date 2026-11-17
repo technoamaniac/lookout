@@ -107,11 +107,11 @@
     <string name="builtin_system_ui">System UI</string>
     <string name="open_permissions">Permissions</string>
     <string name="setup_step">Step %1$d of 2</string>
-    <string name="welcome_title">Let your smart home know what this TV is doing</string>
-    <string name="welcome_body">Lookout sends a short message to your webhook when the app in front changes, the screen turns on or off, or playback changes.</string>
-    <string name="welcome_point_private">Sees which app is in front, never what is on screen</string>
-    <string name="welcome_point_https">Sends only to the HTTPS address you give it</string>
-    <string name="welcome_point_playback">Playback reporting stays off until you allow it</string>
+    <string name="welcome_title">Home, meet your TV</string>
+    <string name="welcome_body">Sends app, screen and playback changes to your webhook.</string>
+    <string name="welcome_point_lights">Let your lights react to the app you open</string>
+    <string name="welcome_point_apps">Works with every app, even sideloaded ones</string>
+    <string name="welcome_point_private">Never sees what is on your screen</string>
     <string name="get_started">Get started</string>
     <string name="skip_setup">Skip setup</string>
     <string name="permissions_title">Permissions</string>

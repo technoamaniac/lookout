@@ -1,8 +1,6 @@
 # <img src="docs/logo.svg" alt="" width="40" height="40" align="top"> Lookout
 
-Lets your smart home know what your Android TV is doing: which app is open, whether the screen is on, and what's playing.
-
-Your TV remote API can tell Home Assistant the TV is on. It usually can't tell it that you just opened SmartTube, paused an episode or let the screensaver kick in, and sideloaded apps are invisible to it. Lookout runs on the TV itself, so it sees every app, and sends each change to your webhook the moment it happens.
+**Home, meet your TV.** Lookout tells your smart home which app is open, whether the screen is on and what's playing.
 
 ## What you can do with it
 

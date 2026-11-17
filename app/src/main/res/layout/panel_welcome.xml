@@ -44,29 +44,29 @@
             android:layout_marginTop="22dp"
             android:drawablePadding="12dp"
             android:gravity="center_vertical"
+            android:text="@string/welcome_point_lights"
+            app:drawableStartCompat="@drawable/ic_status_ok"
+            app:drawableTint="@color/success" />
+
+        <TextView
+            style="@style/Text.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:drawablePadding="12dp"
+            android:gravity="center_vertical"
+            android:text="@string/welcome_point_apps"
+            app:drawableStartCompat="@drawable/ic_status_ok"
+            app:drawableTint="@color/success" />
+
+        <TextView
+            style="@style/Text.Body"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="12dp"
+            android:drawablePadding="12dp"
+            android:gravity="center_vertical"
             android:text="@string/welcome_point_private"
-            app:drawableStartCompat="@drawable/ic_status_ok"
-            app:drawableTint="@color/success" />
-
-        <TextView
-            style="@style/Text.Body"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:drawablePadding="12dp"
-            android:gravity="center_vertical"
-            android:text="@string/welcome_point_https"
-            app:drawableStartCompat="@drawable/ic_status_ok"
-            app:drawableTint="@color/success" />
-
-        <TextView
-            style="@style/Text.Body"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
-            android:drawablePadding="12dp"
-            android:gravity="center_vertical"
-            android:text="@string/welcome_point_playback"
             app:drawableStartCompat="@drawable/ic_status_ok"
             app:drawableTint="@color/success" />
 
