@@ -1,0 +1,122 @@
+name: Dependabot pins
+
+# Dependabot updates the lockfile but not gradle/verification-metadata.xml (dependabot-core#1996), so
+# each Gradle pull request it opens fails dependency verification until the new checksums are added.
+# A commit made with GITHUB_TOKEN starts no workflow, so CI does not run again on it: the verifying build
+# in the write job, which runs on exactly the committed files, is the check for that commit.
+on:
+  pull_request:
+
+permissions: {}
+
+concurrency:
+  # Keyed by pull request: branch names repeat across forks, and every pull request starts this workflow
+  group: dependabot-pins-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  # Runs Gradle, and with it the new dependency, without a token that can write
+  write:
+    # Dependabot's own pushes only: a push by anyone else is expected to bring its own checksums
+    if: >-
+      github.actor == 'dependabot[bot]' && startsWith(github.head_ref, 'dependabot/gradle/')
+      && github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+
+      - uses: actions/setup-java@d1374f8ac74474200d16ef8ecee22c7ae7a51880 # v6.3.0
+        with:
+          distribution: temurin
+          java-version: "17.0.21.1+2"
+
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
+        with:
+          # Checksums come from a fresh download, never from a cache another workflow wrote
+          cache-disabled: true
+
+      - name: Write checksums
+        run: scripts/write-pins.py
+
+      # Gradle reports no mismatch while it writes the metadata, so build again as CI does to check the result
+      - name: Verify checksums
+        run: ./gradlew test assembleDebug
+
+      - id: diff
+        name: Check for new checksums
+        run: |
+          if git diff --quiet -- gradle/verification-metadata.xml; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git diff -- gradle/verification-metadata.xml
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - if: steps.diff.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: verification-metadata
+          path: gradle/verification-metadata.xml
+          if-no-files-found: error
+          retention-days: 1
+
+  # Only tools from the runner image run here: no checkout, so no repository code sees the token that can write
+  commit:
+    needs: write
+    if: needs.write.outputs.changed == 'true'
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: verification-metadata
+
+      # The write job ran the new dependency, which could have rewritten the file to trust anything, so only
+      # added checksum entries pass: no removed line and no new trust rule, key or verification setting.
+      - name: Check that only checksums were added
+        env:
+          GH_TOKEN: ${{ github.token }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          gh api -H "Accept: application/vnd.github.raw+json" \
+            "repos/$GITHUB_REPOSITORY/contents/gradle/verification-metadata.xml?ref=$HEAD_SHA" > base.xml
+          diff -U0 base.xml verification-metadata.xml > changes.diff || [ $? -eq 1 ]
+          allowed='^(@@ .*|\+ *(<(component|artifact|sha256|also-trust) [^<>]*>|</(component|artifact|sha256)>))$'
+          # Past the two file-name lines, every line must be a hunk header or an added checksum element
+          if tail -n +3 changes.diff | grep -v -E "$allowed"; then
+            echo "::error::The new verification metadata changes more than checksum entries"
+            exit 1
+          fi
+
+      # createCommitOnBranch commits the file on the server, signed by GitHub. expectedHeadOid makes the
+      # commit fail if Dependabot pushed again in the meantime, since these checksums were written for the
+      # head this run checked out; Dependabot never edits the metadata file, so its blob cannot show that.
+      - name: Commit checksums
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ github.head_ref }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          base64 -w 0 verification-metadata.xml > content.b64
+          mutation='mutation($input: CreateCommitOnBranchInput!) {
+            createCommitOnBranch(input: $input) { commit { oid } }
+          }'
+          jq -n --rawfile contents content.b64 --arg repo "$GITHUB_REPOSITORY" --arg branch "$BRANCH" \
+            --arg head "$HEAD_SHA" --arg mutation "$mutation" '{
+              query: $mutation,
+              variables: {input: {
+                branch: {repositoryNameWithOwner: $repo, branchName: $branch},
+                expectedHeadOid: $head,
+                message: {headline: "Add checksums for the updated dependencies"},
+                fileChanges: {additions: [{path: "gradle/verification-metadata.xml", contents: $contents}]}
+              }}
+            }' > request.json
+          gh api graphql --input request.json --silent

@@ -257,10 +257,10 @@ To send events somewhere other than a webhook, implement `EventSink`.
 
 ```sh
 ./gradlew :app:dependencies --write-locks
-./gradlew --write-verification-metadata sha256 test assembleDebug assembleRelease
+scripts/write-pins.py
 ```
 
-After an AGP upgrade, also add the Linux and Windows `aapt2` hashes by hand from Google Maven's `.sha256` files; Gradle only fetches the current machine's.
+The script also adds the `aapt2` checksums for the platforms Gradle did not download. On Dependabot's Gradle pull requests, the `Dependabot pins` workflow runs it and commits the new checksums.
 
 Issues and pull requests are welcome; new logic should come with a test. Lookout is developed with [Claude Code](https://claude.com/claude-code) under the maintainer's review; the conventions are in [CLAUDE.md](CLAUDE.md).
 

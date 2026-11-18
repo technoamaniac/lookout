@@ -54,7 +54,7 @@ Lint, tests and the release build (`assembleRelease`, which runs R8) should all 
 
 ## Dependencies and pins
 
-Everything is pinned: actions by commit SHA, the Gradle distribution by checksum, `app/gradle.lockfile` and `gradle/verification-metadata.xml`. After changing a dependency, refresh the pins as described in the README, including the Linux and Windows `aapt2` hashes that Gradle does not download on macOS. A new AGP major is upgraded by hand together with Gradle; Dependabot is configured to skip it. Dependabot waits seven days before proposing a new version, so a hijacked release is likely caught first; do not shorten that to land an update sooner, except for a security fix.
+Everything is pinned: actions by commit SHA, the Gradle distribution by checksum, `app/gradle.lockfile` and `gradle/verification-metadata.xml`. After changing a dependency, refresh the pins as described in the README; `scripts/write-pins.py` also adds the `aapt2` hashes for the platforms Gradle did not download. The `Dependabot pins` workflow runs the same script on Dependabot's Gradle pull requests; check the checksums it commits before merging. A new AGP major is upgraded by hand together with Gradle; Dependabot is configured to skip it. Dependabot waits seven days before proposing a new version, so a hijacked release is likely caught first; do not shorten that to land an update sooner, except for a security fix.
 
 ## Git workflow
 
