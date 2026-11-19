@@ -54,8 +54,8 @@ public final class GitHubReleases implements ReleaseSource, ReleaseNotesSource {
     }
 
     @Override
-    public Optional<String> notesFor(Release release) throws IOException {
-        String tagLink = TAG_MARKER + release.tag();
+    public Optional<String> notesFor(Version version) throws IOException {
+        String tagLink = TAG_MARKER + version.tag();
         Matcher entries = FEED_ENTRY.matcher(readFeed());
         while (entries.find()) {
             // Only the entry's own link names its release, as notes may link to other releases; matching the end of

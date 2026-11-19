@@ -10,7 +10,8 @@ import java.util.regex.Pattern;
 public final class ReleaseNotes {
     private static final Pattern ENTITY = Pattern.compile("&(#x[0-9a-fA-F]+|#\\d+|[a-z]+);");
     // The link to the full diff that GitHub appends to every release: a bare version range means nothing on a TV
-    private static final Pattern DIFF_LINK = Pattern.compile("<p><strong>Full Changelog</strong>.*?</p>", Pattern.DOTALL);
+    private static final Pattern DIFF_LINK =
+            Pattern.compile("<p><strong>Full Changelog</strong>.*?</p>", Pattern.DOTALL);
     // Nothing on a TV can follow a link, so only its text is kept
     private static final Pattern LINK = Pattern.compile("<a\\b[^>]*>(.*?)</a>", Pattern.DOTALL);
     private static final Pattern CODE_START = Pattern.compile("<code\\b[^>]*>");

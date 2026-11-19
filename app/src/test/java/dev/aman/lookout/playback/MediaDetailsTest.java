@@ -56,13 +56,16 @@ public class MediaDetailsTest {
     public void aTooLongArtworkAddressIsPassedOverNotCut() {
         String address = "https://e.com/" + "a".repeat(MediaDetails.MAX_ADDRESS);
         assertEquals("{}", json(MediaDetails.builder().artwork(address).build()));
-        assertEquals("{\"artwork\":\"HTTPS://ok\"}", json(MediaDetails.builder().artwork(address, "HTTPS://ok").build()));
+        assertEquals("{\"artwork\":\"HTTPS://ok\"}",
+                json(MediaDetails.builder().artwork(address, "HTTPS://ok").build()));
     }
 
     @Test
     public void detailsAreEqualOnlyWhenEveryFieldIs() {
-        assertEquals(MediaDetails.builder().title("a").year(1).build(), MediaDetails.builder().title("a").year(1).build());
-        assertNotEquals(MediaDetails.builder().title("a").build(), MediaDetails.builder().title("a").genre("g").build());
+        assertEquals(MediaDetails.builder().title("a").year(1).build(),
+                MediaDetails.builder().title("a").year(1).build());
+        assertNotEquals(MediaDetails.builder().title("a").build(),
+                MediaDetails.builder().title("a").genre("g").build());
         assertNotEquals(MediaDetails.builder().durationMillis(1_000).build(), MediaDetails.NONE);
     }
 }

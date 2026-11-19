@@ -6,7 +6,6 @@ import static org.junit.Assert.assertTrue;
 import dev.aman.lookout.support.FakeWebhookServer;
 
 import java.io.IOException;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Optional;
@@ -148,21 +147,16 @@ public class GitHubReleasesTest {
                 .getBytes(StandardCharsets.UTF_8);
     }
 
-    private static Release release(String version) throws IOException {
-        URL url = new URL("https://example.com/lookout.apk");
-        return new Release(Version.parse(version), url, url);
-    }
-
     @Test
     public void readsTheNotesOfAReleaseFromTheFeed() throws IOException {
         server.route(FEED, 200, null, feedWithNotes("v0.5.0", "&lt;ul&gt;\n&lt;li&gt;Setup&lt;/li&gt;\n&lt;/ul&gt;"));
-        assertEquals("<ul>\n<li>Setup</li>\n</ul>", releases.notesFor(release("0.5.0")).orElseThrow());
+        assertEquals("<ul>\n<li>Setup</li>\n</ul>", releases.notesFor(Version.parse("0.5.0")).orElseThrow());
     }
 
     @Test
     public void aReleaseDoesNotTakeTheNotesOfItsCandidate() throws IOException {
         server.route(FEED, 200, null, feedWithNotes("v0.5.0-rc.1", "&lt;p&gt;Candidate&lt;/p&gt;"));
-        assertTrue(releases.notesFor(release("0.5.0")).isEmpty());
+        assertTrue(releases.notesFor(Version.parse("0.5.0")).isEmpty());
     }
 
     @Test
@@ -171,21 +165,21 @@ public class GitHubReleasesTest {
                 + "<content type=\"html\">&lt;p&gt;See " + TAG_URL + "v0.4.0\"&lt;/p&gt;</content></entry></feed>")
                 .getBytes(StandardCharsets.UTF_8);
         server.route(FEED, 200, null, feed);
-        assertTrue(releases.notesFor(release("0.4.0")).isEmpty());
+        assertTrue(releases.notesFor(Version.parse("0.4.0")).isEmpty());
     }
 
     @Test
     public void reportsNoNotesForAReleaseOutsideTheFeedOrWithoutText() throws IOException {
         server.route(FEED, 200, null, feedWithNotes("v0.5.0", ""));
-        assertTrue(releases.notesFor(release("0.5.0")).isEmpty());
-        assertTrue(releases.notesFor(release("0.4.0")).isEmpty());
+        assertTrue(releases.notesFor(Version.parse("0.5.0")).isEmpty());
+        assertTrue(releases.notesFor(Version.parse("0.4.0")).isEmpty());
         server.route(FEED, 404, null, new byte[0]);
-        assertTrue(releases.notesFor(release("0.5.0")).isEmpty());
+        assertTrue(releases.notesFor(Version.parse("0.5.0")).isEmpty());
     }
 
     @Test(expected = IOException.class)
     public void failsToReadNotesWhenTheFeedErrors() throws IOException {
         server.route(FEED, 503, null, new byte[0]);
-        releases.notesFor(release("0.5.0"));
+        releases.notesFor(Version.parse("0.5.0"));
     }
 }

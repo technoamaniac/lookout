@@ -9,6 +9,7 @@ All notable changes to Lookout. The format follows [Keep a Changelog](https://ke
 - Messages no longer say anything twice. The TV's state stays in `tv` as in 0.6.0, and the rest of a message holds only what `tv` cannot. `app_changed` has no `package`, because `tv.app` says it, and no `activity`, which was often a splash screen or dialog and out of date once you moved around the app. `playback_changed` has no fields of its own; the app's `package`, `state`, `title`, `artist` and the rest are in `tv.playback`, where an app that stopped is no longer listed.
 - `position` of a playing app is now in its `tv.playback` entry with the rest of what its media session shares, so every message carries it. It is how far in the app was at its last change, so a heartbeat repeats it.
 - **Deliveries** are no longer kept across restarts: the tab lists the last 10 attempts of each kind since Lookout started.
+- **Release notes** on the Updates tab is always there, so you can read what changed in the version you have. With a newer version available it still shows that one's notes.
 - The **Update** button in the corner shows on the Settings tab only, not on Deliveries or Updates.
 - The subtitle under **Deliveries** wraps instead of being cut off.
 - The payload in a delivery's details is now indented all the way down, so the apps in `playback` are easy to read.

@@ -6,11 +6,13 @@ import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 
 public class AdbCommandTest {
-    private final AdbCommand commands = new AdbCommand("dev.aman.lookout", "dev.aman.lookout/dev.aman.lookout.playback.MediaAccessService");
+    private static final String LISTENER = "dev.aman.lookout/dev.aman.lookout.playback.MediaAccessService";
+
+    private final AdbCommand commands = new AdbCommand("dev.aman.lookout", LISTENER);
 
     @Test
     public void allowsMediaAccessThroughTheNotificationListener() {
-        assertEquals("adb shell cmd notification allow_listener dev.aman.lookout/dev.aman.lookout.playback.MediaAccessService",
+        assertEquals("adb shell cmd notification allow_listener " + LISTENER,
                 commands.forPermission(Permission.MEDIA_ACCESS));
     }
 

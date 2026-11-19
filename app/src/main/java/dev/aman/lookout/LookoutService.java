@@ -26,7 +26,6 @@ import dev.aman.lookout.playback.PlaybackTracker;
 import dev.aman.lookout.update.PrefsUpdateChannel;
 import dev.aman.lookout.update.RelaunchAfterUpdate;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;

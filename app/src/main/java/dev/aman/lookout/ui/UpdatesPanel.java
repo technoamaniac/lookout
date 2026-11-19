@@ -38,7 +38,6 @@ public final class UpdatesPanel {
     private final MaterialButton checkButton;
     private final View progress;
     private final TextView installButton;
-    private final View updateActions;
     private final View notesButton;
     private final ReleaseNotesSheet notes;
     private final Version installed;
@@ -63,7 +62,6 @@ public final class UpdatesPanel {
         checkButton = activity.findViewById(R.id.check_updates);
         progress = activity.findViewById(R.id.update_progress);
         installButton = activity.findViewById(R.id.install_update);
-        updateActions = activity.findViewById(R.id.update_actions);
         notesButton = activity.findViewById(R.id.release_notes);
         notes = new ReleaseNotesSheet(activity, background, releases);
         installed = Version.parse(InstalledVersion.name(activity));
@@ -98,8 +96,9 @@ public final class UpdatesPanel {
     }
 
     private void showNotes() {
-        if (busy || available == null) return;
-        notes.show(available, notesButton::requestFocus);
+        if (busy) return;
+        // What a newer release brings, or else what the installed one did
+        notes.show(available != null ? available.version() : installed, notesButton::requestFocus);
     }
 
     private void install() {
@@ -139,7 +138,7 @@ public final class UpdatesPanel {
     private void showCheckResult(Optional<Release> newer, boolean quiet) {
         setBusy(false);
         available = newer.orElse(null);
-        updateActions.setVisibility(newer.isPresent() ? View.VISIBLE : View.GONE);
+        installButton.setVisibility(newer.isPresent() ? View.VISIBLE : View.GONE);
         // Install is the primary action once there is something to install
         ButtonStyle.setPrimary(checkButton, !newer.isPresent());
         onAvailabilityChanged.accept(newer);

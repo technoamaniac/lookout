@@ -46,5 +46,6 @@ public class VersionTest {
     @Test
     public void printsAsParsed() {
         assertEquals("1.2.3-rc.1", Version.parse("1.2.3-rc.1").toString());
+        assertEquals("v1.2.3-rc.1", Version.parse("1.2.3-rc.1").tag());
     }
 }

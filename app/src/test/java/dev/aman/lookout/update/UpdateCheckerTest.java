@@ -38,13 +38,15 @@ public class UpdateCheckerTest {
 
     @Test
     public void offersAPreReleaseNewerThanTheInstalledStableRelease() throws IOException {
-        assertEquals("0.3.0-rc.1",
-                new UpdateChecker(publishing("0.3.0-rc.1")).newerThan(Version.parse("0.2.0"), true).orElseThrow().version().toString());
+        Release offered = new UpdateChecker(publishing("0.3.0-rc.1")).newerThan(Version.parse("0.2.0"), true)
+                .orElseThrow();
+        assertEquals("0.3.0-rc.1", offered.version().toString());
     }
 
     @Test
     public void offersTheNextCandidateAndTheStableReleaseThatFollowsIt() throws IOException {
-        assertTrue(new UpdateChecker(publishing("0.3.0-rc.2")).newerThan(Version.parse("0.3.0-rc.1"), true).isPresent());
+        assertTrue(new UpdateChecker(publishing("0.3.0-rc.2"))
+                .newerThan(Version.parse("0.3.0-rc.1"), true).isPresent());
         assertTrue(new UpdateChecker(publishing("0.3.0")).newerThan(Version.parse("0.3.0-rc.2"), true).isPresent());
     }
 
@@ -67,6 +69,7 @@ public class UpdateCheckerTest {
 
     @Test
     public void staysQuietWhenNothingIsPublished() throws IOException {
-        assertTrue(new UpdateChecker(includePreReleases -> Optional.empty()).newerThan(Version.parse("1.0.0"), false).isEmpty());
+        UpdateChecker checker = new UpdateChecker(includePreReleases -> Optional.empty());
+        assertTrue(checker.newerThan(Version.parse("1.0.0"), false).isEmpty());
     }
 }

@@ -27,7 +27,7 @@ final class DeliveriesAdapter extends ListAdapter<DeliveryRecord, DeliveriesAdap
     }
 
     // Records are immutable, so the same instance is the same row
-    private static final DiffUtil.ItemCallback<DeliveryRecord> SAME_RECORD = new DiffUtil.ItemCallback<DeliveryRecord>() {
+    private static final DiffUtil.ItemCallback<DeliveryRecord> SAME_RECORD = new DiffUtil.ItemCallback<>() {
         @Override
         public boolean areItemsTheSame(@NonNull DeliveryRecord a, @NonNull DeliveryRecord b) {
             return a == b;

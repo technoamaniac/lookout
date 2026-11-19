@@ -17,14 +17,15 @@ public class ReleaseNotesTest {
 
     @Test
     public void dropsTheFullChangelogLink() {
-        String html = "<ul><li>One</li></ul>\n<p><strong>Full Changelog</strong>: <a href=\"x\"><tt>v1...v2</tt></a></p>";
+        String html = "<ul><li>One</li></ul>\n"
+                + "<p><strong>Full Changelog</strong>: <a href=\"x\"><tt>v1...v2</tt></a></p>";
         assertEquals("<ul><li>One</li></ul>", ReleaseNotes.fromFeedContent(escaped(html)));
     }
 
     @Test
     public void keepsTheTextOfALinkButNotTheLink() {
-        assertEquals("<p>See the guide.</p>",
-                ReleaseNotes.fromFeedContent(escaped("<p>See <a class=\"x\" href=\"https://e.com\">the guide</a>.</p>")));
+        String html = "<p>See <a class=\"x\" href=\"https://e.com\">the guide</a>.</p>";
+        assertEquals("<p>See the guide.</p>", ReleaseNotes.fromFeedContent(escaped(html)));
     }
 
     @Test
@@ -35,7 +36,8 @@ public class ReleaseNotesTest {
     @Test
     public void unescapesTheFeedOnlyOnce() {
         // The feed escapes the HTML, whose own text is escaped again: the renderer decodes the second layer
-        assertEquals("<p>a &lt;b&gt; &amp; c</p>", ReleaseNotes.fromFeedContent("&lt;p&gt;a &amp;lt;b&amp;gt; &amp;amp; c&lt;/p&gt;"));
+        assertEquals("<p>a &lt;b&gt; &amp; c</p>",
+                ReleaseNotes.fromFeedContent("&lt;p&gt;a &amp;lt;b&amp;gt; &amp;amp; c&lt;/p&gt;"));
     }
 
     @Test

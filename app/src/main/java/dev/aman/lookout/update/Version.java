@@ -66,6 +66,11 @@ public final class Version implements Comparable<Version> {
         return Arrays.hashCode(core) * 31 + preRelease.hashCode();
     }
 
+    /** The git tag a release of this version is published under. */
+    public String tag() {
+        return "v" + text;
+    }
+
     @Override
     public String toString() {
         return text;

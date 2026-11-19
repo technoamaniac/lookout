@@ -96,7 +96,7 @@ adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
 
   ![The Deliveries tab](docs/screenshots/5-deliveries.png)
 
-- **Updates** installs the newest version. Press **Release notes** first to read what changed. Tick **Include pre-releases** to get test versions too. Lookout only talks to GitHub while this tab is open.
+- **Updates** installs the newest version. **Release notes** shows what changed in the newest version, or in the one you have when you are up to date. Tick **Include pre-releases** to get test versions too. Lookout only talks to GitHub while this tab is open.
 
   ![The Updates tab](docs/screenshots/6-updates.png)
 
