@@ -1,7 +1,6 @@
 package dev.aman.lookout.ui;
 
 import dev.aman.lookout.R;
-import dev.aman.lookout.delivery.DeliveryRecord;
 import dev.aman.lookout.delivery.DeliveryResult;
 import dev.aman.lookout.event.EventCategory;
 
@@ -15,36 +14,34 @@ final class DeliveryAppearance {
                 return R.string.category_heartbeat;
             case CHANGE:
                 return R.string.category_change;
+            default:
+                throw new IllegalArgumentException("No label for " + category);
         }
-        throw new IllegalArgumentException("No label for " + category);
     }
 
-    // A failure that will not be tried again reads differently from one that will
-    private static boolean isNotResent(DeliveryRecord record) {
-        return record.result().isRetryable() && !record.message().category().resentWhenFailed();
-    }
-
-    static int labelFor(DeliveryRecord record) {
-        if (isNotResent(record)) return R.string.delivery_not_resent;
-        switch (record.result()) {
+    static int labelFor(DeliveryResult result) {
+        switch (result) {
             case DELIVERED:
                 return R.string.delivery_delivered;
+            case TEMPORARY_FAILURE:
+                return R.string.delivery_failed;
             case PERMANENT_FAILURE:
                 return R.string.delivery_rejected;
             default:
-                return R.string.delivery_failed;
+                throw new IllegalArgumentException("No label for " + result);
         }
     }
 
-    static int responseFor(DeliveryRecord record) {
-        if (isNotResent(record)) return R.string.response_not_resent;
-        switch (record.result()) {
+    static int responseFor(DeliveryResult result) {
+        switch (result) {
             case DELIVERED:
                 return R.string.response_delivered;
+            case TEMPORARY_FAILURE:
+                return R.string.response_failed;
             case PERMANENT_FAILURE:
                 return R.string.response_rejected;
             default:
-                return R.string.response_failed;
+                throw new IllegalArgumentException("No response for " + result);
         }
     }
 
@@ -52,22 +49,26 @@ final class DeliveryAppearance {
         switch (result) {
             case DELIVERED:
                 return R.color.success;
+            case TEMPORARY_FAILURE:
+                return R.color.warning;
             case PERMANENT_FAILURE:
                 return R.color.error;
             default:
-                return R.color.warning;
+                throw new IllegalArgumentException("No color for " + result);
         }
     }
 
-    static int iconFor(DeliveryRecord record) {
-        if (isNotResent(record)) return R.drawable.ic_warning;
-        switch (record.result()) {
+    // Nothing is retried, so a temporary failure shows a warning rather than a pending state
+    static int iconFor(DeliveryResult result) {
+        switch (result) {
             case DELIVERED:
                 return R.drawable.ic_status_ok;
+            case TEMPORARY_FAILURE:
+                return R.drawable.ic_warning;
             case PERMANENT_FAILURE:
                 return R.drawable.ic_status_rejected;
             default:
-                return R.drawable.ic_status_retry;
+                throw new IllegalArgumentException("No icon for " + result);
         }
     }
 
@@ -75,10 +76,12 @@ final class DeliveryAppearance {
         switch (result) {
             case DELIVERED:
                 return StatusLine.Kind.SUCCESS;
+            case TEMPORARY_FAILURE:
+                return StatusLine.Kind.WARNING;
             case PERMANENT_FAILURE:
                 return StatusLine.Kind.ERROR;
             default:
-                return StatusLine.Kind.WARNING;
+                throw new IllegalArgumentException("No kind for " + result);
         }
     }
 }

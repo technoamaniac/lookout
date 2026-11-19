@@ -15,11 +15,11 @@ import org.junit.Test;
 
 public class DeliveryLogTest {
     private static DeliveryRecord record(String pkg) {
-        return new DeliveryRecord(Message.of(new AppEvent(pkg), null, 1000), DeliveryResult.DELIVERED, 1000);
+        return new DeliveryRecord(Message.withoutState(new AppEvent(pkg), null, 1000), DeliveryResult.DELIVERED, 1000);
     }
 
     private static DeliveryRecord beat(long epochSeconds) {
-        return new DeliveryRecord(Message.of(new HeartbeatEvent(60), null, epochSeconds * 1000),
+        return new DeliveryRecord(Message.withoutState(new HeartbeatEvent(60), null, epochSeconds * 1000),
                 DeliveryResult.DELIVERED, 1000);
     }
 
@@ -124,7 +124,7 @@ public class DeliveryLogTest {
     }
 
     private static DeliveryRecord failedBeat(long epochSeconds) {
-        return new DeliveryRecord(Message.of(new HeartbeatEvent(60), null, epochSeconds * 1000),
+        return new DeliveryRecord(Message.withoutState(new HeartbeatEvent(60), null, epochSeconds * 1000),
                 DeliveryResult.TEMPORARY_FAILURE, 1000);
     }
 
@@ -142,40 +142,42 @@ public class DeliveryLogTest {
         }
     }
 
+    // Every heartbeat fails during an outage, which would rewrite the file every 30 seconds
     @Test
-    public void deliveredHeartbeatsAreShownButNeverSaved() {
+    public void heartbeatsAreShownButNeverSavedWhetherDeliveredOrFailed() {
         Saves store = new Saves();
-        DeliveryLog log = new DeliveryLog(2, store);
+        DeliveryLog log = new DeliveryLog(3, store);
 
         log.add(beat(1));
+        log.add(failedBeat(2));
 
-        assertEquals(1, log.recent().size());
+        assertEquals(2, log.recent().size());
         assertTrue(store.saves.isEmpty());
     }
 
     @Test
-    public void failedHeartbeatsAreSaved() {
+    public void failedChangesAreStillSaved() {
         Saves store = new Saves();
         DeliveryLog log = new DeliveryLog(2, store);
 
-        log.add(failedBeat(1));
-        log.add(beat(2));
+        log.add(new DeliveryRecord(Message.withoutState(new AppEvent("a"), null, 1000),
+                DeliveryResult.TEMPORARY_FAILURE, 1000));
+        log.add(failedBeat(2));
 
         assertEquals(1, store.saves.size());
         assertEquals(1, store.saves.get(0).size());
     }
 
-    // A delivered heartbeat can push a saved failed one out of the log, and the file must follow
+    // A heartbeat never pushes a change out of the log, so the file needs no rewrite when one arrives
     @Test
-    public void savesWhenAnUnsavedRecordEvictsASavedOne() {
+    public void aHeartbeatDoesNotRewriteTheFile() {
         Saves store = new Saves();
         DeliveryLog log = new DeliveryLog(1, store);
-        log.add(failedBeat(1));
+        log.add(record("a"));
 
         log.add(beat(2));
 
-        assertEquals(2, store.saves.size());
-        assertTrue(store.saves.get(1).isEmpty());
+        assertEquals(1, store.saves.size());
     }
 
     @Test

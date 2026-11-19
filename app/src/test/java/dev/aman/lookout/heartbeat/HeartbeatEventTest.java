@@ -1,10 +1,10 @@
 package dev.aman.lookout.heartbeat;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertSame;
 
 import dev.aman.lookout.event.EventCategory;
+import dev.aman.lookout.event.TvState;
 
 import org.junit.Test;
 
@@ -15,9 +15,9 @@ public class HeartbeatEventTest {
     }
 
     @Test
-    public void isNeverResentAfterAFailure() {
-        assertFalse(EventCategory.HEARTBEAT.resentWhenFailed());
-        assertTrue(EventCategory.CHANGE.resentWhenFailed());
+    public void leavesTheTvsStateAsItIs() {
+        TvState state = TvState.UNKNOWN.withApp("com.example.a");
+        assertSame(state, new HeartbeatEvent(30).applyTo(state));
     }
 
     @Test

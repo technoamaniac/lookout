@@ -19,7 +19,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 public class WebhookSinkTest {
-    private static final Message EVENT = Message.of(new AppEvent("com.example.a"), null, 1_000);
+    private static final Message EVENT = Message.withoutState(new AppEvent("com.example.a"), null, 1_000);
 
     private FakeWebhookServer server;
     private WebhookSink sink;

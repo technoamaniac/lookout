@@ -48,11 +48,11 @@ final class DeliveryDetailSheet {
 
     /** @param onClosed runs after the sheet closes, to hand focus back to where it came from */
     void show(DeliveryRecord record, Runnable onClosed) {
-        result.show(activity.getString(DeliveryAppearance.labelFor(record)),
+        result.show(activity.getString(DeliveryAppearance.labelFor(record.result())),
                 DeliveryAppearance.kindFor(record.result()));
         app.setText(record.message().summary());
         time.setText(dateTimeFormat.format(new Date(record.attemptedAtMillis())));
-        response.setText(DeliveryAppearance.responseFor(record));
+        response.setText(DeliveryAppearance.responseFor(record.result()));
         payload.setText(highlight(record.message().toPrettyJson()));
         // The sheet is reused, so start each payload at its top rather than where the last one was left
         payloadScroll.scrollTo(0, 0);

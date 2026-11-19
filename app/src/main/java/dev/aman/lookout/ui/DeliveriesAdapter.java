@@ -61,11 +61,11 @@ final class DeliveriesAdapter extends ListAdapter<DeliveryRecord, DeliveriesAdap
     public void onBindViewHolder(@NonNull Row row, int position) {
         DeliveryRecord record = getItem(position);
         int color = row.itemView.getContext().getColor(DeliveryAppearance.colorFor(record.result()));
-        row.icon.setImageResource(DeliveryAppearance.iconFor(record));
+        row.icon.setImageResource(DeliveryAppearance.iconFor(record.result()));
         row.icon.setImageTintList(ColorStateList.valueOf(color));
         row.pkg.setText(record.message().summary());
         row.time.setText(timeFormat.format(new Date(record.attemptedAtMillis())));
-        row.result.setText(DeliveryAppearance.labelFor(record));
+        row.result.setText(DeliveryAppearance.labelFor(record.result()));
         row.result.setTextColor(color);
         row.itemView.setOnClickListener(v -> onSelected.onSelected(record, v));
     }

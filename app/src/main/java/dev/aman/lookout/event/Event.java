@@ -5,15 +5,12 @@ public interface Event {
     /** What the Deliveries tab shows for this event: the app's package, or the type of event. */
     String summary();
 
-    /**
-     * Events with the same key replace each other: once a newer one exists, an older one that has
-     * not been delivered yet is stale, because the receiver only cares about the latest state.
-     */
-    String supersessionKey();
+    /** The TV's state once this event has happened; unchanged by an event that says nothing about the TV. */
+    TvState applyTo(TvState state);
 
     /**
-     * What this event says, without the fields every message shares (the TV's name, the time and an id), which are
-     * added when it is sent. A new builder on each call, so callers may add to it.
+     * What this event says, without the fields every message shares (the TV's state and name, the time and an id),
+     * which are added when it is sent. A new builder on each call, so callers may add to it.
      */
     JsonFields fields();
 

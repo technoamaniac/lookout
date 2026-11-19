@@ -2,11 +2,10 @@ package dev.aman.lookout.delivery;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import dev.aman.lookout.event.EventCategory;
+import dev.aman.lookout.event.TvState;
 import dev.aman.lookout.foreground.AppEvent;
 import dev.aman.lookout.heartbeat.HeartbeatEvent;
 import dev.aman.lookout.playback.MediaDetails;
@@ -28,12 +27,11 @@ public class StoreFilesTest {
     @Rule
     public final TemporaryFolder folder = new TemporaryFolder();
 
-    private final Message app = Message.of(new AppEvent("com.example.a", "Main"), null, 1_000);
-    // Quotes and a newline in the title must survive the round trip
-    private final Message playback = Message.of(
-            new PlaybackEvent(new PlaybackSnapshot("com.example.p", PlayState.PLAYING,
-                    MediaDetails.builder().title("Say \"hi\"\nnow").build(), PlaybackSnapshot.NO_POSITION)),
-            "Den", 2_000).markedDelayed();
+    private final Message app = Message.withoutState(new AppEvent("com.example.a", "Main"), null, 1_000);
+    // Quotes and a newline in the title, and the nested TV state, must survive the round trip
+    private final PlaybackEvent playing = new PlaybackEvent(new PlaybackSnapshot("com.example.p", PlayState.PLAYING,
+            MediaDetails.builder().title("Say \"hi\"\nnow").build(), PlaybackSnapshot.NO_POSITION));
+    private final Message playback = Message.of(playing, playing.applyTo(TvState.UNKNOWN), "Den", 2_000);
 
     private File file(String name) {
         return new File(folder.getRoot(), name);
@@ -41,69 +39,32 @@ public class StoreFilesTest {
 
     private static void assertSameMessage(Message expected, Message actual) {
         assertEquals(expected.id(), actual.id());
-        assertEquals(expected.supersessionKey(), actual.supersessionKey());
         assertEquals(expected.summary(), actual.summary());
         assertEquals(expected.occurredAtMillis(), actual.occurredAtMillis());
         assertEquals(expected.toJson(), actual.toJson());
     }
 
     @Test
-    public void outboxRoundTrips() {
-        OutboxFile store = new OutboxFile(file("outbox.json"));
-        store.save(new Outbox.Snapshot("https://ha.example/hook",
-                List.of(new Outbox.Item(app, true), new Outbox.Item(playback, false))));
-
-        Outbox.Snapshot loaded = new OutboxFile(file("outbox.json")).load();
-
-        assertEquals("https://ha.example/hook", loaded.webhook());
-        assertEquals(2, loaded.items().size());
-        assertSameMessage(app, loaded.items().get(0).message());
-        assertTrue(loaded.items().get(0).settled());
-        assertSameMessage(playback, loaded.items().get(1).message());
-        assertFalse(loaded.items().get(1).settled());
-    }
-
-    @Test
-    public void outboxWithoutAWebhookRoundTrips() {
-        OutboxFile store = new OutboxFile(file("outbox.json"));
-        store.save(new Outbox.Snapshot(null, List.of(new Outbox.Item(app, false))));
-        assertNull(store.load().webhook());
-    }
-
-    @Test
-    public void aMissingOrDamagedOutboxStartsEmpty() throws IOException {
-        assertTrue(new OutboxFile(file("missing.json")).load().items().isEmpty());
-        Files.write(file("bad.json").toPath(), "{\"version\":1,\"items\":[{".getBytes(StandardCharsets.UTF_8));
-        assertTrue(new OutboxFile(file("bad.json")).load().items().isEmpty());
-    }
-
-    @Test
-    public void anOutboxFromAnotherVersionStartsEmpty() throws IOException {
-        Files.write(file("future.json").toPath(), "{\"version\":2,\"items\":[]}".getBytes(StandardCharsets.UTF_8));
-        assertTrue(new OutboxFile(file("future.json")).load().items().isEmpty());
-    }
-
-    @Test
-    public void aFailedSaveKeepsThePreviousOutbox() {
-        OutboxFile store = new OutboxFile(file("outbox.json"));
-        store.save(new Outbox.Snapshot(null, List.of(new Outbox.Item(app, false))));
+    public void aFailedSaveKeepsThePreviousDeliveryLog() {
+        DeliveryLogFile store = new DeliveryLogFile(file("deliveries.json"));
+        store.save(List.of(new DeliveryRecord(app, DeliveryResult.DELIVERED, 8_000)));
         // A folder that cannot be written to makes the next save fail before it touches the file
         assertTrue(folder.getRoot().setWritable(false));
         try {
-            store.save(Outbox.Snapshot.EMPTY);
+            store.save(List.of());
         } finally {
             folder.getRoot().setWritable(true);
         }
 
-        assertEquals(1, store.load().items().size());
+        assertEquals(1, store.load().size());
     }
 
     @Test
     public void savingLeavesNoTemporaryFilesBehind() {
-        OutboxFile store = new OutboxFile(file("outbox.json"));
-        store.save(new Outbox.Snapshot(null, List.of(new Outbox.Item(app, false))));
-        store.save(Outbox.Snapshot.EMPTY);
-        assertArrayEquals(new String[] {"outbox.json"}, folder.getRoot().list());
+        DeliveryLogFile store = new DeliveryLogFile(file("deliveries.json"));
+        store.save(List.of(new DeliveryRecord(app, DeliveryResult.DELIVERED, 8_000)));
+        store.save(List.of());
+        assertArrayEquals(new String[] {"deliveries.json"}, folder.getRoot().list());
     }
 
     @Test
@@ -124,7 +85,8 @@ public class StoreFilesTest {
     @Test
     public void aSavedHeartbeatKeepsItsKind() {
         DeliveryLogFile store = new DeliveryLogFile(file("deliveries.json"));
-        store.save(List.of(new DeliveryRecord(Message.of(new HeartbeatEvent(60), null, 3_000), DeliveryResult.DELIVERED, 3_000)));
+        Message beat = Message.withoutState(new HeartbeatEvent(60), null, 3_000);
+        store.save(List.of(new DeliveryRecord(beat, DeliveryResult.DELIVERED, 3_000)));
         assertEquals(EventCategory.HEARTBEAT, new DeliveryLogFile(file("deliveries.json")).load().get(0).message().category());
     }
 
@@ -146,11 +108,11 @@ public class StoreFilesTest {
 
     @Test
     public void loadingClearsTemporaryFilesACrashLeftBehind() throws IOException {
-        Files.write(file("outbox.json123.tmp").toPath(), "{".getBytes(StandardCharsets.UTF_8));
-        Files.write(file("deliveries.json456.tmp").toPath(), "{".getBytes(StandardCharsets.UTF_8));
+        Files.write(file("deliveries.json123.tmp").toPath(), "{".getBytes(StandardCharsets.UTF_8));
+        Files.write(file("other.json456.tmp").toPath(), "{".getBytes(StandardCharsets.UTF_8));
 
-        new OutboxFile(file("outbox.json")).load();
+        new DeliveryLogFile(file("deliveries.json")).load();
 
-        assertArrayEquals(new String[] {"deliveries.json456.tmp"}, folder.getRoot().list());
+        assertArrayEquals(new String[] {"other.json456.tmp"}, folder.getRoot().list());
     }
 }

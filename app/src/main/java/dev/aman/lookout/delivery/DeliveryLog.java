@@ -10,10 +10,10 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * The most recent delivery attempts, newest first, kept across restarts by its store, except delivered ones of routine
- * categories ({@link EventCategory#keptWhenDelivered()}). Each category of event keeps its own
- * newest attempts, so a frequent category such as heartbeats never pushes the others out. Thread-safe: the service writes
- * from its worker thread while the settings screen reads from the UI thread and tests webhooks from its own.
+ * The most recent delivery attempts, newest first, kept across restarts by its store, except those of routine
+ * categories ({@link EventCategory#savedAcrossRestarts()}). Each category of event keeps its own newest attempts, so a
+ * frequent category such as heartbeats never pushes the others out. Thread-safe: the service writes from its worker
+ * thread while the settings screen reads from the UI thread and tests webhooks from its own.
  */
 public final class DeliveryLog {
     /** How many attempts of each category the Deliveries tab can list. */
@@ -55,13 +55,11 @@ public final class DeliveryLog {
         for (Runnable listener : listeners) listener.run();
     }
 
-    // Newest first; delivered routine attempts stay in memory only
+    // Newest first; routine attempts stay in memory only
     private List<DeliveryRecord> savable() {
         List<DeliveryRecord> savable = new ArrayList<>();
         for (DeliveryRecord record : records) {
-            if (record.result() != DeliveryResult.DELIVERED || record.message().category().keptWhenDelivered()) {
-                savable.add(record);
-            }
+            if (record.message().category().savedAcrossRestarts()) savable.add(record);
         }
         return savable;
     }

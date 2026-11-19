@@ -6,7 +6,7 @@ import java.util.Deque;
 import java.util.List;
 
 /** Runs tasks in order on the test's thread, with a clock the test moves. */
-final class ManualScheduler implements OutboxSender.Scheduler {
+final class ManualScheduler implements Reporter.Scheduler {
     private static final class Timed {
         final Runnable task;
         final long atMillis;
@@ -21,10 +21,6 @@ final class ManualScheduler implements OutboxSender.Scheduler {
     private final Deque<Runnable> queue = new ArrayDeque<>();
     private final List<Timed> timed = new ArrayList<>();
     private long nowMillis;
-
-    long now() {
-        return nowMillis;
-    }
 
     @Override
     public void execute(Runnable task) {

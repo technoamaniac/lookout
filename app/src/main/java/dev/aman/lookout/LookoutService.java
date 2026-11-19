@@ -14,15 +14,12 @@ import dev.aman.lookout.config.Config;
 import dev.aman.lookout.config.DeviceName;
 import dev.aman.lookout.config.PrefsConfigStore;
 import dev.aman.lookout.delivery.NetworkWatcher;
-import dev.aman.lookout.delivery.OutboxSender;
-import dev.aman.lookout.delivery.WebhookOutbox;
+import dev.aman.lookout.delivery.Reporter;
+import dev.aman.lookout.delivery.WebhookReporter;
 import dev.aman.lookout.device.DeviceEvent;
 import dev.aman.lookout.device.DeviceStateReceiver;
-import dev.aman.lookout.event.Event;
 import dev.aman.lookout.foreground.ForegroundTracker;
 import dev.aman.lookout.foreground.PackageFilter;
-import dev.aman.lookout.heartbeat.Heartbeat;
-import dev.aman.lookout.heartbeat.HeartbeatEvent;
 import dev.aman.lookout.playback.MediaAccessService;
 import dev.aman.lookout.playback.MediaSessionWatcher;
 import dev.aman.lookout.playback.PlaybackTracker;
@@ -34,18 +31,13 @@ import java.util.List;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 
-/** Android adapter: wires window, device and playback events through the trackers to the outbox. */
+/** Android adapter: wires window, device and playback events through the trackers to the reporter. */
 public class LookoutService extends AccessibilityService {
     // Lives as long as the service: settings changes reconfigure it, so the app in front is not forgotten
     private final ForegroundTracker tracker = new ForegroundTracker(new PackageFilter(List.of()));
     private final PlaybackTracker playback = new PlaybackTracker();
     private final ScheduledExecutorService io = Executors.newSingleThreadScheduledExecutor();
     private final Handler main = new Handler(Looper.getMainLooper());
-    // On the main thread; the main looper's clock stops in deep sleep
-    private final Heartbeat heartbeat = new Heartbeat((task, delayMillis) -> {
-        main.postDelayed(task, delayMillis);
-        return () -> main.removeCallbacks(task);
-    }, HeartbeatEvent::new, this::sendHeartbeat);
     // Enabling a keyboard changes which packages are ignored, without any settings change of ours
     private final ContentObserver keyboardsChanged = new ContentObserver(main) {
         @Override
@@ -60,11 +52,11 @@ public class LookoutService extends AccessibilityService {
             mediaSessions.start();
         }
     };
-    // Set from the settings, and read on the outbox's thread for each message
+    // Set from the settings, and read on the reporter's thread for each message
     private volatile boolean sendDeviceName;
     // Made once the service has a context, and kept until it is destroyed
     private PrefsConfigStore store;
-    private OutboxSender outbox;
+    private Reporter reporter;
     private NetworkWatcher network;
     private DeviceStateReceiver deviceState;
     private MediaSessionWatcher mediaSessions;
@@ -73,14 +65,13 @@ public class LookoutService extends AccessibilityService {
     public void onCreate() {
         super.onCreate();
         store = new PrefsConfigStore(this);
-        outbox = WebhookOutbox.create(this, ((LookoutApplication) getApplication()).deliveryLog(), io,
+        reporter = WebhookReporter.create(this, ((LookoutApplication) getApplication()).deliveryLog(), io,
                 () -> sendDeviceName ? DeviceName.read(getContentResolver()) : null);
-        outbox.start();
-        network = new NetworkWatcher(this, outbox::networkAvailable);
+        network = new NetworkWatcher(this, reporter::networkAvailable);
         deviceState = new DeviceStateReceiver(this, this::onDeviceEvent);
         // Without the media access grant this does nothing, so playback stays off until the user opts in
         mediaSessions = new MediaSessionWatcher(this, new ComponentName(this, MediaAccessService.class),
-                sessions -> playback.onSessionsChanged(sessions).forEach(outbox::report));
+                sessions -> playback.onSessionsChanged(sessions).forEach(reporter::report));
     }
 
     // The system may connect again without destroying the service, so everything watched is let go first
@@ -93,9 +84,10 @@ public class LookoutService extends AccessibilityService {
         // The constant is hidden from the SDK, so the setting is named by its key
         getContentResolver().registerContentObserver(
                 Settings.Secure.getUriFor("enabled_notification_listeners"), false, listenersChanged);
-        configure();
+        // Before configure, so what they see is in the TV's state when the first heartbeat goes out
         deviceState.start();
         mediaSessions.start();
+        configure();
         network.start();
         reopenAfterUpdate();
     }
@@ -104,7 +96,7 @@ public class LookoutService extends AccessibilityService {
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getPackageName() == null) return;
         String activity = event.getClassName() == null ? null : event.getClassName().toString();
-        tracker.onWindowChanged(event.getPackageName().toString(), activity).ifPresent(outbox::report);
+        tracker.onWindowChanged(event.getPackageName().toString(), activity).ifPresent(reporter::report);
     }
 
     @Override
@@ -113,7 +105,6 @@ public class LookoutService extends AccessibilityService {
     @Override
     public void onDestroy() {
         stopWatching();
-        heartbeat.stop();
         io.shutdownNow();
         super.onDestroy();
     }
@@ -127,11 +118,14 @@ public class LookoutService extends AccessibilityService {
         getContentResolver().unregisterContentObserver(listenersChanged);
     }
 
-    // The screensaver's own window is not an app the user opened, so app changes wait until it ends
+    // The screensaver's own window is not an app the user opened, so app changes wait until it ends, or the screen
+    // turns off, which ends it too if the TV never says so
     private void onDeviceEvent(DeviceEvent event) {
         if (event.kind() == DeviceEvent.Kind.SCREENSAVER_STARTED) tracker.pause();
-        if (event.kind() == DeviceEvent.Kind.SCREENSAVER_STOPPED) tracker.resume();
-        outbox.report(event);
+        if (event.kind() == DeviceEvent.Kind.SCREENSAVER_STOPPED || event.kind() == DeviceEvent.Kind.SCREEN_OFF) {
+            tracker.resume();
+        }
+        reporter.report(event);
     }
 
     // Rerun whenever settings or keyboards change, so edits apply without restarting the service
@@ -139,11 +133,7 @@ public class LookoutService extends AccessibilityService {
         Config config = store.load();
         sendDeviceName = config.sendDeviceName();
         tracker.setFilter(filterFor(config));
-        boolean reporting = store.isReportingOn();
-        outbox.update(config.webhookUrl().orElse(null), reporting);
-        // Nothing to beat for while reports are paused or there is no webhook; resuming beats at once
-        boolean sending = reporting && config.webhookUrl().isPresent();
-        heartbeat.setInterval(sending ? config.heartbeatMinutes() * 60L : 0);
+        reporter.update(config.webhookUrl().orElse(null), store.isReportingOn());
     }
 
     // Android starts the service again once an update installs; the screen the user updated from does not come back
@@ -154,11 +144,6 @@ public class LookoutService extends AccessibilityService {
         startActivity(new Intent(this, SettingsActivity.class)
                 .putExtra(SettingsActivity.EXTRA_SHOW_UPDATES, true)
                 .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK));
-    }
-
-    // A method rather than a lambda in the field: the outbox is made only once the service has a context
-    private void sendHeartbeat(Event heartbeat) {
-        outbox.sendNow(heartbeat);
     }
 
     private PackageFilter filterFor(Config config) {

@@ -31,6 +31,12 @@ public final class JsonFields {
         return this;
     }
 
+    /** Adds a nested object; it stays on one line in {@link #pretty()}. */
+    public JsonFields object(String name, JsonFields object) {
+        fields.put(name, object.compact());
+        return this;
+    }
+
     /** Adds an array of objects; nested objects stay on one line in {@link #pretty()}. */
     public JsonFields objects(String name, List<JsonFields> objects) {
         StringJoiner array = new StringJoiner(",", "[", "]");

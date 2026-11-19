@@ -2,6 +2,8 @@ package dev.aman.lookout.foreground;
 
 import static org.junit.Assert.assertEquals;
 
+import dev.aman.lookout.event.TvState;
+
 import org.junit.Test;
 
 public class AppEventTest {
@@ -21,6 +23,13 @@ public class AppEventTest {
     public void leavesOutABlankActivity() {
         assertEquals("{\"event\":\"app_changed\",\"package\":\"com.example.tv\"}",
                 new AppEvent("com.example.tv", " ").fields().compact());
+    }
+
+    @Test
+    public void becomesTheAppInTheTvsState() {
+        TvState state = new AppEvent("com.example.a").applyTo(TvState.UNKNOWN);
+        assertEquals("{\"app\":\"com.example.b\",\"playback\":[]}",
+                new AppEvent("com.example.b", "com.example.b.Main").applyTo(state).fields().compact());
     }
 
     @Test

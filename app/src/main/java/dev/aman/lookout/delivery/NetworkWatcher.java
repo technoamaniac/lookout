@@ -6,8 +6,9 @@ import android.net.Network;
 import android.net.NetworkCapabilities;
 
 /**
- * Android adapter: says when the TV has a working network again, so waiting deliveries are retried at once instead of
- * at the end of their wait. Waits for Android to validate the network, so a Wi-Fi login page does not count.
+ * Android adapter: says when the TV has a working network again, so a receiver that missed something catches up at
+ * once instead of at the next heartbeat. Waits for Android to validate the network, so a Wi-Fi login page does not
+ * count.
  */
 public final class NetworkWatcher {
     private final ConnectivityManager connectivity;

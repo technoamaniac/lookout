@@ -3,27 +3,25 @@ package dev.aman.lookout.delivery;
 import dev.aman.lookout.event.Event;
 import dev.aman.lookout.event.EventCategory;
 import dev.aman.lookout.event.JsonFields;
+import dev.aman.lookout.event.TvState;
 
 import java.util.Objects;
 import java.util.UUID;
 
 /**
- * An event as it is sent: its payload plus an {@code id} that stays the same on every attempt, so a receiver can drop
- * the duplicate an interrupted delivery can cause. Immutable, so it can be saved and sent again unchanged.
+ * An event as it is sent: its payload plus an {@code id}, so a receiver or the Deliveries tab can tell messages apart.
+ * Immutable, so it can be saved and shown again unchanged.
  */
 public final class Message {
     private final String id;
-    private final String supersessionKey;
     private final String summary;
     private final JsonFields fields;
     private final long occurredAtMillis;
     private final EventCategory category;
 
     /** Restores a saved message; {@code fields} already include the id. */
-    public Message(String id, String supersessionKey, String summary, EventCategory category, JsonFields fields,
-                   long occurredAtMillis) {
+    public Message(String id, String summary, EventCategory category, JsonFields fields, long occurredAtMillis) {
         this.id = Objects.requireNonNull(id);
-        this.supersessionKey = Objects.requireNonNull(supersessionKey);
         this.summary = Objects.requireNonNull(summary);
         this.fields = fields.copy();
         this.occurredAtMillis = occurredAtMillis;
@@ -32,31 +30,30 @@ public final class Message {
 
     /**
      * A new message for {@code event}, with a fresh id. Every message ends with the same fields, so a receiver reads
-     * them alike whatever the event: the TV's name, when it happened in Unix seconds, and the id.
+     * them alike whatever the event: the TV's state, its name, when it happened in Unix seconds, and the id.
      *
+     * @param tv     the TV's state once the event happened
      * @param device the TV's name, so one webhook can serve several; null or blank to leave it out
      */
-    public static Message of(Event event, String device, long occurredAtMillis) {
-        String id = UUID.randomUUID().toString();
-        JsonFields fields = event.fields()
-                .optionalString("device", device)
-                .number("timestamp", occurredAtMillis / 1_000)
-                .string("id", id);
-        return new Message(id, event.supersessionKey(), event.summary(), event.category(), fields, occurredAtMillis);
+    public static Message of(Event event, TvState tv, String device, long occurredAtMillis) {
+        return stamped(event, event.fields().object("tv", tv.fields()), device, occurredAtMillis);
     }
 
-    /** The same message flagged as sent well after it happened, so automations can skip it. Keeps the id. */
-    public Message markedDelayed() {
-        return new Message(id, supersessionKey, summary, category, fields.copy().bool("delayed", true), occurredAtMillis);
+    /** A message without the TV's state, for a test from the settings screen, which knows nothing of it. */
+    public static Message withoutState(Event event, String device, long occurredAtMillis) {
+        return stamped(event, event.fields(), device, occurredAtMillis);
+    }
+
+    private static Message stamped(Event event, JsonFields fields, String device, long occurredAtMillis) {
+        String id = UUID.randomUUID().toString();
+        fields.optionalString("device", device)
+                .number("timestamp", occurredAtMillis / 1_000)
+                .string("id", id);
+        return new Message(id, event.summary(), event.category(), fields, occurredAtMillis);
     }
 
     public String id() {
         return id;
-    }
-
-    /** See {@link Event#supersessionKey()}. */
-    public String supersessionKey() {
-        return supersessionKey;
     }
 
     /** See {@link Event#summary()}. */

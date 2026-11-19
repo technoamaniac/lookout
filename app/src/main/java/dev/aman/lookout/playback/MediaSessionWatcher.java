@@ -58,6 +58,9 @@ public final class MediaSessionWatcher {
             watch(sessions.getActiveSessions(access));
             return true;
         } catch (SecurityException e) {
+            // No sessions can be seen, so none are reported: once access is taken away, what played is not
+            // claimed to play on in every message
+            publish();
             return false;
         }
     }

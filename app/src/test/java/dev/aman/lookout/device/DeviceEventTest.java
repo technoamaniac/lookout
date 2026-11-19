@@ -1,7 +1,8 @@
 package dev.aman.lookout.device;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+
+import dev.aman.lookout.event.TvState;
 
 import org.junit.Test;
 
@@ -22,12 +23,31 @@ public class DeviceEventTest {
     }
 
     @Test
-    public void screenAndScreensaverEventsDoNotReplaceEachOther() {
-        assertEquals(new DeviceEvent(DeviceEvent.Kind.SCREEN_ON).supersessionKey(),
-                new DeviceEvent(DeviceEvent.Kind.SCREEN_OFF).supersessionKey());
-        assertEquals(new DeviceEvent(DeviceEvent.Kind.SCREENSAVER_STARTED).supersessionKey(),
-                new DeviceEvent(DeviceEvent.Kind.SCREENSAVER_STOPPED).supersessionKey());
-        assertNotEquals(new DeviceEvent(DeviceEvent.Kind.SCREEN_ON).supersessionKey(),
-                new DeviceEvent(DeviceEvent.Kind.SCREENSAVER_STARTED).supersessionKey());
+    public void eachKindSetsItsPartOfTheTvsState() {
+        assertEquals("{\"screen\":\"on\",\"playback\":[]}", stateAfter(DeviceEvent.Kind.SCREEN_ON));
+        assertEquals("{\"screen\":\"off\",\"screensaver\":false,\"playback\":[]}",
+                stateAfter(DeviceEvent.Kind.SCREEN_OFF));
+        assertEquals("{\"screensaver\":true,\"playback\":[]}", stateAfter(DeviceEvent.Kind.SCREENSAVER_STARTED));
+        assertEquals("{\"screensaver\":false,\"playback\":[]}", stateAfter(DeviceEvent.Kind.SCREENSAVER_STOPPED));
+    }
+
+    @Test
+    public void theScreenAndTheScreensaverAreIndependent() {
+        TvState state = new DeviceEvent(DeviceEvent.Kind.SCREEN_ON).applyTo(TvState.UNKNOWN);
+        state = new DeviceEvent(DeviceEvent.Kind.SCREENSAVER_STARTED).applyTo(state);
+        assertEquals("{\"screen\":\"on\",\"screensaver\":true,\"playback\":[]}", state.fields().compact());
+    }
+
+    // Some TVs may not send the screensaver's stop when the screen turns off, which would leave "true" in every
+    // heartbeat
+    @Test
+    public void turningTheScreenOffEndsTheScreensaver() {
+        TvState state = new DeviceEvent(DeviceEvent.Kind.SCREENSAVER_STARTED).applyTo(TvState.UNKNOWN);
+        state = new DeviceEvent(DeviceEvent.Kind.SCREEN_OFF).applyTo(state);
+        assertEquals("{\"screen\":\"off\",\"screensaver\":false,\"playback\":[]}", state.fields().compact());
+    }
+
+    private static String stateAfter(DeviceEvent.Kind kind) {
+        return new DeviceEvent(kind).applyTo(TvState.UNKNOWN).fields().compact();
     }
 }

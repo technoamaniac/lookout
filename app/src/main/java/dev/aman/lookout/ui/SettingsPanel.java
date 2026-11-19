@@ -30,7 +30,6 @@ public final class SettingsPanel {
     private final EditText urlField;
     private final IgnoredAppsPicker ignored;
     private final CompoundButton deviceNameSwitch;
-    private final HeartbeatChoice heartbeat;
     private final StatusLine status;
     private final View saveButton;
     private final View testButton;
@@ -55,7 +54,6 @@ public final class SettingsPanel {
         ignored = new IgnoredAppsPicker(activity,
                 new InstalledApps(activity.getPackageManager(), activity.getPackageName()), new BuiltInApps(activity),
                 background, this::onFieldsEdited);
-        heartbeat = new HeartbeatChoice(activity);
         status = new StatusLine(activity.findViewById(R.id.status));
         saveButton = activity.findViewById(R.id.save);
         testButton = activity.findViewById(R.id.test);
@@ -71,8 +69,6 @@ public final class SettingsPanel {
         TextFields.onChanged(urlField, this::onFieldsEdited);
         deviceNameSwitch.setChecked(saved.sendDeviceName());
         deviceNameSwitch.setOnCheckedChangeListener((button, checked) -> onFieldsEdited());
-        heartbeat.show(saved.heartbeatMinutes());
-        heartbeat.onChanged(this::onFieldsEdited);
         saveButton.setOnClickListener(v -> save());
         testButton.setOnClickListener(v -> sendTest());
         updateSaveButton();
@@ -178,7 +174,6 @@ public final class SettingsPanel {
         urlField.setEnabled(!sending);
         ignored.setEnabled(!sending);
         deviceNameSwitch.setEnabled(!sending);
-        heartbeat.setEnabled(!sending);
         updateSaveButton();
     }
 
@@ -222,7 +217,6 @@ public final class SettingsPanel {
     private Config readFields() {
         return Config.parse(urlField.getText().toString(), "", deviceNameSwitch.isChecked())
                 .withIgnoredPackages(ignored.ignored())
-                .withHeartbeatMinutes(heartbeat.minutes())
                 .withReportedPackages(ignored.reported());
     }
 

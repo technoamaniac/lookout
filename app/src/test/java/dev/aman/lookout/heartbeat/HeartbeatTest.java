@@ -2,9 +2,6 @@ package dev.aman.lookout.heartbeat;
 
 import static org.junit.Assert.assertEquals;
 
-import dev.aman.lookout.event.Event;
-import dev.aman.lookout.foreground.AppEvent;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,47 +26,35 @@ public class HeartbeatTest {
     }
 
     private final Tasks tasks = new Tasks();
-    private final List<Long> beats = new ArrayList<>();
-    private final Heartbeat heartbeat = new Heartbeat(tasks, interval -> {
-        beats.add(interval);
-        return new AppEvent("beat");
-    }, (Event event) -> {});
+    private int beats;
+    private final Heartbeat heartbeat = new Heartbeat(tasks, 30_000, () -> beats++);
 
     @Test
     public void beatsAtOnceThenEveryInterval() {
-        heartbeat.setInterval(300);
-        assertEquals(List.of(300L), beats);
-        assertEquals(List.of(300_000L), tasks.delays);
+        heartbeat.restart();
+        assertEquals(1, beats);
+        assertEquals(List.of(30_000L), tasks.delays);
 
         tasks.runNext();
-        assertEquals(List.of(300L, 300L), beats);
+        assertEquals(2, beats);
         assertEquals(1, tasks.pending.size());
     }
 
     @Test
-    public void theSameIntervalAgainChangesNothing() {
-        heartbeat.setInterval(300);
-        heartbeat.setInterval(300);
-        assertEquals(1, beats.size());
+    public void restartingBeatsAtOnceAndReplacesTheOldSchedule() {
+        heartbeat.restart();
+        heartbeat.restart();
+        assertEquals(2, beats);
         assertEquals(1, tasks.pending.size());
-    }
-
-    @Test
-    public void aNewIntervalBeatsAtOnceAndReplacesTheOldSchedule() {
-        heartbeat.setInterval(300);
-        heartbeat.setInterval(60);
-        assertEquals(List.of(300L, 60L), beats);
-        assertEquals(1, tasks.pending.size());
-        assertEquals(60_000L, (long) tasks.delays.get(tasks.delays.size() - 1));
     }
 
     @Test
     public void aFailedBeatDoesNotEndTheBeats() {
-        Heartbeat failing = new Heartbeat(tasks, interval -> new AppEvent("beat"), event -> {
+        Heartbeat failing = new Heartbeat(tasks, 30_000, () -> {
             throw new IllegalStateException();
         });
         try {
-            failing.setInterval(300);
+            failing.restart();
         } catch (IllegalStateException expected) {
             // The next beat must be queued anyway
         }
@@ -77,19 +62,21 @@ public class HeartbeatTest {
     }
 
     @Test
-    public void zeroStopsIt() {
-        heartbeat.setInterval(300);
-        heartbeat.setInterval(0);
-        assertEquals(1, beats.size());
+    public void stopEndsTheBeats() {
+        heartbeat.restart();
+        heartbeat.stop();
+        assertEquals(1, beats);
         assertEquals(0, tasks.pending.size());
     }
 
     @Test
-    public void startsAgainAfterStopping() {
-        heartbeat.setInterval(300);
+    public void stoppingWhenNotRunningDoesNothing() {
         heartbeat.stop();
-        heartbeat.setInterval(300);
-        assertEquals(2, beats.size());
-        assertEquals(1, tasks.pending.size());
+        assertEquals(0, beats);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void needsAPositiveInterval() {
+        new Heartbeat(tasks, 0, () -> {});
     }
 }

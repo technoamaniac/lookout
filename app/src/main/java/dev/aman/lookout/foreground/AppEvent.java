@@ -2,6 +2,7 @@ package dev.aman.lookout.foreground;
 
 import dev.aman.lookout.event.Event;
 import dev.aman.lookout.event.JsonFields;
+import dev.aman.lookout.event.TvState;
 
 import java.util.Objects;
 
@@ -31,10 +32,9 @@ public final class AppEvent implements Event {
         return packageName;
     }
 
-    // Only the app in front matters, so a newer app change makes an older one stale
     @Override
-    public String supersessionKey() {
-        return "foreground";
+    public TvState applyTo(TvState state) {
+        return state.withApp(packageName);
     }
 
     @Override

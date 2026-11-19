@@ -15,7 +15,7 @@
 
 - **Works with any app**, including sideloaded ones. There is nothing to set up per app.
 - **Private by design.** It sees which app is in front, never what is on screen. Playback reporting is off until you switch it on.
-- **Instant, not polled.** Each change is pushed as it happens and retried if the network blips.
+- **Instant and self-healing.** Each change is pushed as it happens, and the whole TV state is sent again every 30 seconds, so a missed message fixes itself.
 - **Any receiver.** Home Assistant, Node-RED, n8n or your own HTTPS server: it is a plain JSON POST.
 - **Keeps itself current.** It updates from this repository's releases after checking each download's SHA-256.
 - **Free and open source** under the Apache 2.0 license.
@@ -54,6 +54,9 @@ The first time you open **Lookout**, it shows a short setup.
    ![The welcome screen](docs/screenshots/1-welcome.png)
 
 2. Press **Allow** next to **Accessibility**, turn Lookout on in the screen that opens, then press Back. If you used `install.sh`, it already says **On**.
+
+   Android may warn that Lookout can "see" or "control" the screen. It shows this for every accessibility app, whatever it does. Lookout only asks Android which app is in front. It never asks for what is on the screen, and it cannot tap or type.
+
 3. The other two are optional. **Media access** lets Lookout report what is playing. **Install updates** lets it update itself. Press **Allow** on each one you want.
 4. Press **Done**.
 
@@ -99,23 +102,30 @@ adb shell am start --activity-clear-top -n dev.aman.lookout/.SettingsActivity \
 
 ## Home Assistant example
 
+Every message carries the TV's whole state under `tv`, so one sensor can read it from any message:
+
 ```yaml
-automation:
-  - alias: TV foreground app
-    triggers:
+template:
+  - triggers:
       - trigger: webhook
         webhook_id: !secret lookout_webhook_id
         local_only: false
     conditions:
       - condition: template
-        value_template: "{{ trigger.json.event == 'app_changed' }}"
-    actions:
-      - action: input_text.set_value
-        target: { entity_id: input_text.tv_foreground_app }
-        data: { value: "{{ trigger.json.package }}" }
+        value_template: "{{ trigger.json.tv is defined }}"
+    sensor:
+      - name: TV app
+        state: "{{ trigger.json.tv.app | default(this.state, true) }}"
+        attributes:
+          screen: "{{ trigger.json.tv.screen | default('unknown') }}"
+          screensaver: "{{ trigger.json.tv.screensaver | default('unknown') }}"
+          playback: "{{ trigger.json.tv.playback }}"
 ```
 
-The condition matters: screen and playback messages arrive on the same webhook.
+- The sensor only changes when the state does, so the heartbeat every 30 seconds adds nothing to your history.
+- `tv.app` is missing after Lookout restarts, until the next app change, so the sensor keeps its last value meanwhile.
+- The condition skips **Test webhook**, which sends no `tv`.
+- For an automation that reacts to one change, such as dimming the lights, trigger on the sensor, or check `trigger.json.event` so it does not run on every heartbeat.
 
 ## What it sends
 
@@ -129,8 +139,15 @@ Content-Type: application/json
   "event": "app_changed",
   "package": "org.smarttube.stable",
   "activity": "org.smarttube.stable.MainActivity",
+  "tv": {
+    "app": "org.smarttube.stable",
+    "screen": "on",
+    "screensaver": false,
+    "playback": []
+  },
   "device": "Living room",
-  "timestamp": 1731600000
+  "timestamp": 1731600000,
+  "id": "c0ffee00-1234-4abc-8def-0123456789ab"
 }
 ```
 
@@ -138,8 +155,13 @@ Content-Type: application/json
 - `activity` is the window Android reported when the app came to the front, often its main activity but sometimes a dialog or splash window. Later screens inside the app do not update it. It is left out when unknown.
 - `device` is the TV's name from its system settings, so one webhook can serve several TVs. It is only sent when **Send this TV's name** is ticked.
 - `timestamp` is Unix seconds.
+- `tv` is the whole state of the TV after this change. Every message has it, so it is the easiest thing to read:
+  - `app` is the last app Lookout reported, so it stays on the previous app while an ignored app, such as your launcher, is in front. It is left out after a restart until the next app change.
+  - `screen` is `on` or `off`.
+  - `screensaver` is `true` while the screensaver runs, and `false` once it stops or the screen turns off. It is left out until Lookout sees one of these, because Android cannot be asked.
+  - `playback` lists each app that is playing or paused, with the same fields as the playback message below, except `position`. It is empty when nothing plays, or when **Media access** is not allowed.
 
-Lookout also reports the TV itself, with the same `event`, `device` and `timestamp` fields:
+Lookout also reports the TV itself, with the same `event`, `tv`, `device` and `timestamp` fields:
 
 - `screen_on` and `screen_off`. The screen state is also sent when the service starts.
 - `screensaver_started` and `screensaver_stopped`. While the screensaver runs, app changes are not reported, so the app you were using stays as the current one.
@@ -169,7 +191,7 @@ Lookout can also report what an app is playing:
 - Only `event`, `package`, `state` and `timestamp` are always there. The rest is left out when the app does not give it: `title`, `artist`, `album`, `album_artist`, `subtitle`, `description`, `genre`, `year`, `duration`, `position` and `artwork`.
 - `duration` and `position` are in seconds. `position` is how far in the app was when the message was sent. It is not sent again as it moves, only with a change of state or of what is playing.
 - `artwork` is a web address. Text is cut at 200 characters.
-- `device` works as above.
+- `tv`, `device` and `id` work as above.
 
 It is off until you allow **Media access** in setup (**Settings → Permissions**). If your TV has no screen for it, run this once from your computer instead:
 
@@ -183,39 +205,42 @@ Only apps that mark their media session as active are seen. SmartTube does so un
 
 ### Delivery
 
-```json
-{
-  "event": "app_changed",
-  "package": "org.smarttube.stable",
-  "timestamp": 1731600000,
-  "id": "c0ffee00-1234-4abc-8def-0123456789ab",
-  "delayed": true
-}
-```
-
-- Any 2xx counts as delivered. Network errors, 408, 429 and 5xx are retried; other responses are not.
-- Retries happen at once when the network comes back, otherwise after waits that grow to 15 minutes. They stop when the message is delivered or a newer one of its kind replaces it.
-- Waiting messages survive a restart, an update or a reboot.
+- Each change is sent once, as it happens. Any 2xx counts as delivered.
+- A message that fails is not sent again. Instead, a heartbeat sends the TV's whole state every 30 seconds, so your smart home catches up within 30 seconds of the webhook working again.
+- It also catches up at once when the TV's network comes back, when you save a new webhook address and when you switch **Enabled** back on.
+- Nothing is saved for later, so a restart or a reboot loses nothing either: the first heartbeat goes out as soon as Lookout starts.
 - Redirects are not followed, so use the final URL.
-- `id` is also sent as the `webhook-id` header and stays the same on each attempt, so a receiver can drop a repeat.
-- `delayed` is `true` on a message sent a minute or more after it happened, so automations can skip stale changes. It is left out otherwise.
+- `id` is also sent as the `webhook-id` header. Each message has its own.
 
-### Heartbeat (optional)
+### Heartbeat
 
-Pick an interval under **Heartbeat** on the Settings tab and Lookout also sends a short message regularly, so your smart home can tell Lookout is running and the TV is reachable:
+Every 30 seconds, Lookout sends the TV's state again, so your smart home always has it and can tell Lookout is running:
 
 ```json
 {
   "event": "heartbeat",
-  "interval": 300,
-  "timestamp": 1731600000
+  "interval": 30,
+  "tv": {
+    "app": "org.smarttube.stable",
+    "screen": "on",
+    "screensaver": false,
+    "playback": [
+      {
+        "package": "org.smarttube.stable",
+        "state": "playing",
+        "title": "Video title"
+      }
+    ]
+  },
+  "timestamp": 1731600000,
+  "id": "0ddba11a-5678-4def-9abc-0123456789ab"
 }
 ```
 
-- It carries nothing about the TV's state: use the events above for that.
+- It is always on while **Enabled** is on and a webhook is saved. That is 2,880 messages a day, so a hosted service that charges per run is a poor fit.
 - `interval` is the seconds until the next one, so a receiver can treat the TV as gone once a few are overdue.
-- A heartbeat that fails is not resent, since a late one would wrongly say the TV is reachable. **Deliveries** lists them once you turn them on under **Filter**.
-- A missing one means the TV is off or offline, or Lookout is not running. A TV that deep-sleeps in standby may stop sending too.
+- A missing one means the TV is off or offline, or Lookout is not running. A TV that deep-sleeps in standby stops sending too.
+- **Deliveries** hides heartbeats until you turn them on under **Filter**.
 
 ## Limitations
 
@@ -235,12 +260,12 @@ Logic lives in plain-Java packages with JVM unit tests; Android classes stay thi
 
 | Package      | Contents                                                                                           |
 | ------------ | -------------------------------------------------------------------------------------------------- |
-| `event`      | `Event` and the JSON builder                                                                       |
+| `event`      | `Event`, `TvState` and the JSON builder                                                            |
 | `foreground` | `ForegroundTracker` turns window events into app changes; `AppEvent`                               |
 | `device`     | `DeviceEvent` and `DeviceStateReceiver`: screen and screensaver changes                            |
 | `playback`   | `PlaybackTracker` and `PlaybackEvent`; `MediaSessionWatcher` reads the sessions                    |
-| `delivery`   | `Outbox`, `OutboxSender` and `WebhookSink`; `DeliveryLog`                                          |
-| `heartbeat`  | `Heartbeat` sends `HeartbeatEvent` at the chosen interval                                          |
+| `delivery`   | `Reporter` sends each change and the heartbeat; `WebhookSink`; `DeliveryLog`                       |
+| `heartbeat`  | `Heartbeat` runs the beat every 30 seconds; `HeartbeatEvent`                                       |
 | `navigation` | `RailFocus` decides where the D-pad goes between a page and the side rail; `ExitConfirmation`      |
 | `config`     | `Config`, validated settings; `SaveGate`; `PrefsConfigStore` persists them                         |
 | `setup`      | `Checklist` of permissions, `AdbCommand`, `FirstRun`; `SystemPermissions` reads the system         |

@@ -7,12 +7,6 @@
     <string name="hint_url">https://example.com/hooks/lookout</string>
     <string name="label_send_device_name">Send this TV\'s name</string>
     <string name="helper_send_device_name">Adds the name from system settings, so one webhook can tell several TVs apart.</string>
-    <string name="label_heartbeat">Heartbeat</string>
-    <string name="heartbeat_off">Off</string>
-    <string name="heartbeat_1">1 minute</string>
-    <string name="heartbeat_5">5 minutes</string>
-    <string name="heartbeat_15">15 minutes</string>
-    <string name="helper_heartbeat">Regularly sends a short message, so your smart home can tell Lookout is running and the TV is reachable. A missed one is not resent.</string>
     <string name="label_ignored">Ignored apps (optional)</string>
     <string name="save">Save</string>
     <string name="test_webhook">Test webhook</string>
@@ -37,8 +31,7 @@
     <string name="category_heartbeat">Heartbeats</string>
     <string name="deliveries_empty">Open an app on the TV, or press Test webhook in Settings. Attempts show up here as they happen.</string>
     <string name="delivery_delivered">Delivered</string>
-    <string name="delivery_failed">Failed, retrying</string>
-    <string name="delivery_not_resent">Failed, not resent</string>
+    <string name="delivery_failed">Failed</string>
     <string name="delivery_rejected">Rejected</string>
     <string name="open_accessibility">Accessibility settings</string>
     <string name="tab_updates">Updates</string>
@@ -86,9 +79,8 @@
     <string name="detail_close">Close</string>
     <string name="detail_back_hint">Back also closes</string>
     <string name="response_delivered">Accepted by the webhook</string>
-    <string name="response_rejected">Refused by the webhook; it will not be retried</string>
-    <string name="response_failed">Not delivered; Lookout retries it</string>
-    <string name="response_not_resent">Not delivered; Lookout does not resend it</string>
+    <string name="response_rejected">Refused by the webhook. Check the URL in Settings.</string>
+    <string name="response_failed">Could not reach the webhook. The next heartbeat sends the TV\'s state again.</string>
     <plurals name="ignored_summary">
         <item quantity="one">%1$d app ignored</item>
         <item quantity="other">%1$d apps ignored</item>

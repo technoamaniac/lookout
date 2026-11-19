@@ -2,6 +2,19 @@
 
 All notable changes to Lookout. The format follows [Keep a Changelog](https://keepachangelog.com/), and versions follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Changed
+
+- Every message now carries the TV's whole state in a new `tv` object: the app in front, the screen, the screensaver and what is playing. A smart home can read everything from any message, and the fields you use today are unchanged. What Lookout has not seen yet is left out rather than guessed: the app in front after a restart, and the screensaver until one starts or stops.
+- The heartbeat is always on and sends the TV's state every 30 seconds. The **Heartbeat** setting is gone.
+- Lookout no longer saves and retries messages that failed. The next heartbeat brings your smart home up to date instead, within 30 seconds of the webhook working again, even if your smart home restarted and lost what it knew.
+- A failed delivery is labelled "Failed" on **Deliveries**, and its details say the next heartbeat sends the state again.
+
+### Removed
+
+- The `delayed` field. Nothing is sent late any more.
+
 ## [0.5.1] - 2026-11-16
 
 ### Changed

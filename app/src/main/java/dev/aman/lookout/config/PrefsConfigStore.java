@@ -16,7 +16,8 @@ public final class PrefsConfigStore implements ConfigStore, ReportingSwitch {
     private static final String KEY_REPORTED = "reported_packages";
     private static final String KEY_SEND_DEVICE_NAME = "send_device_name";
     private static final String KEY_REPORTING = "reporting";
-    private static final String KEY_HEARTBEAT_MINUTES = "heartbeat_minutes";
+    // Versions 0.4.0 to 0.5.1 let the user pick a heartbeat interval; it is fixed now, so the saved one is dropped
+    private static final String OLD_KEY_HEARTBEAT_MINUTES = "heartbeat_minutes";
 
     private final SharedPreferences prefs;
     // SharedPreferences holds listeners weakly, so keep a strong reference
@@ -32,15 +33,11 @@ public final class PrefsConfigStore implements ConfigStore, ReportingSwitch {
         List<String> reported = Config.parsePackages(prefs.getString(KEY_REPORTED, ""));
         // Off until the user opts in: the name can be personal
         boolean sendDeviceName = prefs.getBoolean(KEY_SEND_DEVICE_NAME, false);
-        // Off until the user picks an interval
-        int heartbeatMinutes = Math.max(0, prefs.getInt(KEY_HEARTBEAT_MINUTES, 0));
         try {
-            return Config.parse(prefs.getString(KEY_URL, ""), ignored, sendDeviceName)
-                    .withHeartbeatMinutes(heartbeatMinutes).withReportedPackages(reported);
+            return Config.parse(prefs.getString(KEY_URL, ""), ignored, sendDeviceName).withReportedPackages(reported);
         } catch (IllegalArgumentException e) {
             // A URL saved before validation tightened no longer parses; keep the other settings
-            return Config.parse("", ignored, sendDeviceName).withHeartbeatMinutes(heartbeatMinutes)
-                    .withReportedPackages(reported);
+            return Config.parse("", ignored, sendDeviceName).withReportedPackages(reported);
         }
     }
 
@@ -51,7 +48,7 @@ public final class PrefsConfigStore implements ConfigStore, ReportingSwitch {
                 .putString(KEY_IGNORED, config.ignoredPackagesText())
                 .putString(KEY_REPORTED, config.reportedPackagesText())
                 .putBoolean(KEY_SEND_DEVICE_NAME, config.sendDeviceName())
-                .putInt(KEY_HEARTBEAT_MINUTES, config.heartbeatMinutes())
+                .remove(OLD_KEY_HEARTBEAT_MINUTES)
                 .apply();
     }
 

@@ -3,10 +3,12 @@ package dev.aman.lookout.heartbeat;
 import dev.aman.lookout.event.Event;
 import dev.aman.lookout.event.EventCategory;
 import dev.aman.lookout.event.JsonFields;
+import dev.aman.lookout.event.TvState;
 
 /**
- * A periodic "still here", and nothing else: whether the TV is reachable is all it says. It carries its own interval,
- * so the receiver can work out when one is overdue without hard-coding it.
+ * A periodic "still here". Like every message it carries the TV's state, so a receiver that missed a change catches
+ * up with the next one. It carries its own interval, so the receiver can work out when one is overdue without
+ * hard-coding it.
  */
 public final class HeartbeatEvent implements Event {
     private static final String TYPE = "heartbeat";
@@ -23,8 +25,8 @@ public final class HeartbeatEvent implements Event {
     }
 
     @Override
-    public String supersessionKey() {
-        return TYPE;
+    public TvState applyTo(TvState state) {
+        return state;
     }
 
     @Override

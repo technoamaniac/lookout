@@ -2,7 +2,8 @@ package dev.aman.lookout.playback;
 
 import static dev.aman.lookout.playback.PlaybackSnapshot.NO_POSITION;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+
+import dev.aman.lookout.event.TvState;
 
 import org.junit.Test;
 
@@ -52,10 +53,27 @@ public class PlaybackEventTest {
     }
 
     @Test
-    public void eachAppSupersedesOnlyItsOwnEvents() {
-        assertEquals("playback:a", event("a", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).supersessionKey());
-        assertNotEquals(event("a", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).supersessionKey(),
-                event("b", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).supersessionKey());
+    public void listsTheSessionInTheTvsStateWithoutThePosition() {
+        TvState state = event("a", PlayState.PLAYING, MediaDetails.builder().title("T").build(), 42)
+                .applyTo(TvState.UNKNOWN);
+        assertEquals("{\"playback\":[{\"package\":\"a\",\"state\":\"playing\",\"title\":\"T\"}]}",
+                state.fields().compact());
+    }
+
+    @Test
+    public void eachAppKeepsItsOwnPlaceAndANewerEventReplacesOnlyItsOwn() {
+        TvState state = event("a", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).applyTo(TvState.UNKNOWN);
+        state = event("b", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).applyTo(state);
+        state = event("a", PlayState.PAUSED, MediaDetails.NONE, NO_POSITION).applyTo(state);
+        assertEquals("{\"playback\":[{\"package\":\"a\",\"state\":\"paused\"},"
+                + "{\"package\":\"b\",\"state\":\"playing\"}]}", state.fields().compact());
+    }
+
+    @Test
+    public void aStoppedAppIsNoLongerListed() {
+        TvState state = event("a", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).applyTo(TvState.UNKNOWN);
+        state = event("a", PlayState.STOPPED, MediaDetails.NONE, NO_POSITION).applyTo(state);
+        assertEquals("{\"playback\":[]}", state.fields().compact());
     }
 
     @Test
