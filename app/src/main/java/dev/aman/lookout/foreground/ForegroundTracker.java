@@ -34,15 +34,14 @@ public final class ForegroundTracker {
     }
 
     /**
-     * Returns an event only when the foreground app actually changed, so the activity reported is
-     * the one that opened the app, not later screens inside it.
+     * Returns an event only when the foreground app actually changed, not for later screens inside the same app.
      */
-    public Optional<AppEvent> onWindowChanged(String packageName, String activity) {
+    public Optional<AppEvent> onWindowChanged(String packageName) {
         if (paused || packageName == null || !filter.accepts(packageName)
                 || packageName.equals(foregroundPackage)) {
             return Optional.empty();
         }
         foregroundPackage = packageName;
-        return Optional.of(new AppEvent(packageName, activity));
+        return Optional.of(new AppEvent(packageName));
     }
 }

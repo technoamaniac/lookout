@@ -137,7 +137,6 @@ Content-Type: application/json
 
 {
   "event": "app_changed",
-  "activity": "org.smarttube.stable.MainActivity",
   "tv": {
     "app": "org.smarttube.stable",
     "screen": "on",
@@ -151,7 +150,6 @@ Content-Type: application/json
 ```
 
 - `event` names the kind of message.
-- `activity` is the window Android reported when the app came to the front, often its main activity but sometimes a dialog or splash window. Later screens inside the app do not update it. It is left out when unknown.
 - `device` is the TV's name from its system settings, so one webhook can serve several TVs. It is only sent when **Send this TV's name** is ticked.
 - `timestamp` is Unix seconds.
 - `tv` is the whole state of the TV after this change. Every message has it, whatever its `event`, so it is the easiest thing to read. A message never says anything twice: the other fields are only what `tv` cannot hold.

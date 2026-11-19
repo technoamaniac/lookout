@@ -11,16 +11,9 @@ public final class AppEvent implements Event {
     private static final String TYPE = "app_changed";
 
     private final String packageName;
-    private final String activity;
 
     public AppEvent(String packageName) {
-        this(packageName, null);
-    }
-
-    /** @param activity the window class that appeared; null or blank when the system gave none */
-    public AppEvent(String packageName, String activity) {
         this.packageName = Objects.requireNonNull(packageName);
-        this.activity = activity;
     }
 
     public String packageName() {
@@ -39,8 +32,7 @@ public final class AppEvent implements Event {
 
     @Override
     public JsonFields fields() {
-        return new JsonFields()
-                .string("event", TYPE)
-                .optionalString("activity", activity);
+        // The app itself is in the TV's state
+        return new JsonFields().string("event", TYPE);
     }
 }

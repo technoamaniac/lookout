@@ -27,9 +27,9 @@ public class MessageTest {
 
     @Test
     public void addsTheTvsNameBeforeTheTimeWhenGiven() {
-        Message message = Message.withoutState(new AppEvent("com.example.a", "com.example.a.Main"), "Den", 42_999);
-        assertEquals("{\"event\":\"app_changed\",\"activity\":\"com.example.a.Main\","
-                + "\"device\":\"Den\",\"timestamp\":42,\"id\":\"" + message.id() + "\"}", message.toJson());
+        Message message = Message.withoutState(event, "Den", 42_999);
+        assertEquals("{\"event\":\"app_changed\",\"device\":\"Den\",\"timestamp\":42,\"id\":\""
+                + message.id() + "\"}", message.toJson());
     }
 
     @Test

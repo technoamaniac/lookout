@@ -22,7 +22,7 @@ public final class Message {
     private Message(String id, String summary, EventCategory category, JsonFields fields, long occurredAtMillis) {
         this.id = Objects.requireNonNull(id);
         this.summary = Objects.requireNonNull(summary);
-        this.fields = fields;
+        this.fields = fields.copy();
         this.occurredAtMillis = occurredAtMillis;
         this.category = Objects.requireNonNull(category);
     }

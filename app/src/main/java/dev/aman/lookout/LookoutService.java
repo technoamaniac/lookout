@@ -95,8 +95,7 @@ public class LookoutService extends AccessibilityService {
     @Override
     public void onAccessibilityEvent(AccessibilityEvent event) {
         if (event.getPackageName() == null) return;
-        String activity = event.getClassName() == null ? null : event.getClassName().toString();
-        tracker.onWindowChanged(event.getPackageName().toString(), activity).ifPresent(reporter::report);
+        tracker.onWindowChanged(event.getPackageName().toString()).ifPresent(reporter::report);
     }
 
     @Override

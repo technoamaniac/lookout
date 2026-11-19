@@ -67,7 +67,9 @@ public class DeliveryLogTest {
         log.add(record("c"));
 
         List<String> summaries = new ArrayList<>();
-        for (DeliveryRecord kept : log.recent()) summaries.add(kept.message().category() + " " + kept.message().summary());
+        for (DeliveryRecord kept : log.recent()) {
+            summaries.add(kept.message().category() + " " + kept.message().summary());
+        }
         assertEquals(List.of("CHANGE c", "CHANGE b", "HEARTBEAT heartbeat", "HEARTBEAT heartbeat"), summaries);
         assertEquals(List.of(4_000L, 3_000L), beatTimes(log));
     }
