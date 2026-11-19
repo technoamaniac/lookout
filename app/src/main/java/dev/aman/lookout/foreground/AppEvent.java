@@ -41,7 +41,6 @@ public final class AppEvent implements Event {
     public JsonFields fields() {
         return new JsonFields()
                 .string("event", TYPE)
-                .string("package", packageName)
                 .optionalString("activity", activity);
     }
 }

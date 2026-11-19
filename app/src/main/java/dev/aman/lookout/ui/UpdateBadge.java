@@ -13,7 +13,7 @@ import dev.aman.lookout.update.Release;
 public final class UpdateBadge {
     private final TextView view;
     private Optional<Release> update = Optional.empty();
-    private boolean suppressed;
+    private boolean onSettingsTab = true;
 
     /** @param onSelected runs when the user selects the badge */
     public UpdateBadge(Activity activity, Runnable onSelected) {
@@ -28,13 +28,13 @@ public final class UpdateBadge {
         refresh();
     }
 
-    /** The badge would only repeat the Updates panel, so it hides while that panel is open. */
-    public void setSuppressed(boolean suppressed) {
-        this.suppressed = suppressed;
+    /** The badge belongs to the Settings tab; on the others it is hidden, and on Updates it would repeat the panel. */
+    public void setOnSettingsTab(boolean onSettingsTab) {
+        this.onSettingsTab = onSettingsTab;
         refresh();
     }
 
     private void refresh() {
-        view.setVisibility(update.isPresent() && !suppressed ? View.VISIBLE : View.GONE);
+        view.setVisibility(update.isPresent() && onSettingsTab ? View.VISIBLE : View.GONE);
     }
 }

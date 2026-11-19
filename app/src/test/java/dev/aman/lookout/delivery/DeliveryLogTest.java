@@ -73,21 +73,6 @@ public class DeliveryLogTest {
     }
 
     @Test
-    public void keepsOnlyTheNewestOfEachKindWhenLoading() {
-        DeliveryLog log = new DeliveryLog(1, new DeliveryLogStore() {
-            @Override
-            public List<DeliveryRecord> load() {
-                return List.of(beat(2), record("b"), beat(1), record("a"));
-            }
-
-            @Override
-            public void save(List<DeliveryRecord> newestFirst) {}
-        });
-        assertEquals(2, log.recent().size());
-        assertEquals("b", log.recent().get(1).message().summary());
-    }
-
-    @Test
     public void notifiesListenersUntilRemoved() {
         DeliveryLog log = new DeliveryLog(2);
         AtomicInteger calls = new AtomicInteger();
@@ -97,101 +82,5 @@ public class DeliveryLogTest {
         log.removeListener(listener);
         log.add(record("b"));
         assertEquals(1, calls.get());
-    }
-
-    @Test
-    public void startsWithWhatTheStoreKeptAndSavesEachChange() {
-        List<List<DeliveryRecord>> saves = new ArrayList<>();
-        DeliveryRecord kept = record("kept");
-        DeliveryLog log = new DeliveryLog(2, new DeliveryLogStore() {
-            @Override
-            public List<DeliveryRecord> load() {
-                return List.of(kept);
-            }
-
-            @Override
-            public void save(List<DeliveryRecord> newestFirst) {
-                saves.add(newestFirst);
-            }
-        });
-
-        log.add(record("new"));
-
-        assertEquals("kept", log.recent().get(1).message().summary());
-        assertEquals(1, saves.size());
-        assertEquals(log.recent().size(), saves.get(0).size());
-        assertEquals("new", saves.get(0).get(0).message().summary());
-    }
-
-    private static DeliveryRecord failedBeat(long epochSeconds) {
-        return new DeliveryRecord(Message.withoutState(new HeartbeatEvent(60), null, epochSeconds * 1000),
-                DeliveryResult.TEMPORARY_FAILURE, 1000);
-    }
-
-    private static final class Saves implements DeliveryLogStore {
-        final List<List<DeliveryRecord>> saves = new ArrayList<>();
-
-        @Override
-        public List<DeliveryRecord> load() {
-            return List.of();
-        }
-
-        @Override
-        public void save(List<DeliveryRecord> newestFirst) {
-            saves.add(newestFirst);
-        }
-    }
-
-    // Every heartbeat fails during an outage, which would rewrite the file every 30 seconds
-    @Test
-    public void heartbeatsAreShownButNeverSavedWhetherDeliveredOrFailed() {
-        Saves store = new Saves();
-        DeliveryLog log = new DeliveryLog(3, store);
-
-        log.add(beat(1));
-        log.add(failedBeat(2));
-
-        assertEquals(2, log.recent().size());
-        assertTrue(store.saves.isEmpty());
-    }
-
-    @Test
-    public void failedChangesAreStillSaved() {
-        Saves store = new Saves();
-        DeliveryLog log = new DeliveryLog(2, store);
-
-        log.add(new DeliveryRecord(Message.withoutState(new AppEvent("a"), null, 1000),
-                DeliveryResult.TEMPORARY_FAILURE, 1000));
-        log.add(failedBeat(2));
-
-        assertEquals(1, store.saves.size());
-        assertEquals(1, store.saves.get(0).size());
-    }
-
-    // A heartbeat never pushes a change out of the log, so the file needs no rewrite when one arrives
-    @Test
-    public void aHeartbeatDoesNotRewriteTheFile() {
-        Saves store = new Saves();
-        DeliveryLog log = new DeliveryLog(1, store);
-        log.add(record("a"));
-
-        log.add(beat(2));
-
-        assertEquals(1, store.saves.size());
-    }
-
-    @Test
-    public void loadsNoMoreThanItsCapacity() {
-        DeliveryLog log = new DeliveryLog(1, new DeliveryLogStore() {
-            @Override
-            public List<DeliveryRecord> load() {
-                return List.of(record("a"), record("b"));
-            }
-
-            @Override
-            public void save(List<DeliveryRecord> newestFirst) {}
-        });
-        assertEquals(1, log.recent().size());
-        assertEquals("a", log.recent().get(0).message().summary());
     }
 }

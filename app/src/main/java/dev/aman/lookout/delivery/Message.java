@@ -10,7 +10,7 @@ import java.util.UUID;
 
 /**
  * An event as it is sent: its payload plus an {@code id}, so a receiver or the Deliveries tab can tell messages apart.
- * Immutable, so it can be saved and shown again unchanged.
+ * Immutable, so the Deliveries tab can show it again unchanged.
  */
 public final class Message {
     private final String id;
@@ -19,11 +19,10 @@ public final class Message {
     private final long occurredAtMillis;
     private final EventCategory category;
 
-    /** Restores a saved message; {@code fields} already include the id. */
-    public Message(String id, String summary, EventCategory category, JsonFields fields, long occurredAtMillis) {
+    private Message(String id, String summary, EventCategory category, JsonFields fields, long occurredAtMillis) {
         this.id = Objects.requireNonNull(id);
         this.summary = Objects.requireNonNull(summary);
-        this.fields = fields.copy();
+        this.fields = fields;
         this.occurredAtMillis = occurredAtMillis;
         this.category = Objects.requireNonNull(category);
     }
@@ -69,10 +68,6 @@ public final class Message {
     /** See {@link Event#category()}. */
     public EventCategory category() {
         return category;
-    }
-
-    public JsonFields fields() {
-        return fields.copy();
     }
 
     public String toJson() {

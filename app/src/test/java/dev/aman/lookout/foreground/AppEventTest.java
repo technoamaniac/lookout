@@ -8,20 +8,20 @@ import org.junit.Test;
 
 public class AppEventTest {
     @Test
-    public void serialisesEventAndPackage() {
-        assertEquals("{\"event\":\"app_changed\",\"package\":\"com.example.tv\"}",
+    public void sendsOnlyTheEventWhenThereIsNoActivity() {
+        assertEquals("{\"event\":\"app_changed\"}",
                 new AppEvent("com.example.tv").fields().compact());
     }
 
     @Test
     public void includesTheActivityWhenKnown() {
-        assertEquals("{\"event\":\"app_changed\",\"package\":\"com.example.tv\",\"activity\":\"com.example.tv.Main\"}",
+        assertEquals("{\"event\":\"app_changed\",\"activity\":\"com.example.tv.Main\"}",
                 new AppEvent("com.example.tv", "com.example.tv.Main").fields().compact());
     }
 
     @Test
     public void leavesOutABlankActivity() {
-        assertEquals("{\"event\":\"app_changed\",\"package\":\"com.example.tv\"}",
+        assertEquals("{\"event\":\"app_changed\"}",
                 new AppEvent("com.example.tv", " ").fields().compact());
     }
 
@@ -34,14 +34,13 @@ public class AppEventTest {
 
     @Test
     public void escapesQuotesBackslashesAndControlChars() {
-        assertEquals("{\"event\":\"app_changed\",\"package\":\"a\\\"b\\\\c\\u000ad\"}",
-                new AppEvent("a\"b\\c\nd").fields().compact());
+        assertEquals("{\"event\":\"app_changed\",\"activity\":\"a\\\"b\\\\c\\u000ad\"}",
+                new AppEvent("com.example.tv", "a\"b\\c\nd").fields().compact());
     }
 
     @Test
     public void prettyJsonHasTheSameFieldsIndentedForReading() {
-        assertEquals("{\n  \"event\": \"app_changed\",\n  \"package\": \"com.example.tv\","
-                        + "\n  \"activity\": \"com.example.tv.Main\"\n}",
+        assertEquals("{\n  \"event\": \"app_changed\",\n  \"activity\": \"com.example.tv.Main\"\n}",
                 new AppEvent("com.example.tv", "com.example.tv.Main").fields().pretty());
     }
 }

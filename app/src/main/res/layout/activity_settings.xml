@@ -73,8 +73,7 @@
                             style="@style/Text.Secondary"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:singleLine="true" />
+                            android:layout_marginTop="4dp" />
                     </LinearLayout>
 
                     <!-- Opens the permissions screen; shown only on the Settings tab, beside the title -->

@@ -10,7 +10,8 @@ public interface Event {
 
     /**
      * What this event says, without the fields every message shares (the TV's state and name, the time and an id),
-     * which are added when it is sent. A new builder on each call, so callers may add to it.
+     * which are added when it is sent. Nothing the state already says is repeated here, so an event names only what
+     * happened and what the state cannot hold. A new builder on each call, so callers may add to it.
      */
     JsonFields fields();
 

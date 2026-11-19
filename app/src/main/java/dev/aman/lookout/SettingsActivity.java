@@ -69,12 +69,12 @@ public class SettingsActivity extends AppCompatActivity {
         SettingsPanel settings = new SettingsPanel(this, store, new WebhookTester(log, System::currentTimeMillis),
                 webhookTests, prefill);
         deliveries = new DeliveriesPanel(this, log);
-        // The badge hides on the Updates tab, so focus must move off it before it goes
+        // The badge hides when the Updates tab opens, so focus must move off it before it goes
         UpdateBadge badge = new UpdateBadge(this, () -> tabs.focus(Tab.UPDATES));
         tabs.onSelected(tab -> {
             header.show(tab);
             permissionsButton.setVisibility(tab == Tab.SETTINGS ? View.VISIBLE : View.GONE);
-            badge.setSuppressed(tab == Tab.UPDATES);
+            badge.setOnSettingsTab(tab == Tab.SETTINGS);
             deliveries.setSelected(tab == Tab.DELIVERIES);
             if (tab != Tab.SETTINGS) settings.discardUnsavedIgnoredApps();
         });

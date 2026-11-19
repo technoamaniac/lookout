@@ -18,7 +18,7 @@ public class MessageTest {
     @Test
     public void addsTheTvsStateAndAnIdToTheEventsPayload() {
         Message message = Message.of(event, tv, null, 42_000);
-        assertEquals("{\"event\":\"app_changed\",\"package\":\"com.example.a\",\"tv\":{\"app\":\"com.example.a\","
+        assertEquals("{\"event\":\"app_changed\",\"tv\":{\"app\":\"com.example.a\","
                 + "\"playback\":[]},\"timestamp\":42,\"id\":\"" + message.id() + "\"}",
                 message.toJson());
         assertEquals(event.summary(), message.summary());
@@ -28,7 +28,7 @@ public class MessageTest {
     @Test
     public void addsTheTvsNameBeforeTheTimeWhenGiven() {
         Message message = Message.withoutState(new AppEvent("com.example.a", "com.example.a.Main"), "Den", 42_999);
-        assertEquals("{\"event\":\"app_changed\",\"package\":\"com.example.a\",\"activity\":\"com.example.a.Main\","
+        assertEquals("{\"event\":\"app_changed\",\"activity\":\"com.example.a.Main\","
                 + "\"device\":\"Den\",\"timestamp\":42,\"id\":\"" + message.id() + "\"}", message.toJson());
     }
 

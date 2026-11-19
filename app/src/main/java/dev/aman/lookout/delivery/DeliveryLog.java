@@ -10,58 +10,28 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
- * The most recent delivery attempts, newest first, kept across restarts by its store, except those of routine
- * categories ({@link EventCategory#savedAcrossRestarts()}). Each category of event keeps its own newest attempts, so a
- * frequent category such as heartbeats never pushes the others out. Thread-safe: the service writes from its worker
- * thread while the settings screen reads from the UI thread and tests webhooks from its own.
+ * The most recent delivery attempts, newest first, held in memory only. Each category of event keeps its own newest
+ * attempts, so a frequent category such as heartbeats never pushes the others out. Thread-safe: the service writes
+ * from its worker thread while the settings screen reads from the UI thread and tests webhooks from its own.
  */
 public final class DeliveryLog {
     /** How many attempts of each category the Deliveries tab can list. */
     public static final int CAPACITY = 10;
 
     private final int capacity;
-    private final DeliveryLogStore store;
     private final Deque<DeliveryRecord> records = new ArrayDeque<>();
     private final List<Runnable> listeners = new CopyOnWriteArrayList<>();
-    // What the store holds now, so a change that does not alter it is not saved again
-    private List<DeliveryRecord> saved;
 
-    /** A log held in memory only. */
     public DeliveryLog(int capacity) {
-        this(capacity, DeliveryLogStore.NONE);
-    }
-
-    /** Starts with the records the store kept, and saves every change to it. */
-    public DeliveryLog(int capacity, DeliveryLogStore store) {
         this.capacity = capacity;
-        this.store = store;
-        for (DeliveryRecord record : store.load()) {
-            if (countOf(record.message().category()) < capacity) records.addLast(record);
-        }
-        saved = savable();
     }
 
     public void add(DeliveryRecord record) {
         synchronized (this) {
             records.addFirst(record);
             if (countOf(record.message().category()) > capacity) removeOldest(record.message().category());
-            // Saved under the lock, so two threads' saves cannot land in the wrong order
-            List<DeliveryRecord> toSave = savable();
-            if (!toSave.equals(saved)) {
-                store.save(toSave);
-                saved = toSave;
-            }
         }
         for (Runnable listener : listeners) listener.run();
-    }
-
-    // Newest first; routine attempts stay in memory only
-    private List<DeliveryRecord> savable() {
-        List<DeliveryRecord> savable = new ArrayList<>();
-        for (DeliveryRecord record : records) {
-            if (record.message().category().savedAcrossRestarts()) savable.add(record);
-        }
-        return savable;
     }
 
     private int countOf(EventCategory category) {

@@ -1,6 +1,5 @@
 package dev.aman.lookout.playback;
 
-import static dev.aman.lookout.playback.PlaybackSnapshot.NO_POSITION;
 import static org.junit.Assert.assertEquals;
 
 import dev.aman.lookout.event.TvState;
@@ -8,8 +7,8 @@ import dev.aman.lookout.event.TvState;
 import org.junit.Test;
 
 public class PlaybackEventTest {
-    private static PlaybackEvent event(String app, PlayState state, MediaDetails details, long positionSeconds) {
-        return new PlaybackEvent(new PlaybackSnapshot(app, state, details, positionSeconds));
+    private static PlaybackEvent event(String app, PlayState state, MediaDetails details) {
+        return new PlaybackEvent(new PlaybackSnapshot(app, state, details));
     }
 
     private static MediaDetails details(String title, String artist) {
@@ -17,44 +16,31 @@ public class PlaybackEventTest {
     }
 
     @Test
-    public void serialisesWhatIsPlaying() {
-        assertEquals("{\"event\":\"playback_changed\",\"package\":\"org.smarttube.stable\",\"state\":\"playing\","
-                        + "\"title\":\"Song\",\"artist\":\"Band\"}",
-                event("org.smarttube.stable", PlayState.PLAYING, details("Song", "Band"), NO_POSITION).fields().compact());
+    public void sendsOnlyTheEventName() {
+        assertEquals("{\"event\":\"playback_changed\"}",
+                event("a", PlayState.PLAYING, details("Song", "Band")).fields().compact());
     }
 
     @Test
-    public void leavesOutTitleAndArtistWhenTheAppGivesNone() {
-        assertEquals("{\"event\":\"playback_changed\",\"package\":\"a\",\"state\":\"paused\"}",
-                event("a", PlayState.PAUSED, details(null, " "), NO_POSITION).fields().compact());
-    }
-
-    @Test
-    public void serialisesEverythingTheAppGivesInAFixedOrder() {
+    public void listsInTheTvsStateEverythingTheAppGivesInAFixedOrder() {
         MediaDetails all = MediaDetails.builder().title("Song").artist("Band").album("Record").albumArtist("Group")
                 .subtitle("Live").description("A long night").genre("Rock").year(1999).durationMillis(215_900)
                 .artwork("content://local/1", "https://example.com/a.jpg").build();
-        assertEquals("{\"event\":\"playback_changed\",\"package\":\"a\",\"state\":\"playing\","
+        assertEquals("{\"playback\":[{\"package\":\"a\",\"state\":\"playing\","
                         + "\"title\":\"Song\",\"artist\":\"Band\",\"album\":\"Record\",\"album_artist\":\"Group\","
                         + "\"subtitle\":\"Live\",\"description\":\"A long night\",\"genre\":\"Rock\",\"year\":1999,"
-                        + "\"duration\":215,\"artwork\":\"https://example.com/a.jpg\",\"position\":42}",
-                event("a", PlayState.PLAYING, all, 42).fields().compact());
-    }
-
-    @Test
-    public void aPositionOfZeroIsReportedButAnUnknownOneIsNot() {
-        assertEquals("{\"event\":\"playback_changed\",\"package\":\"a\",\"state\":\"playing\",\"position\":0}",
-                event("a", PlayState.PLAYING, MediaDetails.NONE, 0).fields().compact());
+                        + "\"duration\":215,\"artwork\":\"https://example.com/a.jpg\"}]}",
+                event("a", PlayState.PLAYING, all).applyTo(TvState.UNKNOWN).fields().compact());
     }
 
     @Test
     public void summaryNamesTheAppAndItsState() {
-        assertEquals("a playing", event("a", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).summary());
+        assertEquals("a playing", event("a", PlayState.PLAYING, MediaDetails.NONE).summary());
     }
 
     @Test
-    public void listsTheSessionInTheTvsStateWithoutThePosition() {
-        TvState state = event("a", PlayState.PLAYING, MediaDetails.builder().title("T").build(), 42)
+    public void listsTheSessionInTheTvsState() {
+        TvState state = event("a", PlayState.PLAYING, MediaDetails.builder().title("T").build())
                 .applyTo(TvState.UNKNOWN);
         assertEquals("{\"playback\":[{\"package\":\"a\",\"state\":\"playing\",\"title\":\"T\"}]}",
                 state.fields().compact());
@@ -62,28 +48,28 @@ public class PlaybackEventTest {
 
     @Test
     public void eachAppKeepsItsOwnPlaceAndANewerEventReplacesOnlyItsOwn() {
-        TvState state = event("a", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).applyTo(TvState.UNKNOWN);
-        state = event("b", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).applyTo(state);
-        state = event("a", PlayState.PAUSED, MediaDetails.NONE, NO_POSITION).applyTo(state);
+        TvState state = event("a", PlayState.PLAYING, MediaDetails.NONE).applyTo(TvState.UNKNOWN);
+        state = event("b", PlayState.PLAYING, MediaDetails.NONE).applyTo(state);
+        state = event("a", PlayState.PAUSED, MediaDetails.NONE).applyTo(state);
         assertEquals("{\"playback\":[{\"package\":\"a\",\"state\":\"paused\"},"
                 + "{\"package\":\"b\",\"state\":\"playing\"}]}", state.fields().compact());
     }
 
     @Test
     public void aStoppedAppIsNoLongerListed() {
-        TvState state = event("a", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).applyTo(TvState.UNKNOWN);
-        state = event("a", PlayState.STOPPED, MediaDetails.NONE, NO_POSITION).applyTo(state);
+        TvState state = event("a", PlayState.PLAYING, MediaDetails.NONE).applyTo(TvState.UNKNOWN);
+        state = event("a", PlayState.STOPPED, MediaDetails.NONE).applyTo(state);
         assertEquals("{\"playback\":[]}", state.fields().compact());
     }
 
     @Test
     public void prettyJsonHasTheSameFieldsIndentedForReading() {
-        assertEquals("{\n  \"event\": \"playback_changed\",\n  \"package\": \"a\",\n  \"state\": \"playing\"\n}",
-                event("a", PlayState.PLAYING, MediaDetails.NONE, NO_POSITION).fields().pretty());
+        assertEquals("{\n  \"event\": \"playback_changed\"\n}",
+                event("a", PlayState.PLAYING, MediaDetails.NONE).fields().pretty());
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void bufferingIsNeverReported() {
-        event("a", PlayState.BUFFERING, MediaDetails.NONE, NO_POSITION);
+        event("a", PlayState.BUFFERING, MediaDetails.NONE);
     }
 }

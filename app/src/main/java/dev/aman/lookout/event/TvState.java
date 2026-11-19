@@ -54,7 +54,7 @@ public final class TvState {
         return new TvState(app, screenOn, screensaver, next);
     }
 
-    /** The state as the {@code tv} object of a message. What is not known yet is left out, rather than guessed. */
+    /** The state as fields of a message. What is not known yet is left out, rather than guessed. */
     public JsonFields fields() {
         JsonFields fields = new JsonFields().optionalString("app", app);
         if (screenOn != null) fields.string("screen", screenOn ? "on" : "off");

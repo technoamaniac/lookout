@@ -8,7 +8,6 @@ import android.media.session.MediaSessionManager;
 import android.media.session.PlaybackState;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.SystemClock;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,8 +90,7 @@ public final class MediaSessionWatcher {
         for (MediaController controller : watched) {
             PlaybackState state = controller.getPlaybackState();
             MediaMetadata metadata = controller.getMetadata();
-            snapshots.add(new PlaybackSnapshot(controller.getPackageName(), stateOf(state), detailsOf(metadata),
-                    positionOf(state, metadata)));
+            snapshots.add(new PlaybackSnapshot(controller.getPackageName(), stateOf(state), detailsOf(metadata)));
         }
         listener.accept(snapshots);
     }
@@ -121,22 +119,6 @@ public final class MediaSessionWatcher {
             if (value != null && !value.trim().isEmpty()) return value;
         }
         return null;
-    }
-
-    // The app reports the position as of its last update, so a playing session has moved on since
-    // and never past the end, for an app that stalls without saying so
-    private static long positionOf(PlaybackState state, MediaMetadata metadata) {
-        if (state == null || state.getPosition() == PlaybackState.PLAYBACK_POSITION_UNKNOWN) {
-            return PlaybackSnapshot.NO_POSITION;
-        }
-        long millis = state.getPosition();
-        if (state.getState() == PlaybackState.STATE_PLAYING && state.getLastPositionUpdateTime() > 0) {
-            millis += (long) ((SystemClock.elapsedRealtime() - state.getLastPositionUpdateTime())
-                    * state.getPlaybackSpeed());
-        }
-        long duration = metadata == null ? 0 : metadata.getLong(MediaMetadata.METADATA_KEY_DURATION);
-        if (duration > 0) millis = Math.min(millis, duration);
-        return Math.max(0, millis) / 1_000;
     }
 
     // Everything unlisted means nothing is playing

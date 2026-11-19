@@ -137,7 +137,6 @@ Content-Type: application/json
 
 {
   "event": "app_changed",
-  "package": "org.smarttube.stable",
   "activity": "org.smarttube.stable.MainActivity",
   "tv": {
     "app": "org.smarttube.stable",
@@ -155,11 +154,11 @@ Content-Type: application/json
 - `activity` is the window Android reported when the app came to the front, often its main activity but sometimes a dialog or splash window. Later screens inside the app do not update it. It is left out when unknown.
 - `device` is the TV's name from its system settings, so one webhook can serve several TVs. It is only sent when **Send this TV's name** is ticked.
 - `timestamp` is Unix seconds.
-- `tv` is the whole state of the TV after this change. Every message has it, so it is the easiest thing to read:
+- `tv` is the whole state of the TV after this change. Every message has it, whatever its `event`, so it is the easiest thing to read. A message never says anything twice: the other fields are only what `tv` cannot hold.
   - `app` is the last app Lookout reported, so it stays on the previous app while an ignored app, such as your launcher, is in front. It is left out after a restart until the next app change.
   - `screen` is `on` or `off`.
   - `screensaver` is `true` while the screensaver runs, and `false` once it stops or the screen turns off. It is left out until Lookout sees one of these, because Android cannot be asked.
-  - `playback` lists each app that is playing or paused, with the same fields as the playback message below, except `position`. It is empty when nothing plays, or when **Media access** is not allowed.
+  - `playback` lists each app that is playing or paused, with the fields described under Playback below. It is empty when nothing plays, or when **Media access** is not allowed.
 
 Lookout also reports the TV itself, with the same `event`, `tv`, `device` and `timestamp` fields:
 
@@ -175,23 +174,30 @@ Lookout can also report what an app is playing:
 ```json
 {
   "event": "playback_changed",
-  "package": "org.smarttube.stable",
-  "state": "playing",
-  "title": "Video title",
-  "artist": "Channel",
-  "album": "Playlist",
-  "duration": 215,
-  "position": 42,
-  "artwork": "https://example.com/cover.jpg",
-  "timestamp": 1731600000
+  "tv": {
+    "app": "org.smarttube.stable",
+    "screen": "on",
+    "screensaver": false,
+    "playback": [
+      {
+        "package": "org.smarttube.stable",
+        "state": "playing",
+        "title": "Video title",
+        "artist": "Channel",
+        "album": "Playlist",
+        "duration": 215,
+        "artwork": "https://example.com/cover.jpg"
+      }
+    ]
+  },
+  "timestamp": 1731600000,
+  "id": "5eed1e55-9abc-4def-8123-0123456789ab"
 }
 ```
 
-- `state` is `playing`, `paused` or `stopped`.
-- Only `event`, `package`, `state` and `timestamp` are always there. The rest is left out when the app does not give it: `title`, `artist`, `album`, `album_artist`, `subtitle`, `description`, `genre`, `year`, `duration`, `position` and `artwork`.
-- `duration` and `position` are in seconds. `position` is how far in the app was when the message was sent. It is not sent again as it moves, only with a change of state or of what is playing.
-- `artwork` is a web address. Text is cut at 200 characters.
-- `tv`, `device` and `id` work as above.
+- `playback_changed` has no fields of its own: the change is in `tv.playback`, with one entry for each app that plays or pauses. `state` is `playing` or `paused`, and an app that stopped is no longer listed. Besides `package` and `state`, an entry has only what the app gives: `title`, `artist`, `album`, `album_artist`, `subtitle`, `description`, `genre`, `year`, `duration` and `artwork`.
+- `duration` is in seconds. `artwork` is a web address. Text is cut at 200 characters.
+- `device` works as above.
 
 It is off until you allow **Media access** in setup (**Settings → Permissions**). If your TV has no screen for it, run this once from your computer instead:
 

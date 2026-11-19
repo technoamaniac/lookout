@@ -36,19 +36,18 @@ public final class PlaybackEvent implements Event {
     @Override
     public TvState applyTo(TvState state) {
         if (session.state() == PlayState.STOPPED) return state.withoutPlayback(session.packageName());
-        return state.withPlayback(session.packageName(), sessionFields(new JsonFields()));
+        return state.withPlayback(session.packageName(), sessionFields());
     }
 
     @Override
     public JsonFields fields() {
-        JsonFields fields = sessionFields(new JsonFields().string("event", TYPE));
-        if (session.positionSeconds() >= 0) {
-            fields.number("position", session.positionSeconds());
-        }
-        return fields;
+        // Nothing else: which app, its state and what it plays are in tv.playback, and an app missing from there has
+        // stopped
+        return new JsonFields().string("event", TYPE);
     }
 
-    private JsonFields sessionFields(JsonFields fields) {
+    private JsonFields sessionFields() {
+        JsonFields fields = new JsonFields();
         fields.string("package", session.packageName()).string("state", session.state().json());
         session.details().addTo(fields);
         return fields;

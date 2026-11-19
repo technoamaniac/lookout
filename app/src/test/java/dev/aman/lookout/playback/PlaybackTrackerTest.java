@@ -3,15 +3,17 @@ package dev.aman.lookout.playback;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.util.List;
+import dev.aman.lookout.event.TvState;
 
 import org.junit.Test;
+
+import java.util.List;
 
 public class PlaybackTrackerTest {
     private final PlaybackTracker tracker = new PlaybackTracker();
 
     private static PlaybackSnapshot snapshot(String app, PlayState state, String title) {
-        return new PlaybackSnapshot(app, state, MediaDetails.builder().title(title).build(), 0);
+        return new PlaybackSnapshot(app, state, MediaDetails.builder().title(title).build());
     }
 
     @Test
@@ -20,7 +22,7 @@ public class PlaybackTrackerTest {
         assertEquals(1, events.size());
         assertEquals("a", events.get(0).packageName());
         assertEquals(PlayState.PLAYING, events.get(0).state());
-        assertTrue(events.get(0).fields().compact().contains("\"title\":\"Song\""));
+        assertTrue(events.get(0).applyTo(TvState.UNKNOWN).fields().compact().contains("\"title\":\"Song\""));
     }
 
     @Test
@@ -30,28 +32,11 @@ public class PlaybackTrackerTest {
     }
 
     @Test
-    public void aMovingPositionAloneIsNotAChange() {
-        MediaDetails details = MediaDetails.builder().title("Song").durationMillis(60_000).build();
-        tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PLAYING, details, 5)));
-        assertTrue(tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PLAYING, details, 9)))
-                .isEmpty());
-    }
-
-    @Test
-    public void aChangeCarriesThePositionItHappenedAt() {
-        MediaDetails details = MediaDetails.builder().title("Song").build();
-        tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PLAYING, details, 5)));
-        PlaybackEvent paused = tracker.onSessionsChanged(
-                List.of(new PlaybackSnapshot("a", PlayState.PAUSED, details, 9))).get(0);
-        assertTrue(paused.fields().compact().contains("\"position\":9"));
-    }
-
-    @Test
     public void aNewAlbumOrArtworkIsAChange() {
         tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PLAYING,
-                MediaDetails.builder().title("Song").album("One").build(), 0)));
+                MediaDetails.builder().title("Song").album("One").build())));
         assertEquals(1, tracker.onSessionsChanged(List.of(new PlaybackSnapshot("a", PlayState.PLAYING,
-                MediaDetails.builder().title("Song").album("Two").build(), 0))).size());
+                MediaDetails.builder().title("Song").album("Two").build()))).size());
     }
 
     @Test
@@ -60,7 +45,7 @@ public class PlaybackTrackerTest {
         assertEquals(PlayState.PAUSED,
                 tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PAUSED, "Song"))).get(0).state());
         assertTrue(tracker.onSessionsChanged(List.of(snapshot("a", PlayState.PAUSED, "Next")))
-                .get(0).fields().compact().contains("\"title\":\"Next\""));
+                .get(0).applyTo(TvState.UNKNOWN).fields().compact().contains("\"title\":\"Next\""));
     }
 
     @Test
@@ -139,7 +124,7 @@ public class PlaybackTrackerTest {
         List<PlaybackEvent> events = tracker.onSessionsChanged(List.of(snapshot("a", PlayState.BUFFERING, "Two")));
         assertEquals(1, events.size());
         assertEquals(PlayState.PLAYING, events.get(0).state());
-        assertTrue(events.get(0).fields().compact().contains("\"title\":\"Two\""));
+        assertTrue(events.get(0).applyTo(TvState.UNKNOWN).fields().compact().contains("\"title\":\"Two\""));
     }
 
     @Test

@@ -1,15 +1,14 @@
 package dev.aman.lookout.event;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
 
-/** Builds a flat JSON object, keeping fields in the order they were added. */
+/** Builds a JSON object, keeping fields in the order they were added. Nested objects and arrays are copied in. */
 public final class JsonFields {
-    // Values are already JSON-encoded
-    private final Map<String, String> fields = new LinkedHashMap<>();
+    // Each value is an already-encoded scalar (String), a nested object (JsonFields) or an array of them (Array)
+    private final Map<String, Object> fields = new LinkedHashMap<>();
 
     public JsonFields string(String name, String value) {
         fields.put(name, quote(value));
@@ -31,32 +30,16 @@ public final class JsonFields {
         return this;
     }
 
-    /** Adds a nested object; it stays on one line in {@link #pretty()}. */
+    /** Adds a nested object. */
     public JsonFields object(String name, JsonFields object) {
-        fields.put(name, object.compact());
+        fields.put(name, object.copy());
         return this;
     }
 
-    /** Adds an array of objects; nested objects stay on one line in {@link #pretty()}. */
+    /** Adds an array of objects. */
     public JsonFields objects(String name, List<JsonFields> objects) {
-        StringJoiner array = new StringJoiner(",", "[", "]");
-        for (JsonFields object : objects) array.add(object.compact());
-        fields.put(name, array.toString());
+        fields.put(name, new Array(objects));
         return this;
-    }
-
-    /**
-     * Adds a value that is already JSON-encoded, as returned by {@link #encoded()}; for restoring saved fields, so
-     * nothing has to be decoded and re-encoded.
-     */
-    public JsonFields encoded(String name, String json) {
-        fields.put(name, json);
-        return this;
-    }
-
-    /** Each field's name and JSON-encoded value, in order. */
-    public Map<String, String> encoded() {
-        return Collections.unmodifiableMap(fields);
     }
 
     public JsonFields copy() {
@@ -66,19 +49,43 @@ public final class JsonFields {
     }
 
     public String compact() {
-        return render("", "", ":");
+        return write(new StringBuilder(), false, 0).toString();
     }
 
+    /** The same JSON with one value per line, nested objects and arrays indented. */
     public String pretty() {
-        return render("\n", "  ", ": ");
+        return write(new StringBuilder(), true, 0).toString();
     }
 
-    private String render(String newline, String indent, String colon) {
-        StringJoiner json = new StringJoiner("," + newline, "{" + newline, newline + "}");
-        for (Map.Entry<String, String> field : fields.entrySet()) {
-            json.add(indent + quote(field.getKey()) + colon + field.getValue());
+    private StringBuilder write(StringBuilder out, boolean pretty, int depth) {
+        if (fields.isEmpty()) return out.append("{}");
+        out.append('{');
+        String separator = "";
+        for (Map.Entry<String, Object> field : fields.entrySet()) {
+            out.append(separator);
+            separator = ",";
+            newline(out, pretty, depth + 1);
+            out.append(quote(field.getKey())).append(pretty ? ": " : ":");
+            writeValue(out, field.getValue(), pretty, depth + 1);
         }
-        return json.toString();
+        newline(out, pretty, depth);
+        return out.append('}');
+    }
+
+    private static void writeValue(StringBuilder out, Object value, boolean pretty, int depth) {
+        if (value instanceof JsonFields) {
+            ((JsonFields) value).write(out, pretty, depth);
+        } else if (value instanceof Array) {
+            ((Array) value).write(out, pretty, depth);
+        } else {
+            out.append((String) value);
+        }
+    }
+
+    private static void newline(StringBuilder out, boolean pretty, int depth) {
+        if (!pretty) return;
+        out.append('\n');
+        for (int i = 0; i < depth; i++) out.append("  ");
     }
 
     private static String quote(String s) {
@@ -93,5 +100,31 @@ public final class JsonFields {
             }
         }
         return out.append('"').toString();
+    }
+
+    /** An array of objects, copied so later changes to the originals do not reach it. */
+    private static final class Array {
+        private final List<JsonFields> items = new ArrayList<>();
+
+        Array(List<JsonFields> objects) {
+            for (JsonFields object : objects) items.add(object.copy());
+        }
+
+        void write(StringBuilder out, boolean pretty, int depth) {
+            if (items.isEmpty()) {
+                out.append("[]");
+                return;
+            }
+            out.append('[');
+            String separator = "";
+            for (JsonFields item : items) {
+                out.append(separator);
+                separator = ",";
+                newline(out, pretty, depth + 1);
+                item.write(out, pretty, depth + 1);
+            }
+            newline(out, pretty, depth);
+            out.append(']');
+        }
     }
 }
