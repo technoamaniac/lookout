@@ -50,6 +50,8 @@ public final class PlaybackEvent implements Event {
         JsonFields fields = new JsonFields();
         fields.string("package", session.packageName()).string("state", session.state().json());
         session.details().addTo(fields);
+        // As of the change being reported; it is not updated as it moves, so a heartbeat repeats it
+        if (session.positionSeconds() >= 0) fields.number("position", session.positionSeconds());
         return fields;
     }
 }

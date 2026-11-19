@@ -184,6 +184,7 @@ Lookout can also report what an app is playing:
         "artist": "Channel",
         "album": "Playlist",
         "duration": 215,
+        "position": 42,
         "artwork": "https://example.com/cover.jpg"
       }
     ]
@@ -193,8 +194,9 @@ Lookout can also report what an app is playing:
 }
 ```
 
-- `playback_changed` has no fields of its own: the change is in `tv.playback`, with one entry for each app that plays or pauses. `state` is `playing` or `paused`, and an app that stopped is no longer listed. Besides `package` and `state`, an entry has only what the app gives: `title`, `artist`, `album`, `album_artist`, `subtitle`, `description`, `genre`, `year`, `duration` and `artwork`.
-- `duration` is in seconds. `artwork` is a web address. Text is cut at 200 characters.
+- `playback_changed` has no fields of its own: the change is in `tv.playback`, with one entry for each app that plays or pauses. `state` is `playing` or `paused`, and an app that stopped is no longer listed. Besides `package` and `state`, an entry has only what the app gives: `title`, `artist`, `album`, `album_artist`, `subtitle`, `description`, `genre`, `year`, `duration`, `position` and `artwork`.
+- `duration` and `position` are in seconds. `position` is how far in the app was when its state or what it plays last changed. It is not updated as it moves, so a heartbeat repeats the last one.
+- `artwork` is a web address. Text is cut at 200 characters.
 - `device` works as above.
 
 It is off until you allow **Media access** in setup (**Settings → Permissions**). If your TV has no screen for it, run this once from your computer instead:

@@ -1,5 +1,6 @@
 package dev.aman.lookout.playback;
 
+import static dev.aman.lookout.playback.PlaybackSnapshot.NO_POSITION;
 import static org.junit.Assert.assertEquals;
 
 import dev.aman.lookout.event.TvState;
@@ -8,7 +9,11 @@ import org.junit.Test;
 
 public class PlaybackEventTest {
     private static PlaybackEvent event(String app, PlayState state, MediaDetails details) {
-        return new PlaybackEvent(new PlaybackSnapshot(app, state, details));
+        return event(app, state, details, NO_POSITION);
+    }
+
+    private static PlaybackEvent event(String app, PlayState state, MediaDetails details, long positionSeconds) {
+        return new PlaybackEvent(new PlaybackSnapshot(app, state, details, positionSeconds));
     }
 
     private static MediaDetails details(String title, String artist) {
@@ -31,6 +36,21 @@ public class PlaybackEventTest {
                         + "\"subtitle\":\"Live\",\"description\":\"A long night\",\"genre\":\"Rock\",\"year\":1999,"
                         + "\"duration\":215,\"artwork\":\"https://example.com/a.jpg\"}]}",
                 event("a", PlayState.PLAYING, all).applyTo(TvState.UNKNOWN).fields().compact());
+    }
+
+    @Test
+    public void listsThePositionAfterTheDetailsWhenTheAppGivesOne() {
+        assertEquals("{\"playback\":[{\"package\":\"a\",\"state\":\"paused\",\"title\":\"T\",\"position\":42}]}",
+                event("a", PlayState.PAUSED, MediaDetails.builder().title("T").build(), 42)
+                        .applyTo(TvState.UNKNOWN).fields().compact());
+    }
+
+    @Test
+    public void aPositionOfZeroIsListedButAnUnknownOneIsNot() {
+        assertEquals("{\"playback\":[{\"package\":\"a\",\"state\":\"playing\",\"position\":0}]}",
+                event("a", PlayState.PLAYING, MediaDetails.NONE, 0).applyTo(TvState.UNKNOWN).fields().compact());
+        assertEquals("{\"playback\":[{\"package\":\"a\",\"state\":\"playing\"}]}",
+                event("a", PlayState.PLAYING, MediaDetails.NONE).applyTo(TvState.UNKNOWN).fields().compact());
     }
 
     @Test

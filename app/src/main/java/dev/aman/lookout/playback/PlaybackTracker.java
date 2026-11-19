@@ -24,7 +24,7 @@ public final class PlaybackTracker {
         for (PlaybackSnapshot before : known.values()) {
             if (!current.containsKey(before.packageName()) && before.state() != PlayState.STOPPED) {
                 events.add(new PlaybackEvent(new PlaybackSnapshot(before.packageName(), PlayState.STOPPED,
-                        MediaDetails.NONE)));
+                        MediaDetails.NONE, PlaybackSnapshot.NO_POSITION)));
             }
         }
         known.clear();
